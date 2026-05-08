@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { VoiceOrb } from "@/components/VoiceOrb";
 import type { Difficulty, Gender, PersonaProfile } from "@/lib/supabase/types";
 
 interface ClientOption {
@@ -283,10 +284,9 @@ export function NewSessionForm({
           </StepSection>
         </div>
 
-        {/* SIDEBAR, recap sticky */}
+        {/* SIDEBAR : avatar du prospect en cours de composition */}
         <aside className="lg:sticky lg:top-20 lg:self-start">
-          <RecapCard
-            ready={Boolean(ready)}
+          <AvatarCard
             clientName={selectedClient?.name ?? null}
             personaLabel={personaLabel || null}
             personaRole={selectedProfile?.role ?? null}
@@ -294,13 +294,27 @@ export function NewSessionForm({
             difficultyLabel={
               difficulties.find((d) => d.key === difficulty)?.label ?? ""
             }
-            difficultyIntensity={DIFFICULTY_INTENSITY[difficulty] ?? 1}
-            onLaunch={handleSubmit}
-            loading={loading}
-            error={error}
+            difficultyIntensity={
+              (DIFFICULTY_INTENSITY[difficulty] ?? 1) as 1 | 2 | 3 | 4
+            }
+            ready={Boolean(ready)}
           />
         </aside>
       </div>
+
+      {/* BOUTON DE LANCEMENT EN BAS DE PAGE */}
+      <LaunchBar
+        ready={Boolean(ready)}
+        clientName={selectedClient?.name ?? null}
+        personaLabel={personaLabel || null}
+        difficultyLabel={
+          difficulties.find((d) => d.key === difficulty)?.label ?? ""
+        }
+        gender={gender}
+        loading={loading}
+        error={error}
+        onLaunch={handleSubmit}
+      />
     </form>
   );
 }
@@ -467,7 +481,262 @@ function DifficultyBars({ intensity }: { intensity: number }) {
   );
 }
 
-function RecapCard({
+function AvatarCard({
+  ready,
+  clientName,
+  personaLabel,
+  personaRole,
+  gender,
+  difficultyLabel,
+  difficultyIntensity,
+}: {
+  ready: boolean;
+  clientName: string | null;
+  personaLabel: string | null;
+  personaRole: string | null;
+  gender: Gender;
+  difficultyLabel: string;
+  difficultyIntensity: 1 | 2 | 3 | 4;
+}) {
+  const composing =
+    [clientName, personaLabel, difficultyLabel].filter(Boolean).length > 0;
+
+  return (
+    <div
+      className="rounded-xl p-6 transition-all"
+      style={{
+        background: ready ? "var(--color-dark)" : "#FFFFFF",
+        color: ready ? "#FFFFFF" : "var(--color-dark)",
+        border: ready ? "none" : "1px solid var(--color-gray-border)",
+        boxShadow: ready
+          ? "0 18px 40px rgba(34, 25, 50, 0.18)"
+          : "var(--shadow-sm)",
+      }}
+    >
+      <div
+        className="text-meta uppercase tracking-widest mb-4 text-center"
+        style={{
+          color: ready ? "rgba(255,255,255,0.55)" : "var(--color-gray)",
+        }}
+      >
+        {ready ? "Prospect prêt" : "Compose ton prospect"}
+      </div>
+
+      {/* AVATAR ORB */}
+      <div className="flex justify-center mb-5">
+        <VoiceOrb
+          state={composing ? "idle" : "ended"}
+          size={160}
+          intensity={difficultyIntensity}
+        />
+      </div>
+
+      {/* IDENTITÉ DU PROSPECT EN COURS */}
+      <div className="text-center mb-5">
+        <div
+          className="text-h4"
+          style={{ color: ready ? "#FFFFFF" : "var(--color-dark)" }}
+        >
+          {personaLabel ?? "Persona"}
+        </div>
+        {personaRole && (
+          <div
+            className="text-small mt-1"
+            style={{
+              color: ready
+                ? "rgba(255,255,255,0.65)"
+                : "var(--color-gray)",
+            }}
+          >
+            {personaRole}
+          </div>
+        )}
+      </div>
+
+      {/* TAGS */}
+      <div className="space-y-2.5">
+        <AvatarTag
+          icon="🏢"
+          label="Client"
+          value={clientName}
+          dark={ready}
+        />
+        <AvatarTag
+          icon="👤"
+          label="Genre"
+          value={gender ? (gender === "homme" ? "Homme" : "Femme") : null}
+          dark={ready}
+        />
+        <AvatarTag
+          icon="⚡"
+          label="Difficulté"
+          value={difficultyLabel || null}
+          dark={ready}
+          extra={
+            difficultyLabel ? (
+              <DifficultyBarsLarge
+                intensity={difficultyIntensity}
+                dark={ready}
+              />
+            ) : undefined
+          }
+        />
+      </div>
+    </div>
+  );
+}
+
+function AvatarTag({
+  icon,
+  label,
+  value,
+  dark,
+  extra,
+}: {
+  icon: string;
+  label: string;
+  value: string | null;
+  dark: boolean;
+  extra?: React.ReactNode;
+}) {
+  return (
+    <div
+      className="rounded-md px-3 py-2.5 flex items-center justify-between gap-2"
+      style={{
+        background: dark
+          ? "rgba(255,255,255,0.06)"
+          : "var(--bg-soft)",
+      }}
+    >
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <span
+          className="text-meta uppercase tracking-widest"
+          style={{
+            color: dark ? "rgba(255,255,255,0.45)" : "var(--color-gray)",
+            fontSize: "0.6875rem",
+            minWidth: "70px",
+          }}
+        >
+          {label}
+        </span>
+        <span
+          className="text-small font-semibold truncate"
+          style={{
+            color: value
+              ? dark
+                ? "#FFFFFF"
+                : "var(--color-dark)"
+              : dark
+                ? "rgba(255,255,255,0.3)"
+                : "rgba(139, 127, 163, 0.5)",
+            fontWeight: value ? 600 : 400,
+          }}
+        >
+          {value ?? "À choisir"}
+        </span>
+      </div>
+      {extra}
+    </div>
+  );
+}
+
+function LaunchBar({
+  ready,
+  clientName,
+  personaLabel,
+  difficultyLabel,
+  gender,
+  loading,
+  error,
+  onLaunch,
+}: {
+  ready: boolean;
+  clientName: string | null;
+  personaLabel: string | null;
+  difficultyLabel: string;
+  gender: Gender;
+  loading: boolean;
+  error: string | null;
+  onLaunch: (e: React.FormEvent) => void;
+}) {
+  return (
+    <div className="mt-12">
+      {error && (
+        <div
+          className="rounded-md px-4 py-3 text-small mb-4"
+          style={{
+            background: "rgba(233, 75, 75, 0.08)",
+            color: "var(--color-error)",
+            border: "1px solid rgba(233, 75, 75, 0.24)",
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      <div
+        className="rounded-xl p-6 md:p-8"
+        style={{
+          background: ready ? "var(--color-dark)" : "var(--bg-soft)",
+          color: ready ? "#FFFFFF" : "var(--color-dark)",
+          border: ready ? "none" : "1px solid var(--color-gray-border)",
+          boxShadow: ready
+            ? "0 18px 40px rgba(34, 25, 50, 0.2)"
+            : "none",
+          transition: "all 0.3s var(--ease-out)",
+        }}
+      >
+        <div className="flex items-center justify-between gap-6 flex-wrap">
+          <div className="flex-1 min-w-[260px]">
+            <div
+              className="text-meta uppercase tracking-widest mb-2"
+              style={{
+                color: ready
+                  ? "rgba(255,255,255,0.55)"
+                  : "var(--color-gray)",
+              }}
+            >
+              {ready ? "Prêt à démarrer" : "Configuration en cours"}
+            </div>
+            {ready ? (
+              <p className="text-body-l" style={{ lineHeight: "1.4" }}>
+                Tu vas appeler{" "}
+                <b style={{ color: "var(--color-green)" }}>{personaLabel}</b>
+                {" "}pour <b>{clientName}</b>, en mode{" "}
+                <b style={{ color: "var(--color-green)" }}>
+                  {difficultyLabel.toLowerCase()}
+                </b>
+                . Genre :{" "}
+                <b>{gender === "homme" ? "homme" : "femme"}</b>.
+              </p>
+            ) : (
+              <p
+                className="text-body"
+                style={{ color: "var(--color-gray)" }}
+              >
+                Complète les 4 étapes pour lancer l&apos;appel.
+              </p>
+            )}
+          </div>
+          <Button
+            type="submit"
+            variant={ready ? "primary" : "ghost"}
+            size="lg"
+            disabled={!ready || loading}
+            loading={loading}
+            onClick={onLaunch}
+          >
+            {loading ? "Génération..." : "Lancer l'appel →"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Ancienne RecapCard, remplacée par AvatarCard + LaunchBar mais conservée
+// si jamais on doit y revenir. Non utilisée pour le moment.
+function _UnusedRecapCard({
   ready,
   clientName,
   personaLabel,

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { DifficultyBadge } from "@/components/ui/Badge";
+import { VoiceOrb, type OrbState } from "@/components/VoiceOrb";
 import {
   createRecognition,
   isSpeechRecognitionSupported,
@@ -14,7 +15,14 @@ import {
   type MinimalSpeechRecognition,
   type SpeechRecognitionEvent,
 } from "@/lib/voice";
-import type { Gender, MessageRow, SessionRow } from "@/lib/supabase/types";
+import type { Difficulty, Gender, MessageRow, SessionRow } from "@/lib/supabase/types";
+
+const DIFFICULTY_INTENSITY: Record<Difficulty, 1 | 2 | 3 | 4> = {
+  debutant: 1,
+  intermediaire: 2,
+  avance: 3,
+  expert: 4,
+};
 
 interface Props {
   session: SessionRow;
@@ -441,8 +449,8 @@ export function ChatRoom({ session, initialMessages }: Props) {
       {/* MODE VOIX, prend tout l'espace */}
       {useVoice && (
         <>
-          <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 gap-10">
-            {/* État */}
+          <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 gap-8">
+            {/* État textuel */}
             <div className="flex items-center gap-3">
               <span
                 className="rounded-pill"
@@ -466,8 +474,22 @@ export function ChatRoom({ session, initialMessages }: Props) {
               </span>
             </div>
 
-            {/* Wave visuel */}
-            <SoundWave active={isSpeaking} listening={isListening} thinking={sending} />
+            {/* Orbe animé style GPT */}
+            <VoiceOrb
+              state={
+                ended
+                  ? "ended"
+                  : sending
+                    ? "thinking"
+                    : isSpeaking
+                      ? "speaking"
+                      : isListening
+                        ? "listening"
+                        : "idle"
+              }
+              size={260}
+              intensity={DIFFICULTY_INTENSITY[session.difficulty as Difficulty] ?? 1}
+            />
 
             {/* Interim transcript */}
             <div
@@ -728,7 +750,7 @@ function MicIcon({ size = 24 }: { size?: number }) {
   );
 }
 
-function SoundWave({
+function _UnusedSoundWave({
   active,
   listening,
   thinking,
