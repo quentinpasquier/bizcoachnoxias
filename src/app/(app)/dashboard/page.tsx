@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
-import { Badge, DifficultyBadge, ScoreBadge } from "@/components/ui/Badge";
+import { StatusPill } from "@/components/ui/Status";
+import { DifficultyBadge, ScoreBadge } from "@/components/ui/Badge";
+import { PageHeader } from "@/components/PageHeader";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { formatRelativeFr } from "@/lib/format";
@@ -16,6 +18,7 @@ export default async function DashboardPage() {
     "score" | "appointment_secured" | "difficulty" | "client_id"
   >[] = [];
   let clients: Pick<Client, "id" | "name" | "sector">[] = [];
+  let userName = "Commercial";
 
   if (configured) {
     const {
@@ -23,6 +26,14 @@ export default async function DashboardPage() {
     } = await supabase.auth.getUser();
 
     if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .single();
+      const fullName = (profile as { full_name?: string | null } | null)?.full_name;
+      if (fullName) userName = fullName.split(" ")[0];
+
       const [{ data: sessionsData }, { data: completedData }, { data: clientsData }] =
         await Promise.all([
           supabase
@@ -65,27 +76,27 @@ export default async function DashboardPage() {
 
   return (
     <div className="container-noxias py-12 space-y-12">
-      {/* HERO */}
-      <header className="flex items-end justify-between flex-wrap gap-6">
-        <div>
-          <span className="divider-green block mb-4" />
-          <h1 className="text-h2">Bonjour.</h1>
-          <p
-            className="text-body-l mt-2"
-            style={{ color: "var(--color-gray)" }}
-          >
-            Tes performances et ta prochaine session.
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Link href="/clients" className="btn btn-ghost">
-            Voir les clients
-          </Link>
-          <Link href="/sessions/new" className="btn btn-primary">
-            Démarrer une session
-          </Link>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow="MON COACH"
+        eyebrowGreen
+        title={
+          <>
+            Bonjour <span style={{ color: "var(--color-green)" }}>{userName}</span>
+          </>
+        }
+        subtitle="Choisis un client, lance un appel, progresse à chaque session."
+        action={
+          <>
+            <Link href="/clients" className="btn btn-ghost">
+              Voir les clients
+            </Link>
+            <Link href="/sessions/new" className="btn btn-dark">
+              + Démarrer une session
+            </Link>
+          </>
+        }
+        divider={false}
+      />
 
       {/* STATS */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -100,21 +111,21 @@ export default async function DashboardPage() {
         />
         <StatCard
           number={`${rdvRate}%`}
-          label="RDV obtenus"
+          label="Taux de RDV"
           accent
         />
       </section>
 
       {/* QUICK START : clients */}
       {clients.length > 0 && (
-        <section className="space-y-4">
+        <section className="space-y-5">
           <SectionHeader
             title="Démarrer pour un client"
             action={
               clients.length > 6 ? (
                 <Link
                   href="/clients"
-                  className="text-small font-medium hover:underline"
+                  className="text-small font-semibold"
                   style={{ color: "var(--color-purple)" }}
                 >
                   Voir les {clients.length} clients →
@@ -130,7 +141,7 @@ export default async function DashboardPage() {
                     <div className="min-w-0 flex-1">
                       <div className="text-h4 truncate">{c.name}</div>
                       {c.sector && (
-                        <div className="section-eyebrow mt-1">{c.sector}</div>
+                        <div className="eyebrow mt-1">{c.sector}</div>
                       )}
                     </div>
                     <span
@@ -149,14 +160,14 @@ export default async function DashboardPage() {
       )}
 
       {/* RECENT SESSIONS */}
-      <section className="space-y-4">
+      <section className="space-y-5">
         <SectionHeader
           title="Sessions récentes"
           action={
             sessions.length > 0 ? (
               <Link
                 href="/history"
-                className="text-small font-medium hover:underline"
+                className="text-small font-semibold"
                 style={{ color: "var(--color-purple)" }}
               >
                 Tout l&apos;historique →
@@ -185,11 +196,22 @@ export default async function DashboardPage() {
                     <div className="flex items-center justify-between gap-4 flex-wrap">
                       <div className="flex-1 min-w-[200px]">
                         <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                          <Badge tone="purple">{clientName}</Badge>
+                          <span
+                            className="text-meta font-bold uppercase tracking-widest"
+                            style={{ color: "var(--color-purple)" }}
+                          >
+                            {clientName}
+                          </span>
+                          <span
+                            className="text-meta"
+                            style={{ color: "var(--color-gray)" }}
+                          >
+                            ·
+                          </span>
                           <span className="text-h4">{s.persona_label}</span>
                           <DifficultyBadge difficulty={s.difficulty} />
                           {s.status === "active" && (
-                            <Badge tone="success">En cours</Badge>
+                            <StatusPill tone="success">En cours</StatusPill>
                           )}
                         </div>
                         <p
@@ -201,7 +223,7 @@ export default async function DashboardPage() {
                       </div>
                       <div className="flex items-center gap-3">
                         {s.appointment_secured && (
-                          <Badge tone="success">RDV obtenu</Badge>
+                          <StatusPill tone="success">RDV obtenu</StatusPill>
                         )}
                         <ScoreBadge score={s.score} />
                       </div>
@@ -212,14 +234,14 @@ export default async function DashboardPage() {
             })}
           </div>
         ) : (
-          <Card variant="lavender" className="text-center py-12">
+          <Card variant="lavender" className="text-center py-14">
             <h3 className="text-h3 mb-2">Pas encore de session.</h3>
             <p
               className="text-body mb-6"
               style={{ color: "var(--color-gray)" }}
             >
               {configured
-                ? "Lance ta première simulation, restitution immédiate."
+                ? "Lance ta première simulation. Restitution immédiate."
                 : "Mode démo. Connecte Supabase pour voir tes vraies sessions."}
             </p>
             <Link
@@ -248,15 +270,20 @@ function StatCard({
 }) {
   return (
     <Card variant={accent ? "dark" : "default"}>
-      <div className="section-eyebrow mb-3" style={{ color: accent ? "rgba(255,255,255,0.55)" : "var(--color-gray)" }}>
+      <div
+        className="eyebrow mb-3"
+        style={{
+          color: accent ? "rgba(255,255,255,0.55)" : "var(--color-gray)",
+        }}
+      >
         {label}
       </div>
       <div
         className="font-display"
         style={{
-          fontSize: "4rem",
+          fontSize: "3.75rem",
           lineHeight: "1",
-          color: accent ? "var(--color-green)" : "var(--color-purple)",
+          color: accent ? "var(--color-green)" : "var(--color-dark)",
         }}
       >
         {number}
@@ -266,6 +293,7 @@ function StatCard({
               fontSize: "1.25rem",
               opacity: 0.55,
               marginLeft: "0.25rem",
+              fontWeight: 400,
             }}
           >
             {suffix}

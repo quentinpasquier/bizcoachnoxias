@@ -1,112 +1,115 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
+import { StatusPill } from "@/components/ui/Status";
+import { ProgressBar } from "@/components/ui/ProgressBar";
+import { PageHeader } from "@/components/PageHeader";
+import { ClientsBoard } from "./ClientsBoard";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import type { Client } from "@/lib/supabase/types";
+import type { Client, SessionRow } from "@/lib/supabase/types";
+
+interface ClientWithStats {
+  id: string;
+  name: string;
+  sector: string | null;
+  active: boolean;
+  value_proposition: string | null;
+  product_pitch: string;
+  persona_count: number;
+  total_sessions: number;
+  completed_sessions: number;
+  rdv_secured: number;
+  avg_score: number | null;
+  has_docs: boolean;
+}
 
 export default async function ClientsPage() {
   const supabase = await createClient();
   const configured = isSupabaseConfigured();
 
-  let clients: Client[] = [];
-  let errorMessage: string | null = null;
+  let clients: ClientWithStats[] = [];
 
   if (configured) {
-    const { data, error } = await supabase
-      .from("clients")
-      .select("*")
-      .order("active", { ascending: false })
-      .order("name", { ascending: true });
+    const [{ data: clientsData }, { data: sessionsData }] = await Promise.all([
+      supabase
+        .from("clients")
+        .select("*")
+        .order("active", { ascending: false })
+        .order("name", { ascending: true }),
+      supabase.from("sessions").select("client_id, status, score, appointment_secured"),
+    ]);
 
-    clients = (data ?? []) as Client[];
-    if (error) errorMessage = error.message;
+    const cs = (clientsData ?? []) as Client[];
+    const ss = (sessionsData ?? []) as Pick<
+      SessionRow,
+      "client_id" | "status" | "score" | "appointment_secured"
+    >[];
+
+    clients = cs.map((c) => {
+      const sessions = ss.filter((s) => s.client_id === c.id);
+      const completed = sessions.filter((s) => s.status === "completed");
+      const rdv = completed.filter((s) => s.appointment_secured).length;
+      const scored = completed.filter((s) => typeof s.score === "number");
+      const avg =
+        scored.length > 0
+          ? Math.round(
+              scored.reduce((acc, s) => acc + (s.score ?? 0), 0) / scored.length,
+            )
+          : null;
+
+      return {
+        id: c.id,
+        name: c.name,
+        sector: c.sector,
+        active: c.active,
+        value_proposition: c.value_proposition,
+        product_pitch: c.product_pitch,
+        persona_count: (c.persona_profiles ?? []).length,
+        total_sessions: sessions.length,
+        completed_sessions: completed.length,
+        rdv_secured: rdv,
+        avg_score: avg,
+        has_docs: Boolean(c.synced_content),
+      };
+    });
   }
 
   return (
-    <div className="container-noxias py-10 space-y-8">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <span className="divider-green block mb-3" />
-          <h1 className="text-h2">Clients</h1>
-          <p className="text-body mt-1" style={{ color: "var(--color-gray)" }}>
-            Les comptes pour qui Noxias prospecte. Chaque session est rattachée à un client.
-          </p>
-        </div>
-        <Link href="/clients/new" className="btn btn-primary">
-          + Ajouter un client
-        </Link>
-      </div>
-
-      {errorMessage && (
-        <div
-          className="rounded-md px-4 py-3 text-small"
-          style={{
-            background: "rgba(233, 75, 75, 0.08)",
-            color: "var(--color-error)",
-            border: "1px solid rgba(233, 75, 75, 0.24)",
-          }}
-        >
-          Erreur de chargement : {errorMessage}
-        </div>
-      )}
+    <div className="container-noxias py-12 space-y-8">
+      <PageHeader
+        title="Clients"
+        subtitle={
+          clients.length > 0
+            ? `${clients.length} client${clients.length > 1 ? "s" : ""} suivi${clients.length > 1 ? "s" : ""}`
+            : "Aucun client pour l'instant"
+        }
+        action={
+          <Link href="/clients/new" className="btn btn-dark">
+            + Nouveau client
+          </Link>
+        }
+      />
 
       {clients.length === 0 ? (
-        <Card variant="lavender" className="text-center py-12">
-          <h3 className="text-h3 mb-2">Aucun client pour l'instant.</h3>
-          <p className="text-body mb-6" style={{ color: "var(--color-gray)" }}>
+        <Card variant="lavender" className="text-center py-16">
+          <h3 className="text-h3 mb-2">Aucun client pour l&apos;instant.</h3>
+          <p
+            className="text-body mb-6"
+            style={{ color: "var(--color-gray)" }}
+          >
             {configured
-              ? "Ajoute un premier client pour démarrer les sessions de prospection."
-              : "Mode démo : connecte Supabase pour voir tes clients réels."}
+              ? "Crée ton premier client en uploadant ses docs."
+              : "Mode démo. Connecte Supabase pour voir tes clients."}
           </p>
           <Link href="/clients/new" className="btn btn-primary inline-flex">
-            Ajouter le premier client
+            Créer un client
           </Link>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {clients.map((c) => (
-            <Link key={c.id} href={`/clients/${c.id}`}>
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <h3 className="text-h4">{c.name}</h3>
-                  {!c.active && <Badge tone="neutral">Inactif</Badge>}
-                </div>
-                {c.sector && (
-                  <p
-                    className="text-meta uppercase tracking-widest mb-3"
-                    style={{ color: "var(--color-gray)" }}
-                  >
-                    {c.sector}
-                  </p>
-                )}
-                {c.value_proposition && (
-                  <p
-                    className="text-small flex-1"
-                    style={{ color: "var(--color-dark)" }}
-                  >
-                    {c.value_proposition}
-                  </p>
-                )}
-                <div className="mt-4 pt-4 border-t border-[rgba(139,127,163,0.16)] flex items-center justify-between">
-                  <span
-                    className="text-meta"
-                    style={{ color: "var(--color-gray)" }}
-                  >
-                    {c.ideal_targets ? c.ideal_targets.split(",")[0] : "Tous prospects"}
-                  </span>
-                  <span
-                    className="text-small font-medium"
-                    style={{ color: "var(--color-purple)" }}
-                  >
-                    Voir →
-                  </span>
-                </div>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        <ClientsBoard clients={clients} />
       )}
     </div>
   );
 }
+
+export type { ClientWithStats };
