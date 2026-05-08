@@ -56,7 +56,7 @@ export default async function NewSessionPage({
   const preselectedPersonaLabel = params.persona ?? "";
 
   return (
-    <div className="container-noxias py-10 max-w-3xl">
+    <div className="container-noxias py-12 max-w-6xl">
       <div className="mb-8">
         <span className="divider-green block mb-3" />
         <h1 className="text-h2">Nouvelle session</h1>

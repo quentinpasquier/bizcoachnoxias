@@ -121,177 +121,186 @@ export function NewSessionForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
-      {/* STEPPER */}
-      <Stepper completed={completedSteps} total={4} />
+    <form onSubmit={handleSubmit}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
+        {/* MAIN COLUMN, les étapes */}
+        <div className="space-y-8 min-w-0">
+          {/* STEPPER */}
+          <Stepper completed={completedSteps} total={4} />
 
-      {/* Étape 1 : Client */}
-      <StepSection
-        number="01"
-        title="Pour quel client ?"
-        subtitle={`${clients.length} client${clients.length > 1 ? "s" : ""} disponible${clients.length > 1 ? "s" : ""}`}
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {clients.map((c) => (
-            <SelectableCard
-              key={c.id}
-              selected={clientId === c.id}
-              onClick={() => handleClientChange(c.id)}
-              warningBadge={!c.has_docs ? "Pas de docs" : undefined}
-            >
-              <div className="text-h4">{c.name}</div>
-              {c.sector && <div className="eyebrow mt-1">{c.sector}</div>}
-              {c.value_proposition && (
-                <p
-                  className="text-small mt-2 line-clamp-2"
-                  style={{ color: "var(--color-dark)" }}
-                >
-                  {c.value_proposition}
-                </p>
-              )}
-            </SelectableCard>
-          ))}
-        </div>
-      </StepSection>
-
-      {/* Étape 2 : Persona, dépend du client */}
-      {selectedClient && (
-        <StepSection
-          number="02"
-          title="Quel prospect appelles-tu ?"
-          subtitle={
-            personaOptions.length === 0
-              ? "Aucun persona pour ce client"
-              : `${personaOptions.length} persona${personaOptions.length > 1 ? "s" : ""} pour ${selectedClient.name}`
-          }
-        >
-          {personaOptions.length === 0 ? (
-            <Card variant="lavender">
-              <p style={{ color: "var(--color-gray)" }}>
-                Aucun persona n&apos;a été extrait pour ce client. Uploade des
-                docs ou ajoute-les manuellement dans la fiche client.
-              </p>
-            </Card>
-          ) : (
+          {/* Étape 1 : Client */}
+          <StepSection
+            number="01"
+            title="Pour quel client ?"
+            subtitle={`${clients.length} client${clients.length > 1 ? "s" : ""} disponible${clients.length > 1 ? "s" : ""}`}
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {personaOptions.map((p) => {
-                const profile = selectedClient.persona_profiles.find(
-                  (pp) => pp.label === p,
-                );
+              {clients.map((c) => (
+                <SelectableCard
+                  key={c.id}
+                  selected={clientId === c.id}
+                  onClick={() => handleClientChange(c.id)}
+                  warningBadge={!c.has_docs ? "Pas de docs" : undefined}
+                >
+                  <div className="text-h4">{c.name}</div>
+                  {c.sector && <div className="eyebrow mt-1">{c.sector}</div>}
+                  {c.value_proposition && (
+                    <p
+                      className="text-small mt-2 line-clamp-2"
+                      style={{ color: "var(--color-dark)" }}
+                    >
+                      {c.value_proposition}
+                    </p>
+                  )}
+                </SelectableCard>
+              ))}
+            </div>
+          </StepSection>
+
+          {/* Étape 2 : Persona, dépend du client */}
+          {selectedClient && (
+            <StepSection
+              number="02"
+              title="Quel prospect appelles-tu ?"
+              subtitle={
+                personaOptions.length === 0
+                  ? "Aucun persona pour ce client"
+                  : `${personaOptions.length} persona${personaOptions.length > 1 ? "s" : ""} pour ${selectedClient.name}`
+              }
+            >
+              {personaOptions.length === 0 ? (
+                <Card variant="lavender">
+                  <p style={{ color: "var(--color-gray)" }}>
+                    Aucun persona n&apos;a été extrait pour ce client. Uploade
+                    des docs ou ajoute-les manuellement dans la fiche client.
+                  </p>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {personaOptions.map((p) => {
+                    const profile = selectedClient.persona_profiles.find(
+                      (pp) => pp.label === p,
+                    );
+                    return (
+                      <SelectableCard
+                        key={p}
+                        selected={personaLabel === p}
+                        onClick={() => setPersonaLabel(p)}
+                      >
+                        <div className="text-h4">{p}</div>
+                        {profile?.role && (
+                          <p
+                            className="text-small mt-1"
+                            style={{ color: "var(--color-gray)" }}
+                          >
+                            {profile.role}
+                          </p>
+                        )}
+                        {profile?.typical_company && (
+                          <p
+                            className="text-meta mt-1"
+                            style={{ color: "var(--color-gray)" }}
+                          >
+                            {profile.typical_company}
+                          </p>
+                        )}
+                      </SelectableCard>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Brief étendu si persona sélectionné */}
+              {selectedProfile?.prep_briefing && (
+                <Card
+                  className="mt-4"
+                  style={{
+                    background: "var(--color-lavender)",
+                    border: "1px solid rgba(52, 36, 75, 0.06)",
+                  }}
+                >
+                  <div className="eyebrow-green mb-2">Brief de préparation</div>
+                  <p
+                    className="text-small whitespace-pre-line"
+                    style={{ color: "var(--color-dark)", lineHeight: "1.55" }}
+                  >
+                    {selectedProfile.prep_briefing}
+                  </p>
+                </Card>
+              )}
+            </StepSection>
+          )}
+
+          {/* Étape 3 : Niveau */}
+          <StepSection
+            number="03"
+            title="Quelle difficulté ?"
+            subtitle="Plus c'est haut, plus le prospect est dur"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {difficulties.map((d) => {
+                const intensity = DIFFICULTY_INTENSITY[d.key] ?? 1;
                 return (
                   <SelectableCard
-                    key={p}
-                    selected={personaLabel === p}
-                    onClick={() => setPersonaLabel(p)}
+                    key={d.key}
+                    selected={difficulty === d.key}
+                    onClick={() => setDifficulty(d.key as Difficulty)}
                   >
-                    <div className="text-h4">{p}</div>
-                    {profile?.role && (
-                      <p
-                        className="text-small mt-1"
-                        style={{ color: "var(--color-gray)" }}
-                      >
-                        {profile.role}
-                      </p>
-                    )}
-                    {profile?.typical_company && (
-                      <p
-                        className="text-meta mt-1"
-                        style={{ color: "var(--color-gray)" }}
-                      >
-                        {profile.typical_company}
-                      </p>
-                    )}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-h4">{d.label}</div>
+                      <DifficultyBars intensity={intensity} />
+                    </div>
+                    <p
+                      className="text-small"
+                      style={{ color: "var(--color-gray)" }}
+                    >
+                      {d.description}
+                    </p>
                   </SelectableCard>
                 );
               })}
             </div>
-          )}
+          </StepSection>
 
-          {/* Brief étendu si persona sélectionné */}
-          {selectedProfile?.prep_briefing && (
-            <Card
-              className="mt-4"
-              style={{
-                background: "var(--color-lavender)",
-                border: "1px solid rgba(52, 36, 75, 0.06)",
-              }}
-            >
-              <div className="eyebrow-green mb-2">Brief de préparation</div>
-              <p
-                className="text-small whitespace-pre-line"
-                style={{ color: "var(--color-dark)", lineHeight: "1.55" }}
-              >
-                {selectedProfile.prep_briefing}
-              </p>
-            </Card>
-          )}
-        </StepSection>
-      )}
-
-      {/* Étape 3 : Niveau */}
-      <StepSection
-        number="03"
-        title="Quelle difficulté ?"
-        subtitle="Plus c'est haut, plus le prospect est dur"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {difficulties.map((d) => {
-            const intensity = DIFFICULTY_INTENSITY[d.key] ?? 1;
-            return (
-              <SelectableCard
-                key={d.key}
-                selected={difficulty === d.key}
-                onClick={() => setDifficulty(d.key as Difficulty)}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-h4">{d.label}</div>
-                  <DifficultyBars intensity={intensity} />
-                </div>
-                <p
-                  className="text-small"
-                  style={{ color: "var(--color-gray)" }}
+          {/* Étape 4 : Genre */}
+          <StepSection
+            number="04"
+            title="Genre du prospect"
+            subtitle="Le scénario adaptera le nom et le ton"
+          >
+            <div className="grid grid-cols-2 gap-3 max-w-md">
+              {(["homme", "femme"] as Gender[]).map((g) => (
+                <SelectableCard
+                  key={g}
+                  selected={gender === g}
+                  onClick={() => setGender(g)}
+                  compact
                 >
-                  {d.description}
-                </p>
-              </SelectableCard>
-            );
-          })}
+                  <div className="text-h4 capitalize">{g}</div>
+                </SelectableCard>
+              ))}
+            </div>
+          </StepSection>
         </div>
-      </StepSection>
 
-      {/* Étape 4 : Genre */}
-      <StepSection
-        number="04"
-        title="Genre du prospect"
-        subtitle="Le scénario adaptera le nom et le ton"
-      >
-        <div className="grid grid-cols-2 gap-3 max-w-md">
-          {(["homme", "femme"] as Gender[]).map((g) => (
-            <SelectableCard
-              key={g}
-              selected={gender === g}
-              onClick={() => setGender(g)}
-              compact
-            >
-              <div className="text-h4 capitalize">{g}</div>
-            </SelectableCard>
-          ))}
-        </div>
-      </StepSection>
-
-      {/* RECAP + LAUNCH */}
-      <RecapCard
-        ready={Boolean(ready)}
-        clientName={selectedClient?.name ?? null}
-        personaLabel={personaLabel || null}
-        personaRole={selectedProfile?.role ?? null}
-        gender={gender}
-        difficultyLabel={difficulties.find((d) => d.key === difficulty)?.label ?? ""}
-        difficultyIntensity={DIFFICULTY_INTENSITY[difficulty] ?? 1}
-        onLaunch={handleSubmit}
-        loading={loading}
-        error={error}
-      />
+        {/* SIDEBAR, recap sticky */}
+        <aside className="lg:sticky lg:top-20 lg:self-start">
+          <RecapCard
+            ready={Boolean(ready)}
+            clientName={selectedClient?.name ?? null}
+            personaLabel={personaLabel || null}
+            personaRole={selectedProfile?.role ?? null}
+            gender={gender}
+            difficultyLabel={
+              difficulties.find((d) => d.key === difficulty)?.label ?? ""
+            }
+            difficultyIntensity={DIFFICULTY_INTENSITY[difficulty] ?? 1}
+            onLaunch={handleSubmit}
+            loading={loading}
+            error={error}
+          />
+        </aside>
+      </div>
     </form>
   );
 }
@@ -483,74 +492,90 @@ function RecapCard({
 }) {
   return (
     <div
-      className="rounded-xl p-6 sticky bottom-4 z-10"
+      className="rounded-xl p-6 transition-all"
       style={{
-        background: ready
-          ? "var(--color-dark)"
-          : "rgba(244, 241, 248, 0.96)",
+        background: ready ? "var(--color-dark)" : "#FFFFFF",
         color: ready ? "#FFFFFF" : "var(--color-dark)",
         border: ready ? "none" : "1px solid var(--color-gray-border)",
         boxShadow: ready
-          ? "0 18px 40px rgba(34, 25, 50, 0.2)"
-          : "var(--shadow-md)",
-        backdropFilter: "blur(8px)",
-        transition: "all var(--duration-base) var(--ease-out)",
+          ? "0 18px 40px rgba(34, 25, 50, 0.18)"
+          : "var(--shadow-sm)",
       }}
     >
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex-1 min-w-[260px]">
-          <div
-            className="text-meta uppercase tracking-widest mb-2"
-            style={{
-              color: ready ? "rgba(255,255,255,0.55)" : "var(--color-gray)",
-            }}
-          >
-            {ready ? "Prêt à démarrer" : "Configuration en cours"}
-          </div>
-          {ready ? (
-            <p className="text-body-l" style={{ lineHeight: "1.4" }}>
-              Tu vas appeler{" "}
-              <b style={{ color: "var(--color-green)" }}>{personaLabel}</b>
-              {personaRole ? ` (${personaRole})` : ""} pour{" "}
-              <b>{clientName}</b>, en mode{" "}
-              <b style={{ color: "var(--color-green)" }}>
-                {difficultyLabel.toLowerCase()}
-              </b>
-              . Genre : <b>{gender === "homme" ? "homme" : "femme"}</b>.
-            </p>
-          ) : (
-            <p
-              className="text-body"
-              style={{ color: "var(--color-gray)" }}
-            >
-              Complète les étapes pour lancer ton appel.
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-3 shrink-0">
-          {ready && (
-            <DifficultyBarsLarge
-              intensity={difficultyIntensity}
-              dark={ready}
-            />
-          )}
-          <Button
-            type="submit"
-            variant={ready ? "primary" : "ghost"}
-            size="lg"
-            disabled={!ready || loading}
-            loading={loading}
-            onClick={onLaunch}
-          >
-            {loading ? "Génération du scénario..." : "Lancer l'appel →"}
-          </Button>
-        </div>
+      <div
+        className="text-meta uppercase tracking-widest mb-4"
+        style={{
+          color: ready ? "rgba(255,255,255,0.55)" : "var(--color-gray)",
+        }}
+      >
+        {ready ? "Prêt à démarrer" : "Récap session"}
       </div>
+
+      <div className="space-y-4 mb-6">
+        <RecapLine
+          label="Client"
+          value={clientName}
+          ready={ready}
+        />
+        <RecapLine
+          label="Persona"
+          value={
+            personaLabel
+              ? personaRole
+                ? `${personaLabel} (${personaRole})`
+                : personaLabel
+              : null
+          }
+          ready={ready}
+        />
+        <RecapLine
+          label="Niveau"
+          value={difficultyLabel || null}
+          ready={ready}
+          extra={
+            difficultyLabel ? (
+              <DifficultyBarsLarge
+                intensity={difficultyIntensity}
+                dark={ready}
+              />
+            ) : undefined
+          }
+        />
+        <RecapLine
+          label="Genre du prospect"
+          value={gender ? (gender === "homme" ? "Homme" : "Femme") : null}
+          ready={ready}
+        />
+      </div>
+
+      <Button
+        type="submit"
+        variant={ready ? "primary" : "ghost"}
+        size="lg"
+        disabled={!ready || loading}
+        loading={loading}
+        onClick={onLaunch}
+        fullWidth
+      >
+        {loading ? "Génération..." : "Lancer l'appel →"}
+      </Button>
+
+      {!ready && (
+        <p
+          className="text-meta mt-3 text-center"
+          style={{ color: "var(--color-gray)" }}
+        >
+          Complète les 4 étapes pour démarrer
+        </p>
+      )}
+
       {error && (
         <div
-          className="mt-3 rounded-md px-4 py-3 text-small"
+          className="mt-3 rounded-md px-3 py-2 text-small"
           style={{
-            background: "rgba(233, 75, 75, 0.12)",
+            background: ready
+              ? "rgba(233, 75, 75, 0.16)"
+              : "rgba(233, 75, 75, 0.08)",
             color: ready ? "#FFCDCD" : "var(--color-error)",
             border: ready ? "none" : "1px solid rgba(233, 75, 75, 0.24)",
           }}
@@ -558,6 +583,50 @@ function RecapCard({
           {error}
         </div>
       )}
+    </div>
+  );
+}
+
+function RecapLine({
+  label,
+  value,
+  ready,
+  extra,
+}: {
+  label: string;
+  value: string | null;
+  ready: boolean;
+  extra?: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div
+        className="text-meta uppercase tracking-widest"
+        style={{
+          color: ready ? "rgba(255,255,255,0.45)" : "var(--color-gray)",
+          fontSize: "0.6875rem",
+        }}
+      >
+        {label}
+      </div>
+      <div className="flex items-center justify-between gap-2 mt-1">
+        <span
+          className="text-body font-semibold flex-1"
+          style={{
+            color: value
+              ? ready
+                ? "#FFFFFF"
+                : "var(--color-dark)"
+              : ready
+                ? "rgba(255,255,255,0.35)"
+                : "rgba(139, 127, 163, 0.6)",
+            fontWeight: value ? 600 : 400,
+          }}
+        >
+          {value ?? "À choisir"}
+        </span>
+        {extra}
+      </div>
     </div>
   );
 }
@@ -570,14 +639,14 @@ function DifficultyBarsLarge({
   dark: boolean;
 }) {
   return (
-    <div className="hidden md:flex items-end gap-1">
+    <div className="flex items-end gap-1">
       {[1, 2, 3, 4].map((level) => (
         <span
           key={level}
           className="rounded-sm"
           style={{
-            width: "8px",
-            height: `${level * 6 + 6}px`,
+            width: "6px",
+            height: `${level * 4 + 6}px`,
             background:
               level <= intensity
                 ? "var(--color-green)"
