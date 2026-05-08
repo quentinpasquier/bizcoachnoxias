@@ -32,14 +32,14 @@ export async function GET() {
   checks.envSupabaseUrl = {
     ok: !!parsedUrl && parsedUrl.pathname === "/" && parsedUrl.host.endsWith(".supabase.co"),
     detail: parsedUrl
-      ? `protocol=${parsedUrl.protocol} | host=${parsedUrl.host} | pathname="${parsedUrl.pathname}" | search="${parsedUrl.search}" — ${parsedUrl.pathname !== "/" ? "❌ PATH EN TROP — l'URL doit être uniquement https://xxx.supabase.co sans rien après" : parsedUrl.host.endsWith(".supabase.co") ? "OK" : "host pas en .supabase.co"}`
+      ? `protocol=${parsedUrl.protocol} | host=${parsedUrl.host} | pathname="${parsedUrl.pathname}" | search="${parsedUrl.search}". ${parsedUrl.pathname !== "/" ? "❌ PATH EN TROP. l'URL doit être uniquement https://xxx.supabase.co sans rien après" : parsedUrl.host.endsWith(".supabase.co") ? "OK" : "host pas en .supabase.co"}`
       : `URL invalide ou vide : "${supabaseUrl}"`,
   };
 
   checks.envSupabaseAnonKey = anonKey
     ? {
         ok: anonKey.startsWith("eyJ"),
-        detail: `défini (longueur ${anonKey.length}, commence par "${anonKey.slice(0, 6)}...")${anonKey.startsWith("eyJ") ? "" : " ⚠️ ne commence pas par eyJ — c'est sûrement pas un JWT Supabase valide"}`,
+        detail: `défini (longueur ${anonKey.length}, commence par "${anonKey.slice(0, 6)}...")${anonKey.startsWith("eyJ") ? "" : " ⚠️ ne commence pas par eyJ. c'est sûrement pas un JWT Supabase valide"}`,
       }
     : { ok: false, detail: "VIDE" };
 
@@ -59,7 +59,7 @@ export async function GET() {
     detail: isSupabaseConfigured() ? "vrai" : "faux → mode démo",
   };
 
-  // 2. Tests réseau — uniquement si parsedUrl est OK
+  // 2. Tests réseau. uniquement si parsedUrl est OK
   if (parsedUrl && anonKey) {
     const baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
 
@@ -72,7 +72,7 @@ export async function GET() {
       const text = await res.text();
       checks.testAuthSettings = {
         ok: res.ok,
-        detail: `HTTP ${res.status} — ${truncate(text, 200)}`,
+        detail: `HTTP ${res.status}. ${truncate(text, 200)}`,
       };
     } catch (err) {
       checks.testAuthSettings = {
@@ -90,7 +90,7 @@ export async function GET() {
       const text = await res.text();
       checks.testPostgrestRoot = {
         ok: res.status < 500,
-        detail: `HTTP ${res.status} — ${truncate(text, 200)}`,
+        detail: `HTTP ${res.status}. ${truncate(text, 200)}`,
       };
     } catch (err) {
       checks.testPostgrestRoot = {
@@ -111,7 +111,7 @@ export async function GET() {
       const text = await res.text();
       checks.testClientsTable = {
         ok: res.ok,
-        detail: `HTTP ${res.status} — ${truncate(text, 300)} ${res.ok ? "" : " — vérifie que la migration 0002_clients.sql a bien été exécutée dans le SQL Editor Supabase"}`,
+        detail: `HTTP ${res.status}. ${truncate(text, 300)} ${res.ok ? "" : ". vérifie que la migration 0002_clients.sql a bien été exécutée dans le SQL Editor Supabase"}`,
       };
     } catch (err) {
       checks.testClientsTable = {
@@ -132,7 +132,7 @@ export async function GET() {
       const text = await res.text();
       checks.testProfilesTable = {
         ok: res.ok,
-        detail: `HTTP ${res.status} — ${truncate(text, 300)} ${res.ok ? "" : " — vérifie que la migration 0001_init.sql a bien été exécutée dans le SQL Editor Supabase"}`,
+        detail: `HTTP ${res.status}. ${truncate(text, 300)} ${res.ok ? "" : ". vérifie que la migration 0001_init.sql a bien été exécutée dans le SQL Editor Supabase"}`,
       };
     } catch (err) {
       checks.testProfilesTable = {

@@ -56,7 +56,7 @@ const RESPONSE_SCHEMA = `{
 function buildCriteriaListForPrompt(): string {
   return SCORING_CATEGORIES.map((cat) => {
     const lines = cat.criteria.map(
-      (c) => `  - id: "${c.id}" — ${c.label} : ${c.description}`,
+      (c) => `  - id: "${c.id}". ${c.label} : ${c.description}`,
     );
     return `Catégorie ${cat.label.toUpperCase()} (${cat.criteria.length} critères) :\n${lines.join(
       "\n",

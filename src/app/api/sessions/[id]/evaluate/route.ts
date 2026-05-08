@@ -46,7 +46,7 @@ export async function POST(
 
   if (!session.scenario_data) {
     return NextResponse.json(
-      { error: "Session legacy sans scénario — pas évaluable." },
+      { error: "Session legacy sans scénario. pas évaluable." },
       { status: 409 },
     );
   }
@@ -96,12 +96,12 @@ export async function POST(
           id: c.id,
           label: c.label,
           passed: false,
-          comment: "Aucun échange — critère non observable.",
+          comment: "Aucun échange. critère non observable.",
         })),
       })),
-      strengths: ["Tu as démarré la session — c'est déjà un pas."],
+      strengths: ["Tu as démarré la session. c'est déjà un pas."],
       improvements: [
-        "Engage la conversation — un commercial silencieux ne décroche jamais de RDV.",
+        "Engage la conversation. un commercial silencieux ne décroche jamais de RDV.",
       ],
       next_steps: [
         "Relance une session, et envoie au moins 3 messages pour construire un appel complet.",

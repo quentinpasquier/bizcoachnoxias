@@ -52,7 +52,7 @@ export async function POST(
 
   if (!session.scenario_data || !session.gender) {
     return NextResponse.json(
-      { error: "Session sans scénario ou sans genre — création legacy non supportée." },
+      { error: "Session sans scénario ou sans genre. création legacy non supportée." },
       { status: 409 },
     );
   }

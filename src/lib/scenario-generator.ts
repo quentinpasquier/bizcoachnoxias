@@ -86,7 +86,7 @@ Value prop : ${client.value_proposition ?? "n/a"}
 Cibles idéales : ${client.ideal_targets ?? "n/a"}
 
 Objections classiques connues :
-- ${objections || "(aucune renseignée — déduis-les des docs)"}
+- ${objections || "(aucune renseignée. déduis-les des docs)"}
 
 ${profileBlock}
 

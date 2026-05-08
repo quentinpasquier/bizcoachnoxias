@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     kind: p.kind === "other" ? "other" : p.kind,
   }));
 
-  // 2. Extraction Claude — c'est elle qui paramètre tout le client
+  // 2. Extraction Claude. c'est elle qui paramètre tout le client
   let extracted;
   try {
     extracted = await extractClientFields(combined);

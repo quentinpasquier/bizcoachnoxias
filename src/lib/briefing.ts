@@ -4,7 +4,7 @@ import type { PersonaProfile } from "./supabase/types";
 // d'un persona. Utilise prep_bullets si dispo (extraction récente),
 // sinon découpe prep_briefing en bullets : bullets natifs (-, *, •),
 // puis paragraphes, puis phrases.
-export function getPersonaBullets(profile: PersonaProfile, max = 6): string[] {
+export function getPersonaBullets(profile: PersonaProfile, max = 4): string[] {
   if (Array.isArray(profile.prep_bullets) && profile.prep_bullets.length > 0) {
     return profile.prep_bullets.slice(0, max).map((b) => b.trim()).filter(Boolean);
   }

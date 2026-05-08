@@ -24,7 +24,7 @@ export async function createClient() {
               cookieStore.set(name, value, options),
             );
           } catch {
-            // Server Components ne peuvent pas écrire les cookies — le middleware s'en charge.
+            // Server Components ne peuvent pas écrire les cookies. le middleware s'en charge.
           }
         },
       },

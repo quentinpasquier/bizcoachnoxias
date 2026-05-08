@@ -136,7 +136,7 @@ export const SCORING_CATEGORIES: ScoringCategory[] = [
         id: "objections_angle_neuf",
         label: "Angle neuf",
         description:
-          "Ne répète pas le pitch — apporte un argument ou un angle nouveau.",
+          "Ne répète pas le pitch. apporte un argument ou un angle nouveau.",
       },
       {
         id: "objections_tient_refus",

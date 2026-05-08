@@ -5,7 +5,7 @@
 import type { Gender } from "./supabase/types";
 
 // ====================================================================
-// Speech Synthesis (TTS) — Web Speech API (fallback navigateur)
+// Speech Synthesis (TTS). Web Speech API (fallback navigateur)
 // ====================================================================
 
 let cachedVoices: SpeechSynthesisVoice[] | null = null;
@@ -130,7 +130,7 @@ function speakWebSpeech(opts: SpeakOptions): SpeechSynthesisUtterance | null {
 }
 
 // ====================================================================
-// OpenAI TTS — qualité supérieure, via /api/tts
+// OpenAI TTS. qualité supérieure, via /api/tts
 // ====================================================================
 
 let openaiAvailableCache: boolean | null = null;
@@ -253,7 +253,7 @@ export function stopSpeaking(): void {
 }
 
 // ====================================================================
-// Speech Recognition (STT) — Web Speech API
+// Speech Recognition (STT). Web Speech API
 // ====================================================================
 
 interface MinimalSpeechRecognition {
