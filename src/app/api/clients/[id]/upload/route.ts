@@ -93,7 +93,7 @@ export async function POST(
   let extracted: Awaited<ReturnType<typeof extractClientFields>> | null = null;
   let extractionError: string | null = null;
   try {
-    extracted = await extractClientFields(combined, client.name);
+    extracted = await extractClientFields(combined);
   } catch (err) {
     extractionError = (err as Error).message;
   }

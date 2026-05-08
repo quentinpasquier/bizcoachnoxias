@@ -27,6 +27,18 @@ export interface SyncedFile {
   kind: "pdf" | "docx" | "csv" | "txt" | "md" | "other";
 }
 
+export interface PersonaProfile {
+  id: string; // slug, ex: "avocat"
+  label: string; // "Avocat"
+  role: string; // "Avocat associé en droit des affaires"
+  typical_company: string; // "Cabinet de 5-15 personnes en grande ville"
+  key_pains: string[];
+  key_kpis: string[];
+  main_objections: string[];
+  decision_signals: string;
+  prep_briefing: string; // 2-3 paragraphes pour préparer l'appel
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -41,6 +53,7 @@ export interface Client {
   synced_at: string | null;
   synced_files: SyncedFile[];
   target_personas: string[];
+  persona_profiles: PersonaProfile[];
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -90,8 +103,6 @@ export interface MessageRow {
   created_at: string;
 }
 
-// Évaluation moderne : 20 critères binaires (0/1) regroupés en 5 catégories.
-// Score affiché sur /100 (criteria_total × 5).
 export interface CriterionResult {
   id: string;
   label: string;
@@ -102,15 +113,15 @@ export interface CriterionResult {
 export interface CategoryResult {
   key: CategoryKey;
   label: string;
-  score: number; // nombre de critères validés
-  max: number; // nombre total de critères dans cette catégorie
+  score: number;
+  max: number;
   criteria: CriterionResult[];
 }
 
 export interface Evaluation {
-  overall_score: number; // /100
-  criteria_total: number; // /20
-  criteria_max: number; // 20
+  overall_score: number;
+  criteria_total: number;
+  criteria_max: number;
   categories: CategoryResult[];
   strengths: string[];
   improvements: string[];
