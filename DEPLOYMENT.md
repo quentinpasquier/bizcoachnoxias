@@ -18,7 +18,8 @@ Pas à pas pour mettre en production sur **Vercel** + **Supabase** + **Anthropic
 Dans **Project Settings → API** :
 - `Project URL` → `NEXT_PUBLIC_SUPABASE_URL`
 - `anon public` → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `service_role` → `SUPABASE_SERVICE_ROLE_KEY` *(à garder secret, jamais exposer côté client)*
+
+> La `service_role` key n'est PAS nécessaire pour cette app : toutes les requêtes passent par le client SSR avec l'anon key + RLS, ce qui est plus sûr. Tu peux l'ignorer.
 
 ### 1.3 Exécuter la migration
 
@@ -72,7 +73,6 @@ Dans **Settings → Environment Variables**, ajoute :
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://xxxxx.supabase.co` | Production, Preview, Development |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJ...` | Production, Preview, Development |
-| `SUPABASE_SERVICE_ROLE_KEY` | `eyJ...` | Production, Preview, Development |
 | `ANTHROPIC_API_KEY` | `sk-ant-...` | Production, Preview, Development |
 | `NEXT_PUBLIC_APP_URL` | `https://ton-domaine.vercel.app` | Production |
 
