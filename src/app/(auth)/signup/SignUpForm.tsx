@@ -34,15 +34,15 @@ export function SignUpForm() {
     setLoading(true);
 
     const supabase = createClient();
-    const origin =
-      typeof window !== "undefined" ? window.location.origin : undefined;
 
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: lower,
       password,
       options: {
         data: { full_name: fullName },
-        emailRedirectTo: origin ? `${origin}/auth/callback` : undefined,
+        // Pas d'emailRedirectTo : Supabase utilise sa Site URL configurée.
+        // Évite les erreurs "Invalid path" quand la liste de redirect URLs
+        // n'est pas exhaustive.
       },
     });
 
@@ -136,6 +136,12 @@ function translateError(msg: string): string {
   }
   if (lower.includes("user already registered")) {
     return "Cet email est déjà inscrit. Utilise plutôt « Se connecter ».";
+  }
+  if (lower.includes("invalid path") || lower.includes("redirect")) {
+    return "Configuration Supabase Auth : ajoute ton domaine Vercel + http://localhost:3000 dans Authentication → URL Configuration → Redirect URLs (avec /** ou /* à la fin), puis Save.";
+  }
+  if (lower.includes("fetch") || lower.includes("network")) {
+    return "Impossible de joindre Supabase. Vérifie NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY (sans espace, sans slash final).";
   }
   return msg;
 }
