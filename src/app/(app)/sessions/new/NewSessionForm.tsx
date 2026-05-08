@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { VoiceOrb } from "@/components/VoiceOrb";
+import { getPersonaBullets } from "@/lib/briefing";
 import type { Difficulty, Gender, PersonaProfile } from "@/lib/supabase/types";
 
 interface ClientOption {
@@ -290,6 +291,7 @@ export function NewSessionForm({
             clientName={selectedClient?.name ?? null}
             personaLabel={personaLabel || null}
             personaRole={selectedProfile?.role ?? null}
+            personaProfile={selectedProfile ?? null}
             gender={gender}
             difficultyLabel={
               difficulties.find((d) => d.key === difficulty)?.label ?? ""
@@ -486,6 +488,7 @@ function AvatarCard({
   clientName,
   personaLabel,
   personaRole,
+  personaProfile,
   gender,
   difficultyLabel,
   difficultyIntensity,
@@ -494,12 +497,14 @@ function AvatarCard({
   clientName: string | null;
   personaLabel: string | null;
   personaRole: string | null;
+  personaProfile: PersonaProfile | null;
   gender: Gender;
   difficultyLabel: string;
   difficultyIntensity: 1 | 2 | 3 | 4;
 }) {
   const composing =
     [clientName, personaLabel, difficultyLabel].filter(Boolean).length > 0;
+  const bullets = personaProfile ? getPersonaBullets(personaProfile) : [];
 
   return (
     <div
@@ -582,6 +587,47 @@ function AvatarCard({
           }
         />
       </div>
+
+      {/* BRIEF EN BULLETS, visible quand un persona est sélectionné */}
+      {bullets.length > 0 && (
+        <div
+          className="mt-5 pt-5 border-t"
+          style={{
+            borderColor: ready
+              ? "rgba(255,255,255,0.10)"
+              : "var(--color-gray-border)",
+          }}
+        >
+          <div
+            className="text-meta uppercase tracking-widest mb-3 font-bold"
+            style={{
+              color: ready ? "var(--color-green)" : "var(--color-green)",
+              fontSize: "0.6875rem",
+            }}
+          >
+            Brief de préparation
+          </div>
+          <ul className="space-y-2">
+            {bullets.map((b, i) => (
+              <li
+                key={i}
+                className="text-small flex gap-2"
+                style={{
+                  color: ready ? "rgba(255,255,255,0.92)" : "var(--color-dark)",
+                  lineHeight: "1.45",
+                }}
+              >
+                <span
+                  className="flex-shrink-0 mt-1.5 w-1.5 h-1.5 rounded-pill"
+                  style={{ background: "var(--color-green)" }}
+                  aria-hidden="true"
+                />
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

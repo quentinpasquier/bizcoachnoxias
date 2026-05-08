@@ -34,7 +34,8 @@ const SCHEMA = `{
       "key_kpis": ["<2-3 KPI/métriques que ce persona surveille>", "...", "..."],
       "main_objections": ["<3-5 objections les plus représentatives pour CE persona spécifiquement>", "...", "..."],
       "decision_signals": "<1 phrase : ce qui fait dire OUI à un RDV pour ce persona>",
-      "prep_briefing": "<2-3 paragraphes en français à destination du commercial Noxias pour préparer l'appel : qui il est, ce qui le préoccupe, ce qu'il faut éviter, ce qu'il faut creuser. Ton direct, concret, dirigeant à dirigeant. Pas de jargon corporate.>"
+      "prep_briefing": "<2-3 paragraphes en français à destination du commercial Noxias pour préparer l'appel : qui il est, ce qui le préoccupe, ce qu'il faut éviter, ce qu'il faut creuser. Ton direct, concret, dirigeant à dirigeant. Pas de jargon corporate.>",
+      "prep_bullets": ["<4 à 6 points clés très courts (max 12 mots), actionnables, qui résument le brief : qui est le prospect, ce qui le pique, l'angle qui marche, ce qu'il faut éviter, comment closer>"]
     }
   ]
 }`;
@@ -133,6 +134,9 @@ Extrait le profil complet du client + les profils personas avec briefing. Répon
               typeof p.decision_signals === "string" ? p.decision_signals : "",
             prep_briefing:
               typeof p.prep_briefing === "string" ? p.prep_briefing : "",
+            prep_bullets: Array.isArray(p.prep_bullets)
+              ? p.prep_bullets.map(String).filter(Boolean).slice(0, 6)
+              : [],
           }))
           .slice(0, 8)
       : [],

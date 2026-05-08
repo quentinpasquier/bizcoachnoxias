@@ -37,6 +37,7 @@ export interface PersonaProfile {
   main_objections: string[];
   decision_signals: string;
   prep_briefing: string; // 2-3 paragraphes pour préparer l'appel
+  prep_bullets?: string[]; // 4-6 points clés ultra-courts pour la sidebar
 }
 
 export interface Client {
