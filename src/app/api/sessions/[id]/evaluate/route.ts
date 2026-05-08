@@ -82,15 +82,23 @@ export async function POST(
   }>;
 
   if (messages.length === 0) {
+    const { SCORING_CATEGORIES } = await import("@/lib/scoring-criteria");
     const empty = {
       overall_score: 0,
-      axes: {
-        accroche: { score: 0, comment: "Aucune accroche tentée." },
-        decouverte: { score: 0, comment: "Aucune découverte." },
-        objections: { score: 0, comment: "Aucune objection à gérer." },
-        valeur: { score: 0, comment: "Aucune valeur transmise." },
-        closing: { score: 0, comment: "Aucun closing." },
-      },
+      criteria_total: 0,
+      criteria_max: SCORING_CATEGORIES.reduce((acc, c) => acc + c.criteria.length, 0),
+      categories: SCORING_CATEGORIES.map((cat) => ({
+        key: cat.key,
+        label: cat.label,
+        score: 0,
+        max: cat.criteria.length,
+        criteria: cat.criteria.map((c) => ({
+          id: c.id,
+          label: c.label,
+          passed: false,
+          comment: "Aucun échange — critère non observable.",
+        })),
+      })),
       strengths: ["Tu as démarré la session — c'est déjà un pas."],
       improvements: [
         "Engage la conversation — un commercial silencieux ne décroche jamais de RDV.",

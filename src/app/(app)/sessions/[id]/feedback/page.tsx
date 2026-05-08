@@ -1,19 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Card } from "@/components/ui/Card";
-import { DifficultyBadge } from "@/components/ui/Badge";
+import { Badge, DifficultyBadge } from "@/components/ui/Badge";
 import { createClient } from "@/lib/supabase/server";
 import { formatDuration } from "@/lib/format";
-import type { Evaluation } from "@/lib/supabase/types";
+import type { Evaluation, MessageRow, SessionRow } from "@/lib/supabase/types";
 import { FeedbackEvaluator } from "./FeedbackEvaluator";
-
-const AXIS_LABEL: Record<keyof Evaluation["axes"], string> = {
-  accroche: "Accroche",
-  decouverte: "Découverte",
-  objections: "Gestion d'objections",
-  valeur: "Valeur perçue",
-  closing: "Closing",
-};
 
 export default async function FeedbackPage({
   params,
@@ -30,7 +22,8 @@ export default async function FeedbackPage({
     .single();
 
   if (!session) notFound();
-  if (session.status === "active") redirect(`/sessions/${id}`);
+  const s = session as SessionRow;
+  if (s.status === "active") redirect(`/sessions/${id}`);
 
   const { data: messages } = await supabase
     .from("messages")
@@ -38,13 +31,13 @@ export default async function FeedbackPage({
     .eq("session_id", id)
     .order("created_at", { ascending: true });
 
-  if (!session.evaluation) {
-    return (
-      <FeedbackEvaluator sessionId={id} />
-    );
+  if (!s.evaluation) {
+    return <FeedbackEvaluator sessionId={id} />;
   }
 
-  const evaluation = session.evaluation;
+  const evaluation = s.evaluation as Evaluation;
+  const messagesList = (messages ?? []) as MessageRow[];
+  const isLegacyFormat = !Array.isArray(evaluation.categories);
 
   return (
     <div className="container-noxias py-10 space-y-8 max-w-4xl">
@@ -53,33 +46,27 @@ export default async function FeedbackPage({
           <span className="divider-green block mb-3" />
           <h1 className="text-h2">Restitution</h1>
           <div className="flex items-center gap-3 mt-2 flex-wrap">
-            {session.client_name_snapshot && (
-              <span
-                className="badge"
-                style={{
-                  background: "var(--color-purple)",
-                  color: "#FFFFFF",
-                }}
-              >
-                {session.client_name_snapshot}
-              </span>
+            {s.client_name_snapshot && (
+              <Badge tone="purple">{s.client_name_snapshot}</Badge>
             )}
             <span className="text-body" style={{ color: "var(--color-gray)" }}>
-              {session.persona_label}
+              {s.persona_label}
+              {s.scenario_data && (
+                <>
+                  {" "}— {(s.scenario_data as { persona_name?: string }).persona_name ?? ""}
+                </>
+              )}
             </span>
-            <DifficultyBadge difficulty={session.difficulty} />
-            <span
-              className="text-meta"
-              style={{ color: "var(--color-gray)" }}
-            >
-              · {formatDuration(session.started_at, session.ended_at)}
+            <DifficultyBadge difficulty={s.difficulty} />
+            <span className="text-meta" style={{ color: "var(--color-gray)" }}>
+              · {formatDuration(s.started_at, s.ended_at)}
             </span>
           </div>
         </div>
-        <div className="flex gap-3">
-          {session.client_id && (
+        <div className="flex gap-3 flex-wrap">
+          {s.client_id && (
             <Link
-              href={`/sessions/new?client=${session.client_id}`}
+              href={`/sessions/new?client=${s.client_id}`}
               className="btn btn-ghost"
             >
               Refaire pour ce client
@@ -121,11 +108,19 @@ export default async function FeedbackPage({
           >
             sur 100
           </div>
+          {!isLegacyFormat && (
+            <div
+              className="text-meta mt-3"
+              style={{ color: "rgba(255,255,255,0.5)" }}
+            >
+              {evaluation.criteria_total ?? 0} / {evaluation.criteria_max ?? 20} critères validés
+            </div>
+          )}
         </Card>
 
         <Card className="md:col-span-2">
           <div className="flex items-center gap-3 mb-3">
-            {session.appointment_secured ? (
+            {s.appointment_secured ? (
               <span
                 className="badge"
                 style={{
@@ -137,7 +132,7 @@ export default async function FeedbackPage({
               >
                 ✓ RDV obtenu
               </span>
-            ) : session.ended_by === "prospect" ? (
+            ) : s.ended_by === "prospect" ? (
               <span
                 className="badge"
                 style={{
@@ -169,82 +164,108 @@ export default async function FeedbackPage({
         </Card>
       </div>
 
-      {/* Axes détaillés */}
-      <section>
-        <h2 className="text-h3 mb-4">Notes par axe</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {(Object.keys(evaluation.axes) as Array<keyof Evaluation["axes"]>).map(
-            (axisKey) => {
-              const axis = evaluation.axes[axisKey];
-              return (
-                <Card key={axisKey}>
-                  <div className="flex items-baseline justify-between mb-2">
-                    <h3 className="text-h4">{AXIS_LABEL[axisKey]}</h3>
+      {/* Catégories — nouveau format 20 critères */}
+      {!isLegacyFormat && Array.isArray(evaluation.categories) && (
+        <section>
+          <h2 className="text-h3 mb-4">Détail par catégorie</h2>
+          <div className="space-y-4">
+            {evaluation.categories.map((cat) => (
+              <Card key={cat.key}>
+                <div className="flex items-baseline justify-between mb-3">
+                  <h3 className="text-h4">{cat.label}</h3>
+                  <span
+                    className="font-display"
+                    style={{
+                      fontSize: "2rem",
+                      lineHeight: "1",
+                      color:
+                        cat.score === cat.max
+                          ? "var(--color-green)"
+                          : cat.score >= cat.max / 2
+                            ? "var(--color-purple)"
+                            : "var(--color-red)",
+                    }}
+                  >
+                    {cat.score}
                     <span
-                      className="font-display"
                       style={{
-                        fontSize: "2rem",
-                        lineHeight: "1",
-                        color:
-                          axis.score >= 15
-                            ? "var(--color-green)"
-                            : axis.score >= 10
-                              ? "var(--color-purple)"
-                              : "var(--color-red)",
+                        fontSize: "0.875rem",
+                        opacity: 0.5,
+                        marginLeft: "0.25rem",
                       }}
                     >
-                      {axis.score}
+                      /{cat.max}
+                    </span>
+                  </span>
+                </div>
+                <ProgressBar value={cat.score} max={cat.max} />
+                <ul className="mt-4 space-y-2">
+                  {cat.criteria.map((c) => (
+                    <li key={c.id} className="flex items-start gap-3">
                       <span
+                        className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-pill text-meta font-bold mt-0.5"
                         style={{
-                          fontSize: "0.875rem",
-                          opacity: 0.5,
-                          marginLeft: "0.25rem",
+                          background: c.passed
+                            ? "var(--color-green)"
+                            : "rgba(233, 75, 75, 0.16)",
+                          color: c.passed ? "var(--color-dark)" : "var(--color-error)",
                         }}
                       >
-                        /20
+                        {c.passed ? "✓" : "✗"}
                       </span>
-                    </span>
-                  </div>
-                  <ProgressBar value={axis.score} max={20} />
-                  <p
-                    className="text-small mt-3"
-                    style={{ color: "var(--color-dark)" }}
-                  >
-                    {axis.comment}
-                  </p>
-                </Card>
-              );
-            },
-          )}
-        </div>
-      </section>
+                      <div className="flex-1 min-w-0">
+                        <div
+                          className="text-small font-medium"
+                          style={{
+                            color: c.passed
+                              ? "var(--color-dark)"
+                              : "var(--color-gray)",
+                          }}
+                        >
+                          {c.label}
+                        </div>
+                        <div
+                          className="text-meta mt-0.5"
+                          style={{ color: "var(--color-gray)" }}
+                        >
+                          {c.comment}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Forces / Améliorations / Next */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <FeedbackList
           title="Tes forces"
-          items={evaluation.strengths}
+          items={evaluation.strengths ?? []}
           tone="green"
         />
         <FeedbackList
           title="Axes d'amélioration"
-          items={evaluation.improvements}
+          items={evaluation.improvements ?? []}
           tone="warning"
         />
         <FeedbackList
           title="Prochaines actions"
-          items={evaluation.next_steps}
+          items={evaluation.next_steps ?? []}
           tone="purple"
         />
       </section>
 
       {/* Transcript */}
-      {messages && messages.length > 0 && (
+      {messagesList.length > 0 && (
         <section>
           <h2 className="text-h3 mb-4">Transcript</h2>
           <Card variant="lavender">
             <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-              {messages.map((m) => (
+              {messagesList.map((m) => (
                 <div
                   key={m.id}
                   className={`text-small ${
@@ -280,9 +301,9 @@ export default async function FeedbackPage({
 function ProgressBar({ value, max }: { value: number; max: number }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   const color =
-    value >= 15
+    value === max
       ? "var(--color-green)"
-      : value >= 10
+      : value >= max / 2
         ? "var(--color-purple)"
         : "var(--color-red)";
   return (

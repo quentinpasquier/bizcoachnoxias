@@ -3,6 +3,12 @@ export type Gender = "homme" | "femme";
 export type SessionStatus = "active" | "completed" | "abandoned";
 export type EndedBy = "user" | "prospect" | "timeout";
 export type MessageRole = "user" | "prospect" | "system";
+export type CategoryKey =
+  | "accroche"
+  | "decouverte"
+  | "valeur"
+  | "objections"
+  | "closing";
 
 export interface Profile {
   id: string;
@@ -84,20 +90,28 @@ export interface MessageRow {
   created_at: string;
 }
 
-export interface AxisScore {
-  score: number;
+// Évaluation moderne : 20 critères binaires (0/1) regroupés en 5 catégories.
+// Score affiché sur /100 (criteria_total × 5).
+export interface CriterionResult {
+  id: string;
+  label: string;
+  passed: boolean;
   comment: string;
 }
 
+export interface CategoryResult {
+  key: CategoryKey;
+  label: string;
+  score: number; // nombre de critères validés
+  max: number; // nombre total de critères dans cette catégorie
+  criteria: CriterionResult[];
+}
+
 export interface Evaluation {
-  overall_score: number;
-  axes: {
-    accroche: AxisScore;
-    decouverte: AxisScore;
-    objections: AxisScore;
-    valeur: AxisScore;
-    closing: AxisScore;
-  };
+  overall_score: number; // /100
+  criteria_total: number; // /20
+  criteria_max: number; // 20
+  categories: CategoryResult[];
   strengths: string[];
   improvements: string[];
   next_steps: string[];
