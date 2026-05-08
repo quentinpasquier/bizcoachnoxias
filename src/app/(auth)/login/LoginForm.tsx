@@ -24,20 +24,25 @@ export function LoginForm({
     setError(null);
     setLoading(true);
 
-    const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (signInError) {
-      setError(traduire(signInError.message));
+      if (signInError) {
+        setError(traduire(signInError.message));
+        setLoading(false);
+        return;
+      }
+
+      router.push(next ?? "/dashboard");
+      router.refresh();
+    } catch (err) {
+      setError(traduire((err as Error).message));
       setLoading(false);
-      return;
     }
-
-    router.push(next ?? "/dashboard");
-    router.refresh();
   }
 
   return (
@@ -84,11 +89,18 @@ export function LoginForm({
 }
 
 function traduire(msg: string): string {
-  if (msg.toLowerCase().includes("invalid login")) {
+  const lower = msg.toLowerCase();
+  if (lower.includes("variable d'environnement") || lower.includes("env")) {
+    return "Configuration manquante côté hébergement : les variables NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY ne sont pas définies. Crée un .env.local en local, ou ajoute-les sur Vercel puis redeploie.";
+  }
+  if (lower.includes("invalid login")) {
     return "Email ou mot de passe incorrect.";
   }
-  if (msg.toLowerCase().includes("email not confirmed")) {
-    return "Tu dois confirmer ton email avant de te connecter.";
+  if (lower.includes("email not confirmed")) {
+    return "Email non confirmé. Re-crée le user dans Supabase avec « Auto Confirm User » coché.";
+  }
+  if (lower.includes("fetch") || lower.includes("network")) {
+    return "Impossible de joindre Supabase. Vérifie l'URL Supabase et ta connexion.";
   }
   return msg;
 }
