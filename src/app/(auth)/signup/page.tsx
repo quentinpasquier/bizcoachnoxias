@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
-import { SignUpForm } from "./SignUpForm";
+import { Card } from "@/components/ui/Card";
 
 export default function SignUpPage() {
   return (
@@ -18,30 +18,31 @@ export default function SignUpPage() {
         <div className="w-full max-w-md">
           <div className="mb-8">
             <span className="divider-green block mb-4" />
-            <h1 className="text-h2">Activer mon compte.</h1>
+            <h1 className="text-h2">Pas d'inscription publique.</h1>
             <p
               className="text-body-l mt-2"
               style={{ color: "var(--color-gray)" }}
             >
-              Réservé aux emails <b>@noxias.com</b>.
+              Outil interne Noxias. Les comptes commerciaux sont créés par
+              l'administrateur.
             </p>
           </div>
 
-          <SignUpForm />
+          <Card className="space-y-3">
+            <p className="text-body" style={{ color: "var(--color-dark)" }}>
+              Pour obtenir un accès, contacte l'administrateur Noxias. Il te
+              communiquera tes identifiants après création du compte.
+            </p>
+          </Card>
 
-          <p
-            className="text-small mt-6 text-center"
-            style={{ color: "var(--color-gray)" }}
-          >
-            Déjà un compte ?{" "}
+          <div className="mt-6 text-center">
             <Link
               href="/login"
-              className="font-medium hover:underline"
-              style={{ color: "var(--color-purple)" }}
+              className="btn btn-primary inline-flex"
             >
-              Se connecter
+              Retour à la connexion
             </Link>
-          </p>
+          </div>
         </div>
       </main>
     </div>

@@ -42,11 +42,59 @@ Vérifie ensuite dans **Table Editor** que tu as bien :
 
 Dans **Authentication → Providers** :
 - Active **Email** (par défaut).
-- Optionnel : désactive « Confirm email » pour les tests rapides (à réactiver avant la prod).
+- Décoche **Confirm email** : les commerciaux sont créés directement par l'admin, pas besoin d'email de confirmation.
 
 Dans **Authentication → URL Configuration** :
-- **Site URL** : `https://ton-domaine.vercel.app` (à remplir après déploiement Vercel) — pour les tests locaux, mets `http://localhost:3000`.
-- **Redirect URLs** : ajoute `https://ton-domaine.vercel.app/auth/callback` et `http://localhost:3000/auth/callback`.
+- **Site URL** : `https://ton-domaine.vercel.app` (en local : `http://localhost:3000`)
+
+> Pas besoin de configurer Redirect URLs : il n'y a pas d'inscription publique, les comptes sont créés par l'admin.
+
+### 1.5 Créer les comptes commerciaux
+
+L'app n'a **pas de signup public** — les commerciaux ne peuvent pas s'inscrire seuls. Pour ajouter un commercial, deux méthodes :
+
+#### Méthode A — Dashboard Supabase (recommandé, 2 clics)
+
+1. **Authentication → Users → Add user → Create new user**
+2. Renseigne :
+   - **Email** : `prenom.nom@noxias.com`
+   - **Password** : un mot de passe que tu communiques au commercial
+   - ✓ **Auto Confirm User** (sinon il devra confirmer par email)
+3. **Create user**
+
+Le profil est créé automatiquement (trigger `on_auth_user_created`). Le commercial peut se connecter immédiatement sur `/login`.
+
+#### Méthode B — SQL Editor (en bulk)
+
+```sql
+-- Crée un commercial Noxias en SQL.
+-- Le trigger enforce_noxias_email_domain_trigger valide le domaine @noxias.com.
+-- Le trigger on_auth_user_created crée automatiquement la ligne profiles.
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password,
+  email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
+  created_at, updated_at
+) values (
+  '00000000-0000-0000-0000-000000000000',
+  gen_random_uuid(),
+  'authenticated',
+  'authenticated',
+  'prenom.nom@noxias.com',
+  crypt('MotDePasseFort123', gen_salt('bf')),
+  now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  '{"full_name":"Prénom Nom"}'::jsonb,
+  now(),
+  now()
+);
+```
+
+> Note : la restriction `@noxias.com` est appliquée par un trigger Postgres. Si tu dois exceptionnellement ajouter un email hors domaine (ex : consultant externe), désactive temporairement le trigger :
+> ```sql
+> alter table auth.users disable trigger enforce_noxias_email_domain_trigger;
+> -- ... ton insert ...
+> alter table auth.users enable trigger enforce_noxias_email_domain_trigger;
+> ```
 
 ---
 

@@ -40,15 +40,8 @@ export default async function LoginPage({
               className="text-meta mt-6 text-center"
               style={{ color: "var(--color-gray)" }}
             >
-              Premier accès ?{" "}
-              <Link
-                href="/signup"
-                className="font-medium hover:underline"
-                style={{ color: "var(--color-purple)" }}
-              >
-                Activer mon compte
-              </Link>
-              {" · "}réservé aux emails @noxias.com
+              Accès réservé aux commerciaux Noxias. Compte oublié ou bloqué :
+              contacte l'administrateur.
             </p>
           </div>
         </main>
