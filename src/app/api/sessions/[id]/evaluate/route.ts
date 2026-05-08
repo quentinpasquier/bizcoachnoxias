@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { evaluateSession } from "@/lib/evaluator";
-import type { Difficulty } from "@/lib/supabase/types";
+import type { Client, Difficulty, SessionRow } from "@/lib/supabase/types";
 
 export const maxDuration = 60;
 
@@ -19,14 +19,18 @@ export async function POST(
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
-  const { data: session } = await supabase
+  const { data: sessionData } = await supabase
     .from("sessions")
     .select("*")
     .eq("id", sessionId)
     .single();
 
-  if (!session || session.user_id !== user.id) {
+  if (!sessionData) {
     return NextResponse.json({ error: "Session introuvable" }, { status: 404 });
+  }
+  const session = sessionData as SessionRow;
+  if (session.user_id !== user.id) {
+    return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
   }
 
   if (session.evaluation) {
@@ -40,15 +44,47 @@ export async function POST(
     );
   }
 
-  const { data: messages } = await supabase
+  // Charge client (avec fallback snapshot si supprimé).
+  let client: Client | null = null;
+  if (session.client_id) {
+    const { data } = await supabase
+      .from("clients")
+      .select("*")
+      .eq("id", session.client_id)
+      .single();
+    client = (data as Client) ?? null;
+  }
+  if (!client) {
+    client = {
+      id: session.client_id ?? "deleted",
+      name: session.client_name_snapshot ?? "Client",
+      sector: null,
+      description: null,
+      value_proposition: null,
+      product_pitch: session.product_pitch ?? "",
+      ideal_targets: null,
+      typical_objections: [],
+      active: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      created_by: null,
+    };
+  }
+
+  const { data: messagesData } = await supabase
     .from("messages")
     .select("role, content, metadata")
     .eq("session_id", sessionId)
     .in("role", ["user", "prospect"])
     .order("created_at", { ascending: true });
 
-  if (!messages || messages.length === 0) {
-    // Pas de conversation = score 0, evaluation minimale
+  const messages = (messagesData ?? []) as Array<{
+    role: string;
+    content: string;
+    metadata: Record<string, unknown> | null;
+  }>;
+
+  if (messages.length === 0) {
     const empty = {
       overall_score: 0,
       axes: {
@@ -80,9 +116,8 @@ export async function POST(
   for (let i = messages.length - 1; i >= 0; i--) {
     const m = messages[i];
     if (m.role === "prospect" && m.metadata) {
-      const meta = m.metadata as Record<string, unknown>;
-      if (meta.signal === "hangup" && typeof meta.reason === "string") {
-        hangupReason = meta.reason;
+      if (m.metadata.signal === "hangup" && typeof m.metadata.reason === "string") {
+        hangupReason = m.metadata.reason;
         break;
       }
     }
@@ -92,7 +127,7 @@ export async function POST(
     const evaluation = await evaluateSession({
       difficulty: session.difficulty as Difficulty,
       personaKey: session.persona_key,
-      productPitch: session.product_pitch,
+      client,
       conversation: messages.map((m) => ({
         role: m.role as "user" | "prospect",
         content: m.content,

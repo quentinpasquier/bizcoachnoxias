@@ -1,11 +1,11 @@
 import { getAnthropic, EVALUATOR_MODEL } from "./anthropic";
 import { DIFFICULTY_CONFIG, getPersona } from "./personas";
-import type { Difficulty, Evaluation } from "./supabase/types";
+import type { Client, Difficulty, Evaluation } from "./supabase/types";
 
 export interface EvaluationInput {
   difficulty: Difficulty;
   personaKey: string;
-  productPitch: string | null;
+  client: Client;
   conversation: { role: "user" | "prospect"; content: string }[];
   endedBy: "user" | "prospect" | "timeout";
   appointmentSecured: boolean;
@@ -46,15 +46,15 @@ export async function evaluateSession(input: EvaluationInput): Promise<Evaluatio
         ? "RÉSULTAT : Le commercial a mis fin à l'appel."
         : "RÉSULTAT : Appel terminé par expiration.";
 
-  const system = `Tu es coach commercial senior, ancien directeur des ventes. Tu évalues les commerciaux avec une rigueur exigeante mais bienveillante. Ton style : direct, concret, dirigeant à dirigeant. Pas de blabla, pas de mots anglais inutiles.
+  const system = `Tu es coach commercial senior chez Noxias, agence de prospection externalisée. Tu évalues les commerciaux Noxias avec une rigueur exigeante mais bienveillante. Ton style : direct, concret, dirigeant à dirigeant. Pas de blabla, pas de mots anglais inutiles.
 
-Tu vas analyser un appel de prospection téléphonique entre un commercial (en formation) et un prospect simulé.
+Tu vas analyser un appel de prospection téléphonique entre un commercial Noxias (en formation) et un prospect simulé. Le commercial appelle au nom d'un client de Noxias et pitche l'offre de ce client.
 
 Tu dois noter sur 5 axes (chacun /20) :
-- ACCROCHE : pertinence des 30 premières secondes, accroche personnalisée vs générique
+- ACCROCHE : pertinence des 30 premières secondes, accroche personnalisée vs générique, capacité à se présenter comme appelant pour le bon compte
 - DECOUVERTE : qualité des questions ouvertes, écoute active, capacité à creuser
-- OBJECTIONS : gestion des résistances (acquittement → reformulation → réponse)
-- VALEUR : capacité à transmettre un bénéfice concret, chiffré, lié au contexte du prospect
+- OBJECTIONS : gestion des résistances (acquittement → reformulation → réponse), surtout face aux objections typiques du client
+- VALEUR : capacité à transmettre la value proposition du client de Noxias de manière concrète et liée au contexte du prospect
 - CLOSING : assertivité dans la demande de RDV, proposition d'un créneau précis, gestion du « non »
 
 Score global = somme des 5 axes (sur 100).
@@ -67,13 +67,17 @@ Règles :
 - Sois EXIGEANT : sur du Débutant, 60/100 c'est correct ; sur de l'Expert, 60/100 c'est déjà très bon.
 - Cite des extraits de l'appel quand c'est pertinent (« Quand tu dis "...", tu... »).
 - Tutoie le commercial dans tes commentaires (formation = proximité).
-- Pas de langue de bois. Si c'était mauvais, dis-le. Si c'était excellent, dis-le aussi.`;
+- Pas de langue de bois. Si c'était mauvais, dis-le. Si c'était excellent, dis-le aussi.
+- Tu peux et dois faire référence à l'offre du client (sa value proposition, son pitch) pour juger si elle a été bien transmise.`;
 
   const userMessage = `# CONTEXTE DE LA SESSION
 
 Niveau : ${cfg.label}
 Persona simulé : ${persona?.label ?? input.personaKey} (${persona?.role ?? "?"} chez ${persona?.company ?? "?"})
-Pitch annoncé par le commercial : ${input.productPitch ?? "(non précisé)"}
+
+Client Noxias pour qui le commercial prospectait : ${input.client.name}${input.client.sector ? ` (${input.client.sector})` : ""}
+Pitch que le commercial était censé porter : ${input.client.product_pitch}
+${input.client.value_proposition ? `Value prop : ${input.client.value_proposition}` : ""}
 
 ${outcomeLine}
 

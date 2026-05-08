@@ -12,9 +12,26 @@ export interface Profile {
   updated_at: string;
 }
 
+export interface Client {
+  id: string;
+  name: string;
+  sector: string | null;
+  description: string | null;
+  value_proposition: string | null;
+  product_pitch: string;
+  ideal_targets: string | null;
+  typical_objections: string[];
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+}
+
 export interface SessionRow {
   id: string;
   user_id: string;
+  client_id: string | null;
+  client_name_snapshot: string | null;
   difficulty: Difficulty;
   persona_key: string;
   persona_label: string;

@@ -186,7 +186,10 @@ export function ChatRoom({ session, initialMessages }: Props) {
                 className="text-meta uppercase tracking-widest"
                 style={{ color: "var(--color-gray)" }}
               >
-                Appel en cours
+                Appel en cours pour{" "}
+                <span style={{ color: "var(--color-purple)" }}>
+                  {session.client_name_snapshot ?? "—"}
+                </span>
               </div>
             </div>
             <DifficultyBadge difficulty={session.difficulty} />

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateProspectReply } from "@/lib/prospect-engine";
-import type { Difficulty, MessageRow } from "@/lib/supabase/types";
+import type { Client, Difficulty, MessageRow, SessionRow } from "@/lib/supabase/types";
 
 export async function POST(
   request: Request,
@@ -22,14 +22,15 @@ export async function POST(
     opening?: boolean;
   };
 
-  const { data: session, error: sessionErr } = await supabase
+  const { data: sessionData, error: sessionErr } = await supabase
     .from("sessions")
     .select("*")
     .eq("id", sessionId)
     .single();
-  if (sessionErr || !session) {
+  if (sessionErr || !sessionData) {
     return NextResponse.json({ error: "Session introuvable" }, { status: 404 });
   }
+  const session = sessionData as SessionRow;
   if (session.user_id !== user.id) {
     return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
   }
@@ -38,6 +39,34 @@ export async function POST(
       { error: "Cette session est terminée" },
       { status: 409 },
     );
+  }
+
+  // Charge le client lié — la session a un client_id (sinon fallback vers un client virtuel via le snapshot)
+  let client: Client | null = null;
+  if (session.client_id) {
+    const { data } = await supabase
+      .from("clients")
+      .select("*")
+      .eq("id", session.client_id)
+      .single();
+    client = (data as Client) ?? null;
+  }
+  if (!client) {
+    // Fallback de sécurité (client supprimé) : on reconstruit un minimum à partir du snapshot.
+    client = {
+      id: session.client_id ?? "deleted",
+      name: session.client_name_snapshot ?? "Client",
+      sector: null,
+      description: null,
+      value_proposition: null,
+      product_pitch: session.product_pitch ?? "",
+      ideal_targets: null,
+      typical_objections: [],
+      active: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      created_by: null,
+    };
   }
 
   // Insert user message si fourni.
@@ -66,8 +95,8 @@ export async function POST(
     .order("created_at", { ascending: true });
 
   const turns = (history ?? []).map((m) => ({
-    role: m.role as "user" | "prospect",
-    content: m.content,
+    role: (m as { role: string; content: string }).role as "user" | "prospect",
+    content: (m as { role: string; content: string }).content,
   }));
 
   // Génère la réponse du prospect.
@@ -76,7 +105,7 @@ export async function POST(
     reply = await generateProspectReply({
       difficulty: session.difficulty as Difficulty,
       personaKey: session.persona_key,
-      productPitch: session.product_pitch,
+      client,
       history: turns,
     });
   } catch (err) {
@@ -95,7 +124,12 @@ export async function POST(
         session_id: sessionId,
         role: "prospect",
         content: reply.text,
-        metadata: { signal: reply.signal.type },
+        metadata:
+          reply.signal.type === "hangup"
+            ? { signal: "hangup", reason: reply.signal.reason }
+            : reply.signal.type === "appointment"
+              ? { signal: "appointment", date: reply.signal.date }
+              : { signal: "continue" },
       })
       .select("id, content")
       .single();
@@ -105,7 +139,7 @@ export async function POST(
         { status: 500 },
       );
     }
-    prospectMessage = inserted;
+    prospectMessage = inserted as Pick<MessageRow, "id" | "content">;
   }
 
   // Si signal hangup ou appointment, on ferme la session.

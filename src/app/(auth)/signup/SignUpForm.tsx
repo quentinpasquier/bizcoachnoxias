@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { createClient } from "@/lib/supabase/client";
 
+const ALLOWED_DOMAIN = "noxias.com";
+
 export function SignUpForm() {
   const router = useRouter();
   const [fullName, setFullName] = useState("");
@@ -19,6 +21,11 @@ export function SignUpForm() {
     e.preventDefault();
     setError(null);
 
+    const lower = email.trim().toLowerCase();
+    if (!lower.endsWith(`@${ALLOWED_DOMAIN}`)) {
+      setError(`Seuls les emails @${ALLOWED_DOMAIN} sont autorisés.`);
+      return;
+    }
     if (password.length < 8) {
       setError("Le mot de passe doit faire au moins 8 caractères.");
       return;
@@ -31,7 +38,7 @@ export function SignUpForm() {
       typeof window !== "undefined" ? window.location.origin : undefined;
 
     const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
+      email: lower,
       password,
       options: {
         data: { full_name: fullName },
@@ -40,7 +47,7 @@ export function SignUpForm() {
     });
 
     if (signUpError) {
-      setError(signUpError.message);
+      setError(translateError(signUpError.message));
       setLoading(false);
       return;
     }
@@ -62,7 +69,7 @@ export function SignUpForm() {
           Vérifie ta boîte mail.
         </div>
         <p className="text-body" style={{ color: "var(--color-gray)" }}>
-          On vient de t'envoyer un lien de confirmation à <b>{email}</b>.
+          On vient d'envoyer un lien de confirmation à <b>{email}</b>.
           Clique dessus pour activer ton compte.
         </p>
       </div>
@@ -83,8 +90,8 @@ export function SignUpForm() {
       <Input
         id="email"
         type="email"
-        label="Email professionnel"
-        placeholder="prenom.nom@entreprise.com"
+        label="Email Noxias"
+        placeholder={`prenom.nom@${ALLOWED_DOMAIN}`}
         autoComplete="email"
         required
         value={email}
@@ -116,8 +123,19 @@ export function SignUpForm() {
       )}
 
       <Button type="submit" variant="primary" loading={loading} fullWidth>
-        Créer mon compte
+        Activer mon compte
       </Button>
     </form>
   );
+}
+
+function translateError(msg: string): string {
+  const lower = msg.toLowerCase();
+  if (lower.includes("noxias.com") || lower.includes("@noxias")) {
+    return "Seuls les emails @noxias.com sont autorisés.";
+  }
+  if (lower.includes("user already registered")) {
+    return "Cet email est déjà inscrit. Utilise plutôt « Se connecter ».";
+  }
+  return msg;
 }

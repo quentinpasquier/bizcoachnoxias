@@ -29,6 +29,12 @@ export function Header({ user }: HeaderProps) {
               Tableau de bord
             </Link>
             <Link
+              href="/clients"
+              className="text-small text-white/70 hover:text-white transition-colors"
+            >
+              Clients
+            </Link>
+            <Link
               href="/sessions/new"
               className="text-small text-white/70 hover:text-white transition-colors"
             >

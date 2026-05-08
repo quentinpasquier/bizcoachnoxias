@@ -9,7 +9,7 @@ export default function SignUpPage() {
       style={{ background: "var(--color-lavender)" }}
     >
       <header className="container-noxias flex h-16 items-center">
-        <Link href="/">
+        <Link href="/login">
           <Logo variant="light" size={28} />
         </Link>
       </header>
@@ -18,12 +18,12 @@ export default function SignUpPage() {
         <div className="w-full max-w-md">
           <div className="mb-8">
             <span className="divider-green block mb-4" />
-            <h1 className="text-h2">Crée ton compte.</h1>
+            <h1 className="text-h2">Activer mon compte.</h1>
             <p
               className="text-body-l mt-2"
               style={{ color: "var(--color-gray)" }}
             >
-              5 minutes pour démarrer ta première session.
+              Réservé aux emails <b>@noxias.com</b>.
             </p>
           </div>
 

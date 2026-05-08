@@ -1,8 +1,10 @@
 # Noxias Coach
 
-> Coach IA pour commerciaux. Simulez un appel de prospection non sollicité, mesurez votre performance, progressez.
+> Outil interne Noxias. Coach IA pour les commerciaux qui font de la prospection externalisée.
 
-Une session = un appel téléphonique simulé avec un prospect joué par Claude (Anthropic). Le commercial choisit un persona (DG PME, DAF, DRH, Dir. Marketing) et un niveau de difficulté (Débutant → Expert), puis tente d'obtenir un RDV. Le prospect peut raccrocher à tout moment selon le niveau choisi. À la fin, une restitution chiffrée sur 5 axes (accroche, découverte, objections, valeur, closing) avec forces, axes d'amélioration et prochaines actions.
+Noxias prospecte au nom de plusieurs clients. Avant de décrocher pour de vrai, ses commerciaux s'entraînent ici : ils choisissent un **client** (avec son pitch et ses objections), un **persona** à appeler (DG PME, DAF, DRH, Dir. Marketing, Founder scaleup, CEO grand compte) et un **niveau** (Débutant → Expert), puis tentent d'obtenir un RDV. Le prospect peut raccrocher selon son niveau d'exigence. À la fin, une restitution chiffrée sur 5 axes (accroche, découverte, objections, valeur, closing) avec forces, axes d'amélioration et prochaines actions.
+
+Accès réservé aux emails **@noxias.com** (enforced en base via trigger Postgres).
 
 ## Stack
 
@@ -118,8 +120,23 @@ Le score est calibré selon le niveau (60/100 sur Expert ≫ 60/100 sur Débutan
 | `directeur-marketing-scaleup` | Sarah Benchikh — Dir. Marketing scaleup SaaS B2B série B |
 | `daf-holding` | Jean-Pierre Mercier — DAF holding familiale BTP, Bordeaux |
 | `drh-grand-compte` | Aurélie Dubois — DRH groupe industriel coté |
+| `founder-scaleup` | Léo Marchetti — Founder & CEO scaleup série A |
+| `ceo-grand-compte` | Marie-Agnès Vasseur — CEO groupe coté CAC Mid 60 |
 
 Pour ajouter un persona : éditer `src/lib/personas.ts`.
+
+## Clients
+
+Chaque client = une boîte pour qui Noxias prospecte. Ses champs :
+- `name`, `sector`, `description`
+- `value_proposition` — la promesse en une phrase
+- `product_pitch` — ce que le commercial Noxias doit pitcher (l'IA prospect base son jugement là-dessus)
+- `ideal_targets` — les personas pertinents pour ce client (texte libre)
+- `typical_objections` — array d'objections que l'IA prospect peut ressortir naturellement
+- `active` — désactiver sans supprimer
+
+Gestion via l'UI : `/clients` (liste, création, édition, désactivation).
+3 clients d'exemple sont seedés via `0002_clients.sql` (TrésoFlow, Cabinet Lelong RH, Studio Octant) — éditer/supprimer selon besoin.
 
 ## Niveaux de difficulté
 

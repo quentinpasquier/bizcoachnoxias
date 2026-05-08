@@ -1,6 +1,6 @@
 import { getAnthropic, PROSPECT_MODEL } from "./anthropic";
 import { buildProspectSystemPrompt, getPersona } from "./personas";
-import type { Difficulty } from "./supabase/types";
+import type { Client, Difficulty } from "./supabase/types";
 
 export interface ConversationTurn {
   role: "user" | "prospect";
@@ -52,7 +52,7 @@ function parseSignal(raw: string): { text: string; signal: ProspectSignal } {
 export async function generateProspectReply(args: {
   difficulty: Difficulty;
   personaKey: string;
-  productPitch: string | null;
+  client: Client;
   history: ConversationTurn[];
 }): Promise<ProspectReply> {
   const persona = getPersona(args.personaKey);
@@ -63,7 +63,7 @@ export async function generateProspectReply(args: {
   const system = buildProspectSystemPrompt({
     persona,
     difficulty: args.difficulty,
-    productPitch: args.productPitch,
+    client: args.client,
   });
 
   const messages = args.history.map((turn) => ({

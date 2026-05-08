@@ -21,17 +21,22 @@ Dans **Project Settings → API** :
 
 > La `service_role` key n'est PAS nécessaire pour cette app : toutes les requêtes passent par le client SSR avec l'anon key + RLS, ce qui est plus sûr. Tu peux l'ignorer.
 
-### 1.3 Exécuter la migration
+### 1.3 Exécuter les migrations
 
-Dans **SQL Editor → New query** :
-1. Ouvre `supabase/migrations/0001_init.sql` du repo.
-2. Copie-colle le contenu intégral dans l'éditeur SQL.
-3. Clique **Run**.
+Dans **SQL Editor → New query**, exécute dans l'ordre :
+
+1. `supabase/migrations/0001_init.sql` — profiles, sessions, messages, RLS
+2. `supabase/migrations/0002_clients.sql` — table clients, restriction email @noxias.com, seed de 3 clients exemple
+
+Pour chaque migration : copie-colle le contenu, clique **Run**.
 
 Vérifie ensuite dans **Table Editor** que tu as bien :
 - `profiles` (RLS activée)
-- `sessions` (RLS activée)
+- `sessions` (RLS activée, avec colonnes `client_id` + `client_name_snapshot`)
 - `messages` (RLS activée)
+- `clients` (RLS activée, 3 lignes seed)
+
+> **Restriction email** : un trigger Postgres bloque les inscriptions hors `@noxias.com`. Pour ajouter un commercial dont l'email n'est pas en @noxias.com (cas exceptionnel), tu peux désactiver ou modifier le trigger `enforce_noxias_email_domain_trigger` sur `auth.users`.
 
 ### 1.4 Configurer l'auth
 

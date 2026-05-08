@@ -53,6 +53,17 @@ export default async function FeedbackPage({
           <span className="divider-green block mb-3" />
           <h1 className="text-h2">Restitution</h1>
           <div className="flex items-center gap-3 mt-2 flex-wrap">
+            {session.client_name_snapshot && (
+              <span
+                className="badge"
+                style={{
+                  background: "var(--color-purple)",
+                  color: "#FFFFFF",
+                }}
+              >
+                {session.client_name_snapshot}
+              </span>
+            )}
             <span className="text-body" style={{ color: "var(--color-gray)" }}>
               {session.persona_label}
             </span>
@@ -66,6 +77,14 @@ export default async function FeedbackPage({
           </div>
         </div>
         <div className="flex gap-3">
+          {session.client_id && (
+            <Link
+              href={`/sessions/new?client=${session.client_id}`}
+              className="btn btn-ghost"
+            >
+              Refaire pour ce client
+            </Link>
+          )}
           <Link href="/sessions/new" className="btn btn-primary">
             Nouvelle session
           </Link>
