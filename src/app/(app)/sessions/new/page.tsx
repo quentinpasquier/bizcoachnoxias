@@ -5,12 +5,12 @@ import { NewSessionForm } from "./NewSessionForm";
 import { DIFFICULTY_CONFIG } from "@/lib/personas";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import type { Client } from "@/lib/supabase/types";
+import type { Client, PersonaProfile } from "@/lib/supabase/types";
 
 export default async function NewSessionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ client?: string }>;
+  searchParams: Promise<{ client?: string; persona?: string }>;
 }) {
   const params = await searchParams;
   const supabase = await createClient();
@@ -38,7 +38,7 @@ export default async function NewSessionPage({
             {configured ? "Aucun client actif." : "Aucun client (mode démo)."}
           </h3>
           <p className="text-body mb-6" style={{ color: "var(--color-gray)" }}>
-            Avant de lancer une session, ajoute au moins un client avec ses docs.
+            Avant de lancer une session, ajoute un client en uploadant ses docs.
           </p>
           <Link href="/clients/new" className="btn btn-primary inline-flex">
             Ajouter un client
@@ -53,7 +53,7 @@ export default async function NewSessionPage({
   }
 
   const preselectedClientId = params.client ?? "";
-  const preselectedClient = clients.find((c) => c.id === preselectedClientId);
+  const preselectedPersonaLabel = params.persona ?? "";
 
   return (
     <div className="container-noxias py-10 max-w-3xl">
@@ -61,8 +61,8 @@ export default async function NewSessionPage({
         <span className="divider-green block mb-3" />
         <h1 className="text-h2">Nouvelle session</h1>
         <p className="text-body mt-1" style={{ color: "var(--color-gray)" }}>
-          Choisis le client, le persona, le genre et le niveau. Un scénario réaliste sera
-          généré à partir des docs du client.
+          Choisis le persona, le genre et le niveau.
+          Un scénario réaliste est généré à la volée.
         </p>
       </div>
 
@@ -74,9 +74,11 @@ export default async function NewSessionPage({
           value_proposition: c.value_proposition,
           product_pitch: c.product_pitch,
           target_personas: c.target_personas ?? [],
+          persona_profiles: (c.persona_profiles ?? []) as PersonaProfile[],
           has_docs: Boolean(c.synced_content),
         }))}
-        preselectedClientId={preselectedClient?.id ?? ""}
+        preselectedClientId={preselectedClientId}
+        preselectedPersonaLabel={preselectedPersonaLabel}
         difficulties={Object.entries(DIFFICULTY_CONFIG).map(([key, cfg]) => ({
           key,
           label: cfg.label,

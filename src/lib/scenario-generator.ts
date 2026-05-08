@@ -1,21 +1,31 @@
 import { getAnthropic } from "./anthropic";
-import type { Client, Difficulty, Gender, Scenario } from "./supabase/types";
+import type {
+  Client,
+  Difficulty,
+  Gender,
+  PersonaProfile,
+  Scenario,
+} from "./supabase/types";
 
 const SCENARIO_MODEL = "claude-sonnet-4-6";
 
 const SCHEMA = `{
-  "persona_label": "<étiquette générique du persona joué, ex: 'Avocat', 'Gérant Escape Game', 'DAF holding'>",
+  "persona_label": "<étiquette générique du persona joué>",
   "persona_name": "<prénom + nom français crédible, cohérent avec le genre>",
-  "persona_role": "<intitulé exact du poste, ex: 'Avocat associé en droit des affaires'>",
+  "persona_role": "<intitulé exact du poste>",
   "company_name": "<nom de l'entreprise/cabinet/établissement, fictif mais crédible>",
   "company_context": "<2-3 phrases : taille, ville, secteur, particularités>",
-  "current_situation": "<2-3 phrases : ce que vit le prospect en ce moment, déclencheurs potentiels (ex: 'Vient de refondre son site, baisse de trafic constatée le mois dernier')>",
-  "hidden_pain_points": ["<3 douleurs spécifiques que ce prospect a, qu'il ne révélera pas spontanément>", "...", "..."],
-  "kpis_to_probe": ["<2-3 KPI/métriques que ce prospect surveille (ex: coût d'acquisition, taux de remplissage)>", "...", "..."],
-  "available_objections": ["<5-7 objections concrètes que ce prospect va sortir, formulées comme à l'oral>", "...", "..."],
-  "decision_criteria": "<1-2 phrases : ce qui le ferait dire OUI à un RDV, basé sur ses douleurs réelles>",
+  "current_situation": "<2-3 phrases : ce que vit le prospect en ce moment, déclencheurs potentiels>",
+  "hidden_pain_points": ["<3 douleurs spécifiques qu'il ne révélera pas spontanément>", "...", "..."],
+  "kpis_to_probe": ["<2-3 KPI/métriques que ce prospect surveille>", "...", "..."],
+  "available_objections": ["<5-7 objections concrètes formulées comme à l'oral>", "...", "..."],
+  "decision_criteria": "<1-2 phrases : ce qui le ferait dire OUI à un RDV>",
   "voice_notes": "<1 phrase sur son style de parole : tutoiement/vouvoiement, vocabulaire, rythme>"
 }`;
+
+function truncate(s: string, n: number): string {
+  return s.length > n ? `${s.slice(0, n)}\n\n[... contenu tronqué ...]` : s;
+}
 
 export async function generateScenario(args: {
   client: Client;
@@ -25,15 +35,36 @@ export async function generateScenario(args: {
 }): Promise<Scenario> {
   const { client, difficulty, gender, personaLabel } = args;
 
+  const profile = (client.persona_profiles ?? []).find(
+    (p: PersonaProfile) => p.label === personaLabel,
+  );
+
   const docs = client.synced_content
     ? truncate(client.synced_content, 50000)
-    : `[Aucun document client n'a été uploadé. Génère un scénario cohérent à partir des champs structurés du client.]`;
+    : `[Aucun document client n'a été uploadé. Génère un scénario cohérent à partir des champs structurés.]`;
 
   const objections = (client.typical_objections ?? []).join("\n- ");
 
-  const system = `Tu es coach commercial senior chez Noxias, agence de prospection externalisée. Tu génères des scénarios de jeu de rôle réalistes pour entraîner les commerciaux Noxias.
+  // Brief enrichi du persona si profile disponible
+  const profileBlock = profile
+    ? `
+# PROFIL DU PERSONA À JOUER (déjà préparé pour ce client)
+- Label : ${profile.label}
+- Rôle exact : ${profile.role}
+- Entreprise typique : ${profile.typical_company}
+- Douleurs clés : ${profile.key_pains.join(" ; ")}
+- KPIs surveillés : ${profile.key_kpis.join(" ; ")}
+- Objections principales attendues : ${profile.main_objections.map((o) => `« ${o} »`).join(" ; ")}
+- Ce qui le fait dire OUI : ${profile.decision_signals}
 
-Ton job : à partir des docs d'un client (matrice de prospection + boîte à outils) et des paramètres choisis (persona à jouer, difficulté, genre), tu produis un SCÉNARIO précis : qui est le prospect, son contexte, ses douleurs cachées, les objections qu'il va sortir, ce qui le ferait dire oui.
+Brief de préparation (déjà rédigé) :
+${profile.prep_briefing}
+
+Tu DOIS coller à ce profil. Le scénario que tu génères doit hériter de ces caractéristiques tout en variant les détails (nom, ville, situation actuelle).
+`
+    : "";
+
+  const system = `Tu es coach commercial senior chez Noxias, agence de prospection externalisée. Tu génères des scénarios de jeu de rôle réalistes pour entraîner les commerciaux Noxias.
 
 Règles :
 - Réponds UNIQUEMENT en JSON valide, pas de markdown, pas de texte avant/après.
@@ -41,15 +72,11 @@ Règles :
 
 ${SCHEMA}
 
-- Cohérence avec les docs du client : utilise les douleurs, KPI, objections qui y figurent.
-- Variété : invente un nom et un contexte d'entreprise différents à chaque appel (pas toujours le même Maître Dupont).
-- Réalisme : les détails (taille, ville, secteur) doivent être plausibles et compatibles avec la cible décrite dans la matrice.
-- Adapté à la difficulté :
-  * débutant : prospect plutôt ouvert, peu d'objections, douleur évidente
-  * intermédiaire : 2-3 objections classiques, prospect occupé
-  * avancé : prospect sceptique, multi-objections, souvent déjà servi par un concurrent
-  * expert : prospect hostile, sur ses gardes, défis à chaque échange
-- Adapté au genre : nom et style cohérents (homme ou femme).`;
+- Cohérence avec le profil et les docs : utilise les douleurs, KPI, objections du persona.
+- Variété : invente un nom, une entreprise, une situation différents à chaque appel.
+- Réalisme : détails plausibles et compatibles avec la cible.
+- Adapté à la difficulté : débutant = ouvert | intermédiaire = 2-3 objections | avancé = sceptique multi-objections | expert = hostile, défis à chaque échange.
+- Adapté au genre : nom et style cohérents.`;
 
   const user = `# CLIENT NOXIAS
 Nom : ${client.name}
@@ -60,6 +87,8 @@ Cibles idéales : ${client.ideal_targets ?? "n/a"}
 
 Objections classiques connues :
 - ${objections || "(aucune renseignée — déduis-les des docs)"}
+
+${profileBlock}
 
 # DOCS DU CLIENT (matrice + boîte à outils)
 ${docs}
@@ -100,8 +129,4 @@ Génère le scénario JSON pour cette session. Réponds en JSON pur.`;
   }
 
   return parsed;
-}
-
-function truncate(s: string, n: number): string {
-  return s.length > n ? `${s.slice(0, n)}\n\n[... contenu tronqué ...]` : s;
 }

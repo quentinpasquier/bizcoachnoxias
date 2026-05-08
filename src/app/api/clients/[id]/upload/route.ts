@@ -108,6 +108,9 @@ export async function POST(
     if (extracted.target_personas.length > 0) {
       update.target_personas = extracted.target_personas;
     }
+    if (extracted.persona_profiles.length > 0) {
+      update.persona_profiles = extracted.persona_profiles;
+    }
     if (extracted.typical_objections.length > 0) {
       update.typical_objections = extracted.typical_objections;
     }
@@ -119,6 +122,12 @@ export async function POST(
     }
     if (extracted.ideal_targets) {
       update.ideal_targets = extracted.ideal_targets;
+    }
+    if (extracted.sector && !client.sector) {
+      update.sector = extracted.sector;
+    }
+    if (extracted.description && !client.description) {
+      update.description = extracted.description;
     }
   }
 
