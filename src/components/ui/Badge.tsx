@@ -50,7 +50,7 @@ export function DifficultyBadge({ difficulty }: { difficulty: Difficulty }) {
 
 export function ScoreBadge({ score }: { score: number | null }) {
   if (score === null || score === undefined) {
-    return <Badge tone="neutral">—</Badge>;
+    return <Badge tone="neutral">·</Badge>;
   }
   const tone: Tone =
     score >= 75 ? "success" : score >= 50 ? "info" : score >= 30 ? "warning" : "error";

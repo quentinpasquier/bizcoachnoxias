@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "./Logo";
 import { SignOutButton } from "./SignOutButton";
+import { HeaderNav } from "./HeaderNav";
 
 interface HeaderProps {
   user: { email?: string | null; full_name?: string | null } | null;
@@ -9,50 +10,34 @@ interface HeaderProps {
 export function Header({ user }: HeaderProps) {
   return (
     <header
-      className="border-b"
+      className="sticky top-0 z-40 border-b backdrop-blur-md"
       style={{
-        background: "var(--color-dark)",
-        borderColor: "rgba(255, 255, 255, 0.08)",
+        background: "rgba(34, 25, 50, 0.92)",
+        borderColor: "rgba(255, 255, 255, 0.06)",
       }}
     >
-      <div className="container-noxias flex h-16 items-center justify-between">
-        <Link href={user ? "/dashboard" : "/"} className="flex items-center">
+      <div className="container-noxias flex h-16 items-center justify-between gap-4">
+        <Link href={user ? "/dashboard" : "/login"} className="flex items-center shrink-0">
           <Logo variant="dark" size={28} />
         </Link>
 
         {user && (
-          <nav className="flex items-center gap-6">
-            <Link
-              href="/dashboard"
-              className="text-small text-white/70 hover:text-white transition-colors"
-            >
-              Tableau de bord
-            </Link>
-            <Link
-              href="/clients"
-              className="text-small text-white/70 hover:text-white transition-colors"
-            >
-              Clients
-            </Link>
-            <Link
-              href="/sessions/new"
-              className="text-small text-white/70 hover:text-white transition-colors"
-            >
-              Nouvelle session
-            </Link>
-            <Link
-              href="/history"
-              className="text-small text-white/70 hover:text-white transition-colors"
-            >
-              Historique
-            </Link>
-            <div className="flex items-center gap-3 pl-4 border-l border-white/10">
-              <span className="text-meta text-white/60">
-                {user.full_name ?? user.email}
-              </span>
+          <>
+            <HeaderNav />
+            <div className="flex items-center gap-3 pl-4 border-l border-white/10 shrink-0">
+              <div className="hidden md:flex flex-col items-end">
+                <span className="text-meta text-white/85 leading-tight">
+                  {user.full_name ?? "Commercial"}
+                </span>
+                {user.email && (
+                  <span className="text-meta text-white/45 leading-tight">
+                    {user.email}
+                  </span>
+                )}
+              </div>
               <SignOutButton />
             </div>
-          </nav>
+          </>
         )}
       </div>
     </header>

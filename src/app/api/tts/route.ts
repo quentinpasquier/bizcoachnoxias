@@ -6,10 +6,20 @@ export const maxDuration = 30;
 
 const OPENAI_TTS_URL = "https://api.openai.com/v1/audio/speech";
 
-// Voix OpenAI : alloy, echo, fable, onyx, nova, shimmer
-// Sélection en fonction du genre du prospect
-function pickVoice(gender: Gender): string {
-  return gender === "femme" ? "nova" : "onyx";
+// Pool de voix par genre. La voix retenue varie d'une session à l'autre
+// (déterministe via le seed pour rester stable au sein d'une session).
+const VOICES_HOMME = ["onyx", "echo", "fable", "alloy"];
+const VOICES_FEMME = ["nova", "shimmer", "alloy"];
+
+function pickVoice(gender: Gender, seed: string): string {
+  const pool = gender === "femme" ? VOICES_FEMME : VOICES_HOMME;
+  if (!seed) return pool[0];
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+  }
+  const idx = Math.abs(hash) % pool.length;
+  return pool[idx];
 }
 
 export async function POST(request: Request) {
@@ -17,13 +27,14 @@ export async function POST(request: Request) {
   if (!apiKey) {
     return NextResponse.json(
       {
-        error: "OPENAI_API_KEY non configurée. Le client utilisera la voix navigateur (Web Speech).",
+        error:
+          "OPENAI_API_KEY non configurée. Le client utilise la voix navigateur (Web Speech).",
       },
       { status: 503 },
     );
   }
 
-  let body: { text?: string; gender?: string };
+  let body: { text?: string; gender?: string; seed?: string };
   try {
     body = await request.json();
   } catch {
@@ -32,6 +43,7 @@ export async function POST(request: Request) {
 
   const text = (body.text ?? "").trim();
   const gender = (body.gender ?? "homme") as Gender;
+  const seed = body.seed ?? "";
 
   if (!text) {
     return NextResponse.json({ error: "Texte vide" }, { status: 400 });
@@ -39,6 +51,8 @@ export async function POST(request: Request) {
   if (text.length > 4000) {
     return NextResponse.json({ error: "Texte trop long (max 4000 caractères)" }, { status: 400 });
   }
+
+  const voice = pickVoice(gender, seed);
 
   const response = await fetch(OPENAI_TTS_URL, {
     method: "POST",
@@ -49,7 +63,7 @@ export async function POST(request: Request) {
     body: JSON.stringify({
       model: "tts-1",
       input: text,
-      voice: pickVoice(gender),
+      voice,
       response_format: "mp3",
       speed: 1.05,
     }),
@@ -69,12 +83,12 @@ export async function POST(request: Request) {
     headers: {
       "Content-Type": "audio/mpeg",
       "Cache-Control": "no-store",
+      "X-Voice": voice,
     },
   });
 }
 
 export async function GET() {
-  // Permet au client de savoir si OpenAI TTS est disponible
   return NextResponse.json({
     available: Boolean(process.env.OPENAI_API_KEY),
   });

@@ -39,58 +39,51 @@ export default async function FeedbackPage({
   const messagesList = (messages ?? []) as MessageRow[];
   const isLegacyFormat = !Array.isArray(evaluation.categories);
 
-  return (
-    <div className="container-noxias py-10 space-y-8 max-w-4xl">
-      <div className="flex items-start justify-between flex-wrap gap-4">
-        <div>
-          <span className="divider-green block mb-3" />
-          <h1 className="text-h2">Restitution</h1>
-          <div className="flex items-center gap-3 mt-2 flex-wrap">
-            {s.client_name_snapshot && (
-              <Badge tone="purple">{s.client_name_snapshot}</Badge>
-            )}
-            <span className="text-body" style={{ color: "var(--color-gray)" }}>
-              {s.persona_label}
-              {s.scenario_data && (
-                <>
-                  {" "}— {(s.scenario_data as { persona_name?: string }).persona_name ?? ""}
-                </>
-              )}
-            </span>
-            <DifficultyBadge difficulty={s.difficulty} />
-            <span className="text-meta" style={{ color: "var(--color-gray)" }}>
-              · {formatDuration(s.started_at, s.ended_at)}
-            </span>
-          </div>
-        </div>
-        <div className="flex gap-3 flex-wrap">
-          {s.client_id && (
-            <Link
-              href={`/sessions/new?client=${s.client_id}`}
-              className="btn btn-ghost"
-            >
-              Refaire pour ce client
-            </Link>
-          )}
-          <Link href="/sessions/new" className="btn btn-primary">
-            Nouvelle session
-          </Link>
-        </div>
-      </div>
+  const personaName = (s.scenario_data as { persona_name?: string } | null)?.persona_name ?? "";
 
-      {/* Score global + outcome */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card variant="dark" className="md:col-span-1 flex flex-col items-center justify-center text-center py-10">
+  return (
+    <div className="container-noxias py-12 space-y-12 max-w-4xl">
+      {/* HERO */}
+      <header>
+        <Link
+          href="/history"
+          className="text-small hover:underline inline-flex items-center gap-1 mb-6"
+          style={{ color: "var(--color-gray)" }}
+        >
+          ← Retour à l&apos;historique
+        </Link>
+        <span className="divider-green block mb-4" />
+        <h1 className="text-h2">Restitution</h1>
+        <div className="flex items-center gap-3 mt-3 flex-wrap">
+          {s.client_name_snapshot && (
+            <Badge tone="purple">{s.client_name_snapshot}</Badge>
+          )}
+          <span className="text-body" style={{ color: "var(--color-dark)" }}>
+            {s.persona_label}
+            {personaName && (
+              <span style={{ color: "var(--color-gray)" }}> · {personaName}</span>
+            )}
+          </span>
+          <DifficultyBadge difficulty={s.difficulty} />
+          <span className="text-meta" style={{ color: "var(--color-gray)" }}>
+            {formatDuration(s.started_at, s.ended_at)}
+          </span>
+        </div>
+      </header>
+
+      {/* SCORE PRINCIPAL */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <Card variant="dark" className="md:col-span-1 flex flex-col items-center justify-center text-center py-12">
           <div
-            className="text-meta uppercase tracking-widest mb-2"
-            style={{ color: "rgba(255,255,255,0.6)" }}
+            className="section-eyebrow mb-3"
+            style={{ color: "rgba(255,255,255,0.55)" }}
           >
             Score global
           </div>
           <div
             className="font-display"
             style={{
-              fontSize: "6rem",
+              fontSize: "6.5rem",
               lineHeight: "1",
               color:
                 evaluation.overall_score >= 75
@@ -104,79 +97,56 @@ export default async function FeedbackPage({
           </div>
           <div
             className="text-body mt-2"
-            style={{ color: "rgba(255,255,255,0.6)" }}
+            style={{ color: "rgba(255,255,255,0.55)" }}
           >
             sur 100
           </div>
           {!isLegacyFormat && (
             <div
-              className="text-meta mt-3"
-              style={{ color: "rgba(255,255,255,0.5)" }}
+              className="text-meta mt-4 px-3 py-1 rounded-pill"
+              style={{
+                color: "rgba(255,255,255,0.7)",
+                background: "rgba(255,255,255,0.06)",
+              }}
             >
-              {evaluation.criteria_total ?? 0} / {evaluation.criteria_max ?? 20} critères validés
+              {evaluation.criteria_total ?? 0} / {evaluation.criteria_max ?? 20}{" "}
+              critères validés
             </div>
           )}
         </Card>
 
-        <Card className="md:col-span-2">
-          <div className="flex items-center gap-3 mb-3">
+        <Card className="md:col-span-2 flex flex-col justify-center">
+          <div className="mb-4">
             {s.appointment_secured ? (
-              <span
-                className="badge"
-                style={{
-                  background: "rgba(60, 200, 121, 0.18)",
-                  color: "#1F6A3F",
-                  fontSize: "1rem",
-                  padding: "8px 16px",
-                }}
-              >
-                ✓ RDV obtenu
-              </span>
+              <Badge tone="success">RDV obtenu</Badge>
             ) : s.ended_by === "prospect" ? (
-              <span
-                className="badge"
-                style={{
-                  background: "rgba(233, 75, 75, 0.16)",
-                  color: "#A61F1F",
-                  fontSize: "1rem",
-                  padding: "8px 16px",
-                }}
-              >
-                ✗ Prospect a raccroché
-              </span>
+              <Badge tone="error">Prospect a raccroché</Badge>
             ) : (
-              <span
-                className="badge"
-                style={{
-                  background: "rgba(139, 127, 163, 0.16)",
-                  color: "var(--color-purple)",
-                  fontSize: "1rem",
-                  padding: "8px 16px",
-                }}
-              >
-                Appel terminé
-              </span>
+              <Badge tone="neutral">Appel terminé</Badge>
             )}
           </div>
-          <p className="text-body-l" style={{ color: "var(--color-dark)" }}>
+          <p
+            className="text-body-l"
+            style={{ color: "var(--color-dark)", lineHeight: "1.5" }}
+          >
             {evaluation.outcome_summary}
           </p>
         </Card>
-      </div>
+      </section>
 
-      {/* Catégories — nouveau format 20 critères */}
+      {/* CATÉGORIES, format 20 critères */}
       {!isLegacyFormat && Array.isArray(evaluation.categories) && (
-        <section>
-          <h2 className="text-h3 mb-4">Détail par catégorie</h2>
+        <section className="space-y-5">
+          <h2 className="text-h3">Détail par catégorie</h2>
           <div className="space-y-4">
             {evaluation.categories.map((cat) => (
               <Card key={cat.key}>
-                <div className="flex items-baseline justify-between mb-3">
+                <div className="flex items-baseline justify-between mb-4 gap-3">
                   <h3 className="text-h4">{cat.label}</h3>
                   <span
                     className="font-display"
                     style={{
-                      fontSize: "2rem",
+                      fontSize: "2.25rem",
                       lineHeight: "1",
                       color:
                         cat.score === cat.max
@@ -188,18 +158,19 @@ export default async function FeedbackPage({
                   >
                     {cat.score}
                     <span
+                      className="text-small"
                       style={{
-                        fontSize: "0.875rem",
                         opacity: 0.5,
                         marginLeft: "0.25rem",
+                        fontWeight: "normal",
                       }}
                     >
-                      /{cat.max}
+                      / {cat.max}
                     </span>
                   </span>
                 </div>
                 <ProgressBar value={cat.score} max={cat.max} />
-                <ul className="mt-4 space-y-2">
+                <ul className="mt-5 space-y-3">
                   {cat.criteria.map((c) => (
                     <li key={c.id} className="flex items-start gap-3">
                       <span
@@ -207,15 +178,18 @@ export default async function FeedbackPage({
                         style={{
                           background: c.passed
                             ? "var(--color-green)"
-                            : "rgba(233, 75, 75, 0.16)",
-                          color: c.passed ? "var(--color-dark)" : "var(--color-error)",
+                            : "rgba(233, 75, 75, 0.12)",
+                          color: c.passed
+                            ? "var(--color-dark)"
+                            : "var(--color-error)",
                         }}
+                        aria-hidden="true"
                       >
                         {c.passed ? "✓" : "✗"}
                       </span>
                       <div className="flex-1 min-w-0">
                         <div
-                          className="text-small font-medium"
+                          className="text-small font-semibold"
                           style={{
                             color: c.passed
                               ? "var(--color-dark)"
@@ -226,7 +200,7 @@ export default async function FeedbackPage({
                         </div>
                         <div
                           className="text-meta mt-0.5"
-                          style={{ color: "var(--color-gray)" }}
+                          style={{ color: "var(--color-gray)", lineHeight: "1.4" }}
                         >
                           {c.comment}
                         </div>
@@ -240,7 +214,7 @@ export default async function FeedbackPage({
         </section>
       )}
 
-      {/* Forces / Améliorations / Next */}
+      {/* FORCES / IMPROVEMENTS / NEXT */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <FeedbackList
           title="Tes forces"
@@ -259,19 +233,17 @@ export default async function FeedbackPage({
         />
       </section>
 
-      {/* Transcript */}
+      {/* TRANSCRIPT */}
       {messagesList.length > 0 && (
-        <section>
-          <h2 className="text-h3 mb-4">Transcript</h2>
+        <section className="space-y-4">
+          <h2 className="text-h3">Transcript</h2>
           <Card variant="lavender">
             <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
               {messagesList.map((m) => (
                 <div
                   key={m.id}
                   className={`text-small ${
-                    m.role === "system"
-                      ? "italic opacity-70 text-center"
-                      : ""
+                    m.role === "system" ? "italic opacity-70 text-center" : ""
                   }`}
                   style={{
                     color:
@@ -283,8 +255,8 @@ export default async function FeedbackPage({
                   }}
                 >
                   {m.role !== "system" && (
-                    <span className="font-medium">
-                      {m.role === "user" ? "Toi : " : "Prospect : "}
+                    <span className="font-semibold mr-2">
+                      {m.role === "user" ? "Toi" : "Prospect"} :
                     </span>
                   )}
                   {m.content}
@@ -294,6 +266,21 @@ export default async function FeedbackPage({
           </Card>
         </section>
       )}
+
+      {/* CTA */}
+      <section className="flex justify-center gap-3 flex-wrap pt-4">
+        {s.client_id && (
+          <Link
+            href={`/sessions/new?client=${s.client_id}`}
+            className="btn btn-ghost"
+          >
+            Refaire pour ce client
+          </Link>
+        )}
+        <Link href="/sessions/new" className="btn btn-primary">
+          Nouvelle session
+        </Link>
+      </section>
     </div>
   );
 }
@@ -309,7 +296,7 @@ function ProgressBar({ value, max }: { value: number; max: number }) {
   return (
     <div
       className="w-full h-2 rounded-pill overflow-hidden"
-      style={{ background: "rgba(139, 127, 163, 0.2)" }}
+      style={{ background: "rgba(139, 127, 163, 0.16)" }}
     >
       <div
         className="h-full rounded-pill transition-all duration-slow ease-[cubic-bezier(0.16,1,0.3,1)]"
@@ -336,21 +323,25 @@ function FeedbackList({
         : "var(--color-purple)";
   return (
     <Card>
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-4">
         <span
-          className="w-8 h-0.5 rounded-pill"
+          className="w-8 h-1 rounded-pill"
           style={{ background: accent }}
         />
         <h3 className="text-h4">{title}</h3>
       </div>
-      <ul className="space-y-2">
+      <ul className="space-y-2.5">
         {items?.map((item, i) => (
           <li
             key={i}
             className="text-small flex gap-2"
             style={{ color: "var(--color-dark)" }}
           >
-            <span style={{ color: accent }}>—</span>
+            <span
+              className="mt-1.5 w-1.5 h-1.5 rounded-pill flex-shrink-0"
+              style={{ background: accent }}
+              aria-hidden="true"
+            />
             <span>{item}</span>
           </li>
         ))}

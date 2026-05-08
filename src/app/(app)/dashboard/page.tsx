@@ -64,13 +64,14 @@ export default async function DashboardPage() {
   const clientById = new Map(clients.map((c) => [c.id, c]));
 
   return (
-    <div className="container-noxias py-10 space-y-10">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+    <div className="container-noxias py-12 space-y-12">
+      {/* HERO */}
+      <header className="flex items-end justify-between flex-wrap gap-6">
         <div>
-          <span className="divider-green block mb-3" />
-          <h1 className="text-h2">Tableau de bord</h1>
+          <span className="divider-green block mb-4" />
+          <h1 className="text-h2">Bonjour.</h1>
           <p
-            className="text-body mt-1"
+            className="text-body-l mt-2"
             style={{ color: "var(--color-gray)" }}
           >
             Tes performances et ta prochaine session.
@@ -78,53 +79,64 @@ export default async function DashboardPage() {
         </div>
         <div className="flex gap-3">
           <Link href="/clients" className="btn btn-ghost">
-            Clients
+            Voir les clients
           </Link>
           <Link href="/sessions/new" className="btn btn-primary">
             Démarrer une session
           </Link>
         </div>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* STATS */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <StatCard
           number={totalSessions.toString()}
           label="Sessions terminées"
         />
         <StatCard
-          number={avgScore !== null ? `${avgScore}` : "—"}
+          number={avgScore !== null ? `${avgScore}` : "·"}
           suffix={avgScore !== null ? "/100" : undefined}
           label="Score moyen"
         />
         <StatCard
           number={`${rdvRate}%`}
-          label="Taux de RDV obtenus"
+          label="RDV obtenus"
           accent
         />
-      </div>
+      </section>
 
+      {/* QUICK START : clients */}
       {clients.length > 0 && (
-        <section>
-          <h2 className="text-h3 mb-4">Démarrer pour un client</h2>
+        <section className="space-y-4">
+          <SectionHeader
+            title="Démarrer pour un client"
+            action={
+              clients.length > 6 ? (
+                <Link
+                  href="/clients"
+                  className="text-small font-medium hover:underline"
+                  style={{ color: "var(--color-purple)" }}
+                >
+                  Voir les {clients.length} clients →
+                </Link>
+              ) : undefined
+            }
+          />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {clients.slice(0, 6).map((c) => (
-              <Link key={c.id} href={`/sessions/new?client=${c.id}`}>
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="text-h4">{c.name}</div>
+              <Link key={c.id} href={`/clients/${c.id}`}>
+                <Card hoverable>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-h4 truncate">{c.name}</div>
                       {c.sector && (
-                        <div
-                          className="text-meta uppercase tracking-widest mt-1"
-                          style={{ color: "var(--color-gray)" }}
-                        >
-                          {c.sector}
-                        </div>
+                        <div className="section-eyebrow mt-1">{c.sector}</div>
                       )}
                     </div>
                     <span
-                      className="text-small font-medium"
+                      className="text-h4"
                       style={{ color: "var(--color-green)" }}
+                      aria-hidden="true"
                     >
                       →
                     </span>
@@ -133,31 +145,25 @@ export default async function DashboardPage() {
               </Link>
             ))}
           </div>
-          {clients.length > 6 && (
-            <div className="mt-3">
-              <Link
-                href="/clients"
-                className="text-small font-medium hover:underline"
-                style={{ color: "var(--color-purple)" }}
-              >
-                Voir tous les clients ({clients.length}) →
-              </Link>
-            </div>
-          )}
         </section>
       )}
 
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-h3">Sessions récentes</h2>
-          <Link
-            href="/history"
-            className="text-small font-medium hover:underline"
-            style={{ color: "var(--color-purple)" }}
-          >
-            Tout voir →
-          </Link>
-        </div>
+      {/* RECENT SESSIONS */}
+      <section className="space-y-4">
+        <SectionHeader
+          title="Sessions récentes"
+          action={
+            sessions.length > 0 ? (
+              <Link
+                href="/history"
+                className="text-small font-medium hover:underline"
+                style={{ color: "var(--color-purple)" }}
+              >
+                Tout l&apos;historique →
+              </Link>
+            ) : undefined
+          }
+        />
 
         {sessions.length > 0 ? (
           <div className="space-y-3">
@@ -175,10 +181,10 @@ export default async function DashboardPage() {
                   }
                   className="block"
                 >
-                  <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                  <Card hoverable>
                     <div className="flex items-center justify-between gap-4 flex-wrap">
                       <div className="flex-1 min-w-[200px]">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                           <Badge tone="purple">{clientName}</Badge>
                           <span className="text-h4">{s.persona_label}</span>
                           <DifficultyBadge difficulty={s.difficulty} />
@@ -193,10 +199,9 @@ export default async function DashboardPage() {
                           {formatRelativeFr(s.started_at)}
                         </p>
                       </div>
-
                       <div className="flex items-center gap-3">
                         {s.appointment_secured && (
-                          <Badge tone="success">✓ RDV obtenu</Badge>
+                          <Badge tone="success">RDV obtenu</Badge>
                         )}
                         <ScoreBadge score={s.score} />
                       </div>
@@ -214,8 +219,8 @@ export default async function DashboardPage() {
               style={{ color: "var(--color-gray)" }}
             >
               {configured
-                ? "Démarre ta première simulation. 5 minutes, restitution immédiate."
-                : "Mode démo : connecte Supabase pour voir tes vraies sessions."}
+                ? "Lance ta première simulation, restitution immédiate."
+                : "Mode démo. Connecte Supabase pour voir tes vraies sessions."}
             </p>
             <Link
               href="/sessions/new"
@@ -243,10 +248,13 @@ function StatCard({
 }) {
   return (
     <Card variant={accent ? "dark" : "default"}>
+      <div className="section-eyebrow mb-3" style={{ color: accent ? "rgba(255,255,255,0.55)" : "var(--color-gray)" }}>
+        {label}
+      </div>
       <div
         className="font-display"
         style={{
-          fontSize: "4.5rem",
+          fontSize: "4rem",
           lineHeight: "1",
           color: accent ? "var(--color-green)" : "var(--color-purple)",
         }}
@@ -255,8 +263,8 @@ function StatCard({
         {suffix && (
           <span
             style={{
-              fontSize: "1.5rem",
-              opacity: 0.6,
+              fontSize: "1.25rem",
+              opacity: 0.55,
               marginLeft: "0.25rem",
             }}
           >
@@ -264,12 +272,21 @@ function StatCard({
           </span>
         )}
       </div>
-      <div
-        className="text-meta uppercase tracking-widest mt-2"
-        style={{ color: accent ? "rgba(255,255,255,0.6)" : "var(--color-gray)" }}
-      >
-        {label}
-      </div>
     </Card>
+  );
+}
+
+function SectionHeader({
+  title,
+  action,
+}: {
+  title: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-end justify-between gap-3 flex-wrap">
+      <h2 className="text-h3">{title}</h2>
+      {action}
+    </div>
   );
 }

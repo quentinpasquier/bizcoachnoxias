@@ -98,6 +98,7 @@ export function pickFrenchVoice(gender: Gender): SpeechSynthesisVoice | null {
 interface SpeakOptions {
   text: string;
   gender: Gender;
+  seed?: string;
   rate?: number;
   pitch?: number;
   onStart?: () => void;
@@ -175,7 +176,11 @@ async function speakOpenAI(opts: SpeakOptions): Promise<boolean> {
     const res = await fetch("/api/tts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: opts.text, gender: opts.gender }),
+      body: JSON.stringify({
+        text: opts.text,
+        gender: opts.gender,
+        seed: opts.seed ?? "",
+      }),
     });
     if (!res.ok) return false;
 

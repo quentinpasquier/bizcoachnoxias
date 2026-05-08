@@ -78,9 +78,9 @@ export default async function LoginPage({
             <span style={{ color: "var(--color-green)" }}>D&apos;APPELER LE VRAI.</span>
           </h2>
           <p className="text-body-l text-white/80 mt-6">
-            Choisis un client, choisis un prospect, lance l&apos;appel. L&apos;IA
-            joue le rôle du dirigeant — objections réalistes, raccrochage
-            possible — et tu reçois une restitution chiffrée à la fin.
+            Choisis un client, choisis un persona, lance l&apos;appel. L&apos;IA
+            joue le rôle du dirigeant avec des objections réalistes. Tu reçois
+            une restitution chiffrée à la fin.
           </p>
 
           <div className="mt-10 grid grid-cols-3 gap-4 pt-8 border-t border-white/10">

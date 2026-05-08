@@ -30,6 +30,8 @@ interface DisplayMessage {
 export function ChatRoom({ session, initialMessages }: Props) {
   const router = useRouter();
   const gender: Gender = (session.gender as Gender) ?? "homme";
+  const personaName = (session.scenario_data as { persona_name?: string } | null)?.persona_name ?? "";
+  const personaRole = (session.scenario_data as { persona_role?: string } | null)?.persona_role ?? "";
 
   const [messages, setMessages] = useState<DisplayMessage[]>(
     initialMessages.map((m) => ({
@@ -44,7 +46,6 @@ export function ChatRoom({ session, initialMessages }: Props) {
   const [endLoading, setEndLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Voice state
   const [voiceMode, setVoiceMode] = useState<boolean>(true);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -52,13 +53,11 @@ export function ChatRoom({ session, initialMessages }: Props) {
   const [draft, setDraft] = useState("");
   const [voiceSupported, setVoiceSupported] = useState({ tts: false, stt: false });
 
-  // Refs
   const transcriptRef = useRef<HTMLDivElement>(null);
   const hasOpenedRef = useRef(false);
   const recognitionRef = useRef<MinimalSpeechRecognition | null>(null);
   const finalTranscriptRef = useRef("");
 
-  // ----- Initialisation voix -----
   useEffect(() => {
     setVoiceSupported({
       tts: isSpeechSynthesisSupported(),
@@ -73,7 +72,6 @@ export function ChatRoom({ session, initialMessages }: Props) {
     };
   }, []);
 
-  // ----- Auto-scroll -----
   useEffect(() => {
     transcriptRef.current?.scrollTo({
       top: transcriptRef.current.scrollHeight,
@@ -81,12 +79,10 @@ export function ChatRoom({ session, initialMessages }: Props) {
     });
   }, [messages, sending, interimTranscript]);
 
-  // ----- Décrochage initial -----
   useEffect(() => {
     if (hasOpenedRef.current) return;
     hasOpenedRef.current = true;
     if (initialMessages.length > 0) {
-      // Joue la dernière prospect si reload
       const lastProspect = [...initialMessages]
         .reverse()
         .find((m) => m.role === "prospect");
@@ -105,6 +101,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
     await speak({
       text,
       gender,
+      seed: session.id,
       onStart: () => setIsSpeaking(true),
       onEnd: () => setIsSpeaking(false),
       onError: () => setIsSpeaking(false),
@@ -166,7 +163,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
         {
           id: `system-appt-${Date.now()}`,
           role: "system",
-          content: `RDV obtenu ! ${data.signal.date ?? ""}`.trim(),
+          content: `RDV obtenu. ${data.signal.date ?? ""}`.trim(),
         },
       ]);
       setEnded(true);
@@ -211,7 +208,6 @@ export function ChatRoom({ session, initialMessages }: Props) {
     }
   }
 
-  // ----- Reconnaissance vocale -----
   function startListening() {
     if (!voiceSupported.stt || isListening || sending || ended) return;
     if (isSpeaking) {
@@ -248,8 +244,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
     recognition.onend = () => {
       setIsListening(false);
       const finalText = finalTranscriptRef.current.trim();
-      const interimText = setInterimTranscript("") ?? "";
-      void interimText;
+      setInterimTranscript("");
       if (finalText.length > 0) {
         void sendMessage(finalText);
       }
@@ -279,6 +274,15 @@ export function ChatRoom({ session, initialMessages }: Props) {
       try {
         recognitionRef.current.stop();
       } catch {}
+    }
+  }
+
+  function toggleListening() {
+    if (sending || ended || isSpeaking) return;
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
     }
   }
 
@@ -313,51 +317,80 @@ export function ChatRoom({ session, initialMessages }: Props) {
     if (lastProspect) void playProspectAudio(lastProspect.content);
   }
 
-  function toggleListening() {
-    if (sending || ended || isSpeaking) return;
-    if (isListening) {
-      stopListening();
-    } else {
-      startListening();
-    }
-  }
+  const stateLabel = isSpeaking
+    ? "Le prospect parle"
+    : isListening
+      ? "À toi"
+      : sending
+        ? "Le prospect réfléchit"
+        : ended
+          ? "Appel terminé"
+          : "En ligne";
+
+  const stateColor = isSpeaking
+    ? "var(--color-purple)"
+    : isListening
+      ? "var(--color-red)"
+      : sending
+        ? "var(--color-gray)"
+        : ended
+          ? "var(--color-gray)"
+          : "var(--color-green)";
+
+  const useVoice = voiceMode && voiceSupported.tts && voiceSupported.stt;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
-      {/* Header */}
+    <div
+      className="flex flex-col"
+      style={{ minHeight: "calc(100vh - 4rem)", background: "#FAF9FC" }}
+    >
+      {/* TOP BAR */}
       <div
         className="border-b"
         style={{
-          background: "var(--color-lavender)",
-          borderColor: "rgba(52, 36, 75, 0.08)",
+          background: "#FFFFFF",
+          borderColor: "var(--color-gray-border)",
         }}
       >
         <div className="container-noxias py-4 flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div>
-              <div className="text-h4">{session.persona_label}</div>
-              <div
-                className="text-meta uppercase tracking-widest"
-                style={{ color: "var(--color-gray)" }}
-              >
-                Appel en cours pour{" "}
-                <span style={{ color: "var(--color-purple)" }}>
-                  {session.client_name_snapshot ?? "—"}
+          <div className="flex items-center gap-4 min-w-0">
+            <div
+              className="hidden sm:flex items-center justify-center rounded-pill flex-shrink-0"
+              style={{
+                width: "44px",
+                height: "44px",
+                background: "var(--color-purple)",
+                color: "#FFFFFF",
+                fontWeight: 700,
+              }}
+            >
+              {(personaName || session.persona_label).charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <div className="text-h4 truncate">
+                {personaName || session.persona_label}
+              </div>
+              <div className="text-meta truncate" style={{ color: "var(--color-gray)" }}>
+                {personaRole || session.persona_label} · pour{" "}
+                <span style={{ color: "var(--color-purple)", fontWeight: 600 }}>
+                  {session.client_name_snapshot ?? "Client"}
                 </span>
               </div>
             </div>
             <DifficultyBadge difficulty={session.difficulty} />
           </div>
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={toggleVoiceMode}
-              className="text-meta hover:underline"
-              style={{ color: "var(--color-gray)" }}
-            >
-              Mode {voiceMode ? "texte" : "voix"}
-            </button>
             {!ended && (
+              <button
+                type="button"
+                onClick={toggleVoiceMode}
+                className="text-meta hover:underline"
+                style={{ color: "var(--color-gray)" }}
+              >
+                {useVoice ? "Mode texte" : "Mode voix"}
+              </button>
+            )}
+            {!ended ? (
               <Button
                 type="button"
                 variant="danger"
@@ -367,8 +400,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
               >
                 Raccrocher
               </Button>
-            )}
-            {ended && (
+            ) : (
               <Button
                 type="button"
                 variant="primary"
@@ -382,135 +414,142 @@ export function ChatRoom({ session, initialMessages }: Props) {
         </div>
       </div>
 
-      {/* Mode VOICE : interface call */}
-      {voiceMode && voiceSupported.tts && voiceSupported.stt && (
+      {/* MODE VOIX, prend tout l'espace */}
+      {useVoice && (
         <>
-          <div className="flex-1 flex flex-col items-center justify-center gap-8 px-6">
-            {/* Indicateur d'état */}
-            <div className="text-center">
-              <div
-                className={`text-meta uppercase tracking-widest mb-3 ${isSpeaking ? "" : "opacity-50"}`}
-                style={{ color: "var(--color-purple)" }}
+          <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 gap-10">
+            {/* État */}
+            <div className="flex items-center gap-3">
+              <span
+                className="rounded-pill"
+                style={{
+                  width: "10px",
+                  height: "10px",
+                  background: stateColor,
+                  boxShadow:
+                    isSpeaking || isListening
+                      ? `0 0 0 6px ${stateColor}26`
+                      : "none",
+                  transition: "box-shadow 0.2s",
+                }}
+                aria-hidden="true"
+              />
+              <span
+                className="section-eyebrow"
+                style={{ color: stateColor }}
               >
-                {isSpeaking
-                  ? "Le prospect parle..."
-                  : isListening
-                    ? "À toi de parler"
-                    : sending
-                      ? "Le prospect réfléchit..."
-                      : ended
-                        ? "Appel terminé"
-                        : "En ligne"}
-              </div>
-              <div className="font-display" style={{ fontSize: "2.5rem", color: "var(--color-purple)" }}>
-                {session.persona_label}
-              </div>
-              {session.scenario_data && (
-                <div className="text-body" style={{ color: "var(--color-gray)" }}>
-                  {(session.scenario_data as { persona_name?: string; persona_role?: string }).persona_name}
-                  {(session.scenario_data as { persona_role?: string }).persona_role
-                    ? ` — ${(session.scenario_data as { persona_role?: string }).persona_role}`
-                    : ""}
-                </div>
-              )}
+                {stateLabel}
+              </span>
             </div>
 
-            {/* Visualiser état */}
-            <SoundIndicator active={isSpeaking || isListening} thinking={sending} />
+            {/* Wave visuel */}
+            <SoundWave active={isSpeaking} listening={isListening} thinking={sending} />
 
-            {/* Transcript en cours (interim) */}
-            {(isListening || interimTranscript) && (
-              <div
-                className="rounded-lg px-5 py-3 max-w-2xl text-center min-h-[56px] flex items-center justify-center"
-                style={{
-                  background: "rgba(60, 200, 121, 0.10)",
-                  color: "var(--color-dark)",
-                  border: "1px solid rgba(60, 200, 121, 0.32)",
-                }}
-              >
+            {/* Interim transcript */}
+            <div
+              className="rounded-lg px-6 py-4 max-w-2xl w-full text-center min-h-[80px] flex items-center justify-center transition-all"
+              style={{
+                background: isListening
+                  ? "rgba(60, 200, 121, 0.08)"
+                  : "transparent",
+                border: isListening
+                  ? "1px dashed rgba(60, 200, 121, 0.4)"
+                  : "1px dashed transparent",
+                opacity: isListening || interimTranscript ? 1 : 0.4,
+              }}
+            >
+              {isListening ? (
                 <div>
                   <div
                     className="text-meta uppercase tracking-widest mb-1"
                     style={{ color: "var(--color-green)" }}
                   >
-                    Tu dis...
+                    Tu dis
                   </div>
-                  <div className="text-body">
-                    {interimTranscript || "(parle, je t'écoute)"}
+                  <div className="text-body" style={{ color: "var(--color-dark)" }}>
+                    {interimTranscript || "Parle, je t'écoute..."}
                   </div>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="text-meta" style={{ color: "var(--color-gray)" }}>
+                  {ended
+                    ? "L'appel est terminé."
+                    : sending
+                      ? "..."
+                      : "Clique le micro pour parler."}
+                </div>
+              )}
+            </div>
 
-            {/* Bouton micro géant — click-to-toggle */}
+            {/* MIC BUTTON */}
             {!ended && (
-              <div className="flex flex-col items-center gap-3">
+              <div className="flex flex-col items-center gap-4">
                 <button
                   type="button"
                   onClick={toggleListening}
                   disabled={sending || isSpeaking}
-                  className="rounded-pill flex items-center justify-center transition-all duration-base disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="rounded-pill flex items-center justify-center transition-all duration-base disabled:opacity-40 disabled:cursor-not-allowed relative"
                   style={{
-                    width: "120px",
-                    height: "120px",
+                    width: "112px",
+                    height: "112px",
                     background: isListening
                       ? "var(--color-red)"
                       : "var(--color-green)",
                     color: "var(--color-dark)",
-                    boxShadow: isListening
-                      ? "0 0 0 8px rgba(233, 75, 75, 0.32)"
-                      : "var(--shadow-lg)",
-                    transform: isListening ? "scale(1.06)" : "scale(1)",
-                    animation: isListening ? "micPulse 1.4s ease-in-out infinite" : "none",
                   }}
                   aria-label={isListening ? "Cliquer pour envoyer" : "Cliquer pour parler"}
                 >
-                  <MicIcon size={56} />
+                  {isListening && (
+                    <span
+                      className="absolute inset-0 rounded-pill animate-ring"
+                      aria-hidden="true"
+                    />
+                  )}
+                  <MicIcon size={48} />
                 </button>
-                <div
-                  className="text-meta uppercase tracking-widest"
-                  style={{ color: "var(--color-gray)" }}
-                >
-                  {isListening
-                    ? "Cliquer pour envoyer"
-                    : isSpeaking
-                      ? "Le prospect parle, attends"
-                      : "Cliquer pour parler"}
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={replayProspect}
+                    disabled={isSpeaking || sending}
+                    className="text-meta hover:underline disabled:opacity-40"
+                    style={{ color: "var(--color-gray)" }}
+                  >
+                    Réécouter
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={replayProspect}
-                  className="text-meta hover:underline"
-                  style={{ color: "var(--color-gray)" }}
-                >
-                  Réécouter le prospect
-                </button>
-                <style>{`
-                  @keyframes micPulse {
-                    0%, 100% { box-shadow: 0 0 0 8px rgba(233, 75, 75, 0.32); }
-                    50% { box-shadow: 0 0 0 16px rgba(233, 75, 75, 0.10); }
-                  }
-                `}</style>
               </div>
+            )}
+
+            {ended && (
+              <Button
+                type="button"
+                variant="primary"
+                onClick={() => router.push(`/sessions/${session.id}/feedback`)}
+              >
+                Voir la restitution
+              </Button>
             )}
           </div>
 
-          {/* Transcript discret en bas */}
+          {/* Transcript collapsible */}
           <div
             className="border-t"
-            style={{ borderColor: "rgba(52, 36, 75, 0.08)" }}
+            style={{ borderColor: "var(--color-gray-border)", background: "#FFFFFF" }}
           >
             <details className="container-noxias py-3">
               <summary
-                className="text-meta uppercase tracking-widest cursor-pointer"
+                className="text-meta uppercase tracking-widest cursor-pointer flex items-center gap-2 select-none"
                 style={{ color: "var(--color-gray)" }}
               >
-                Transcript ({messages.filter((m) => m.role !== "system").length} échange
-                {messages.filter((m) => m.role !== "system").length > 1 ? "s" : ""})
+                <span>Transcript</span>
+                <span className="badge" style={{ background: "var(--color-lavender)", color: "var(--color-purple)" }}>
+                  {messages.filter((m) => m.role !== "system").length}
+                </span>
               </summary>
               <div
                 ref={transcriptRef}
-                className="mt-3 max-h-[200px] overflow-y-auto space-y-2"
+                className="mt-3 max-h-[260px] overflow-y-auto space-y-2 pr-2"
               >
                 {messages.map((m) => (
                   <TranscriptLine key={m.id} message={m} />
@@ -532,18 +571,19 @@ export function ChatRoom({ session, initialMessages }: Props) {
         </>
       )}
 
-      {/* Mode TEXT (fallback / Firefox / debug) */}
-      {(!voiceMode || !voiceSupported.tts || !voiceSupported.stt) && (
+      {/* MODE TEXTE */}
+      {!useVoice && (
         <>
           {!voiceSupported.stt && (
             <div
               className="px-4 py-2 text-meta text-center"
               style={{
-                background: "rgba(245, 165, 36, 0.12)",
+                background: "rgba(245, 165, 36, 0.10)",
                 color: "#8A5A0E",
+                borderBottom: "1px solid rgba(245, 165, 36, 0.24)",
               }}
             >
-              Mode voix non disponible dans ce navigateur. Utilise Chrome ou Edge pour la voix. Ici, mode texte.
+              Mode voix indisponible dans ce navigateur. Utilise Chrome ou Edge pour la voix.
             </div>
           )}
 
@@ -581,7 +621,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
             className="border-t"
             style={{
               background: "#FFFFFF",
-              borderColor: "rgba(52, 36, 75, 0.08)",
+              borderColor: "var(--color-gray-border)",
             }}
           >
             <div className="container-noxias py-4 max-w-3xl">
@@ -597,11 +637,10 @@ export function ChatRoom({ session, initialMessages }: Props) {
                   {error}
                 </div>
               )}
-
               {ended ? (
                 <div className="text-center py-3">
                   <p className="text-body" style={{ color: "var(--color-gray)" }}>
-                    L'appel est terminé. Tu vas être redirigé vers la restitution.
+                    L&apos;appel est terminé. Redirection vers la restitution.
                   </p>
                 </div>
               ) : (
@@ -623,7 +662,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
                     }}
                     rows={2}
                     disabled={sending}
-                    placeholder="Réponds au prospect... (Entrée pour envoyer, Shift+Entrée pour passer à la ligne)"
+                    placeholder="Tape ta réponse, Entrée pour envoyer..."
                     className="input flex-1 resize-none"
                     style={{ minHeight: "60px" }}
                   />
@@ -652,7 +691,7 @@ function MicIcon({ size = 24 }: { size?: number }) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={2}
+      strokeWidth={2.2}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -665,11 +704,13 @@ function MicIcon({ size = 24 }: { size?: number }) {
   );
 }
 
-function SoundIndicator({
+function SoundWave({
   active,
+  listening,
   thinking,
 }: {
   active: boolean;
+  listening: boolean;
   thinking: boolean;
 }) {
   if (thinking) {
@@ -681,28 +722,28 @@ function SoundIndicator({
       </div>
     );
   }
+
+  const isAnimating = active || listening;
+  const color = listening ? "var(--color-red)" : "var(--color-green)";
+
   return (
-    <div className="flex items-end gap-1.5 h-12">
-      {[0, 1, 2, 3, 4].map((i) => (
+    <div className="flex items-center justify-center gap-1.5 h-16">
+      {[0, 1, 2, 3, 4, 5, 6].map((i) => (
         <span
           key={i}
-          className="w-2 rounded-pill"
+          className="w-1.5 rounded-pill"
           style={{
-            background: active
-              ? "var(--color-green)"
-              : "rgba(139, 127, 163, 0.32)",
-            height: active ? `${20 + ((i * 13) % 36)}px` : "8px",
-            transition: "height 0.2s",
-            animation: active ? `wave ${0.6 + i * 0.1}s ease-in-out infinite alternate` : "none",
+            background: isAnimating ? color : "rgba(139, 127, 163, 0.24)",
+            height: "8px",
+            transformOrigin: "center",
+            animation: isAnimating
+              ? `wave-bar ${0.6 + (i % 3) * 0.15}s ease-in-out infinite alternate`
+              : "none",
+            transform: isAnimating ? `scaleY(${1 + (i % 4)})` : "scaleY(1)",
+            transition: "background 0.2s",
           }}
         />
       ))}
-      <style>{`
-        @keyframes wave {
-          0% { height: 12px; }
-          100% { height: 44px; }
-        }
-      `}</style>
     </div>
   );
 }
@@ -711,7 +752,7 @@ function TranscriptLine({ message }: { message: DisplayMessage }) {
   if (message.role === "system") {
     return (
       <div
-        className="text-meta italic text-center"
+        className="text-meta italic text-center py-1"
         style={{ color: "var(--color-gray)" }}
       >
         {message.content}
@@ -720,10 +761,13 @@ function TranscriptLine({ message }: { message: DisplayMessage }) {
   }
   const isUser = message.role === "user";
   return (
-    <div className="text-small">
+    <div className="text-small flex gap-3">
       <span
-        className="font-medium uppercase tracking-widest text-meta mr-2"
-        style={{ color: isUser ? "var(--color-green)" : "var(--color-purple)" }}
+        className="font-semibold uppercase tracking-widest text-meta shrink-0"
+        style={{
+          color: isUser ? "var(--color-green)" : "var(--color-purple)",
+          minWidth: "70px",
+        }}
       >
         {isUser ? "Toi" : "Prospect"}
       </span>
@@ -757,9 +801,9 @@ function Bubble({ message }: { message: DisplayMessage }) {
       <div
         className="rounded-lg px-5 py-3 max-w-[80%]"
         style={{
-          background: isUser ? "var(--color-green)" : "var(--color-lavender)",
+          background: isUser ? "var(--color-green)" : "#FFFFFF",
           color: "var(--color-dark)",
-          border: isUser ? "none" : "1px solid rgba(52, 36, 75, 0.08)",
+          border: isUser ? "none" : "1px solid var(--color-gray-border)",
         }}
       >
         <div

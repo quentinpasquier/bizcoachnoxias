@@ -17,7 +17,7 @@ const ubuntu = Ubuntu({
 });
 
 export const metadata: Metadata = {
-  title: "Noxias Coach — Entraînez vos commerciaux face aux vrais prospects",
+  title: "Noxias Coach · Entraînez vos commerciaux face aux vrais prospects",
   description:
     "Coach IA pour commerciaux. Simulez des appels de prospection avec un prospect non sollicité, mesurez votre performance, progressez.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),

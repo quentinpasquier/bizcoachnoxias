@@ -101,7 +101,7 @@ export function NewClientUploader() {
                 <b>Glisse-dépose</b> tes documents ici
               </p>
               <p className="text-small" style={{ color: "var(--color-gray)" }}>
-                ou clique pour les sélectionner — PDF, DOCX, CSV, TXT, MD · max 15 MB par fichier
+                ou clique pour les sélectionner. PDF, DOCX, CSV, TXT, MD · 15 MB max par fichier
               </p>
               <p className="text-meta mt-4" style={{ color: "var(--color-gray)" }}>
                 Idéal : matrice de prospection + boîte à outils du client

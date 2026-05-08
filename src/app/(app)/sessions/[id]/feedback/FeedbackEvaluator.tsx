@@ -57,7 +57,7 @@ export function FeedbackEvaluator({ sessionId }: { sessionId: string }) {
               <span className="typing-dot" />
             </div>
             <p className="text-body" style={{ color: "var(--color-dark)" }}>
-              Le coach analyse ton appel — quelques secondes...
+              Le coach analyse ton appel. Quelques secondes...
             </p>
           </div>
         )}
