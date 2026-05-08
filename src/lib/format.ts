@@ -18,8 +18,30 @@ export function formatRelativeFr(iso: string): string {
   });
 }
 
+// Date + heure au format français : "8 mai 2026, 14:32"
+export function formatDateTimeFr(iso: string): string {
+  const date = new Date(iso);
+  return date.toLocaleString("fr-FR", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+// Date seule : "8 mai 2026"
+export function formatDateFr(iso: string): string {
+  const date = new Date(iso);
+  return date.toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 export function formatDuration(startIso: string, endIso: string | null): string {
-  if (!endIso) return "—";
+  if (!endIso) return "·";
   const start = new Date(startIso).getTime();
   const end = new Date(endIso).getTime();
   const seconds = Math.floor((end - start) / 1000);

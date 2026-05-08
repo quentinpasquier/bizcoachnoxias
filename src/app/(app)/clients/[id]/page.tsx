@@ -3,10 +3,9 @@ import { notFound } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Badge, DifficultyBadge, ScoreBadge } from "@/components/ui/Badge";
 import { StatusPill } from "@/components/ui/Status";
-import { ProgressBar } from "@/components/ui/ProgressBar";
 import { createClient } from "@/lib/supabase/server";
 import type { Client, PersonaProfile, SessionRow } from "@/lib/supabase/types";
-import { formatRelativeFr } from "@/lib/format";
+import { formatDateTimeFr } from "@/lib/format";
 
 export default async function ClientDetailPage({
   params,
@@ -16,7 +15,14 @@ export default async function ClientDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: clientData }, { data: sessionsData }] = await Promise.all([
+  const [
+    { data: clientData },
+    { data: sessionsData },
+    { data: profilesData },
+    {
+      data: { user: currentUser },
+    },
+  ] = await Promise.all([
     supabase.from("clients").select("*").eq("id", id).single(),
     supabase
       .from("sessions")
@@ -24,12 +30,20 @@ export default async function ClientDetailPage({
       .eq("client_id", id)
       .order("started_at", { ascending: false })
       .limit(10),
+    supabase.from("profiles").select("id, full_name"),
+    supabase.auth.getUser(),
   ]);
 
   if (!clientData) notFound();
   const client = clientData as Client;
   const sessions = (sessionsData ?? []) as SessionRow[];
   const personas = (client.persona_profiles ?? []) as PersonaProfile[];
+  const profileById = new Map(
+    ((profilesData ?? []) as { id: string; full_name: string | null }[]).map(
+      (p) => [p.id, p.full_name ?? "Anonyme"],
+    ),
+  );
+  const myUserId = currentUser?.id ?? null;
 
   const completed = sessions.filter((s) => s.status === "completed");
   const avgScore =
@@ -223,40 +237,59 @@ export default async function ClientDetailPage({
           </Card>
         ) : (
           <div className="space-y-3">
-            {sessions.map((s) => (
-              <Link
-                key={s.id}
-                href={
-                  s.status === "active"
-                    ? `/sessions/${s.id}`
-                    : `/sessions/${s.id}/feedback`
-                }
-              >
-                <Card hoverable className="mb-3">
-                  <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-h4">{s.persona_label}</span>
-                        <DifficultyBadge difficulty={s.difficulty} />
-                        {s.status === "active" && (
-                          <StatusPill tone="success">En cours</StatusPill>
-                        )}
-                        {s.appointment_secured && (
-                          <StatusPill tone="success">RDV</StatusPill>
-                        )}
+            {sessions.map((s) => {
+              const author = profileById.get(s.user_id) ?? "Anonyme";
+              const isMe = s.user_id === myUserId;
+              return (
+                <Link
+                  key={s.id}
+                  href={
+                    s.status === "active"
+                      ? `/sessions/${s.id}`
+                      : `/sessions/${s.id}/feedback`
+                  }
+                >
+                  <Card hoverable className="mb-3">
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                      <div className="flex-1 min-w-[200px]">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-h4">{s.persona_label}</span>
+                          <DifficultyBadge difficulty={s.difficulty} />
+                          {s.status === "active" && (
+                            <StatusPill tone="success">En cours</StatusPill>
+                          )}
+                          {s.appointment_secured && (
+                            <StatusPill tone="success">RDV</StatusPill>
+                          )}
+                          {isMe && (
+                            <span
+                              className="badge"
+                              style={{
+                                background: "rgba(60, 200, 121, 0.10)",
+                                color: "#1F6A3F",
+                              }}
+                            >
+                              Toi
+                            </span>
+                          )}
+                        </div>
+                        <p
+                          className="text-small mt-1"
+                          style={{ color: "var(--color-gray)" }}
+                        >
+                          <span style={{ color: "var(--color-dark)", fontWeight: 500 }}>
+                            {author}
+                          </span>
+                          {" · "}
+                          {formatDateTimeFr(s.started_at)}
+                        </p>
                       </div>
-                      <p
-                        className="text-small mt-1"
-                        style={{ color: "var(--color-gray)" }}
-                      >
-                        {formatRelativeFr(s.started_at)}
-                      </p>
+                      <ScoreBadge score={s.score} />
                     </div>
-                    <ScoreBadge score={s.score} />
-                  </div>
-                </Card>
-              </Link>
-            ))}
+                  </Card>
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>

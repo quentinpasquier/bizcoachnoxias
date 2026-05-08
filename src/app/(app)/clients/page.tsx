@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
-import { StatusPill } from "@/components/ui/Status";
-import { ProgressBar } from "@/components/ui/ProgressBar";
 import { PageHeader } from "@/components/PageHeader";
 import { ClientsBoard } from "./ClientsBoard";
 import { createClient } from "@/lib/supabase/server";

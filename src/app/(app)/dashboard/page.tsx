@@ -5,20 +5,22 @@ import { DifficultyBadge, ScoreBadge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/PageHeader";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { formatRelativeFr } from "@/lib/format";
+import { formatDateTimeFr } from "@/lib/format";
 import type { Client, SessionRow } from "@/lib/supabase/types";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
   const configured = isSupabaseConfigured();
 
-  let sessions: SessionRow[] = [];
-  let completedSessions: Pick<
+  let mySessions: Pick<
     SessionRow,
     "score" | "appointment_secured" | "difficulty" | "client_id"
   >[] = [];
+  let teamSessions: SessionRow[] = [];
   let clients: Pick<Client, "id" | "name" | "sector">[] = [];
+  let profileById = new Map<string, string>();
   let userName = "Commercial";
+  let myUserId: string | null = null;
 
   if (configured) {
     const {
@@ -26,6 +28,7 @@ export default async function DashboardPage() {
     } = await supabase.auth.getUser();
 
     if (user) {
+      myUserId = user.id;
       const { data: profile } = await supabase
         .from("profiles")
         .select("full_name")
@@ -34,41 +37,49 @@ export default async function DashboardPage() {
       const fullName = (profile as { full_name?: string | null } | null)?.full_name;
       if (fullName) userName = fullName.split(" ")[0];
 
-      const [{ data: sessionsData }, { data: completedData }, { data: clientsData }] =
-        await Promise.all([
-          supabase
-            .from("sessions")
-            .select("*")
-            .eq("user_id", user.id)
-            .order("started_at", { ascending: false })
-            .limit(5),
-          supabase
-            .from("sessions")
-            .select("score, appointment_secured, difficulty, client_id")
-            .eq("user_id", user.id)
-            .eq("status", "completed"),
-          supabase
-            .from("clients")
-            .select("id, name, sector")
-            .eq("active", true)
-            .order("name", { ascending: true }),
-        ]);
+      const [
+        { data: mySessionsData },
+        { data: teamSessionsData },
+        { data: clientsData },
+        { data: profilesData },
+      ] = await Promise.all([
+        supabase
+          .from("sessions")
+          .select("score, appointment_secured, difficulty, client_id")
+          .eq("user_id", user.id)
+          .eq("status", "completed"),
+        supabase
+          .from("sessions")
+          .select("*")
+          .order("started_at", { ascending: false })
+          .limit(8),
+        supabase
+          .from("clients")
+          .select("id, name, sector")
+          .eq("active", true)
+          .order("name", { ascending: true }),
+        supabase.from("profiles").select("id, full_name"),
+      ]);
 
-      sessions = (sessionsData ?? []) as SessionRow[];
-      completedSessions = (completedData ?? []) as typeof completedSessions;
+      mySessions = (mySessionsData ?? []) as typeof mySessions;
+      teamSessions = (teamSessionsData ?? []) as SessionRow[];
       clients = (clientsData ?? []) as typeof clients;
+      profileById = new Map(
+        ((profilesData ?? []) as { id: string; full_name: string | null }[]).map(
+          (p) => [p.id, p.full_name ?? "Anonyme"],
+        ),
+      );
     }
   }
 
-  const totalSessions = completedSessions.length;
+  const totalSessions = mySessions.length;
   const avgScore =
     totalSessions > 0
       ? Math.round(
-          completedSessions.reduce((acc, s) => acc + (s.score ?? 0), 0) /
-            totalSessions,
+          mySessions.reduce((acc, s) => acc + (s.score ?? 0), 0) / totalSessions,
         )
       : null;
-  const rdvSecured = completedSessions.filter((s) => s.appointment_secured).length;
+  const rdvSecured = mySessions.filter((s) => s.appointment_secured).length;
   const rdvRate =
     totalSessions > 0 ? Math.round((rdvSecured / totalSessions) * 100) : 0;
 
@@ -98,25 +109,28 @@ export default async function DashboardPage() {
         divider={false}
       />
 
-      {/* STATS */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <StatCard
-          number={totalSessions.toString()}
-          label="Sessions terminées"
-        />
-        <StatCard
-          number={avgScore !== null ? `${avgScore}` : "·"}
-          suffix={avgScore !== null ? "/100" : undefined}
-          label="Score moyen"
-        />
-        <StatCard
-          number={`${rdvRate}%`}
-          label="Taux de RDV"
-          accent
-        />
+      {/* MES STATS */}
+      <section>
+        <h2 className="text-h3 mb-4">Tes performances</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <StatCard
+            number={totalSessions.toString()}
+            label="Sessions terminées"
+          />
+          <StatCard
+            number={avgScore !== null ? `${avgScore}` : "·"}
+            suffix={avgScore !== null ? "/100" : undefined}
+            label="Score moyen"
+          />
+          <StatCard
+            number={`${rdvRate}%`}
+            label="Taux de RDV"
+            accent
+          />
+        </div>
       </section>
 
-      {/* QUICK START : clients */}
+      {/* DEMARRER */}
       {clients.length > 0 && (
         <section className="space-y-5">
           <SectionHeader
@@ -159,12 +173,12 @@ export default async function DashboardPage() {
         </section>
       )}
 
-      {/* RECENT SESSIONS */}
+      {/* ACTIVITE EQUIPE */}
       <section className="space-y-5">
         <SectionHeader
-          title="Sessions récentes"
+          title="Activité de l'équipe"
           action={
-            sessions.length > 0 ? (
+            teamSessions.length > 0 ? (
               <Link
                 href="/history"
                 className="text-small font-semibold"
@@ -176,12 +190,14 @@ export default async function DashboardPage() {
           }
         />
 
-        {sessions.length > 0 ? (
+        {teamSessions.length > 0 ? (
           <div className="space-y-3">
-            {sessions.map((s) => {
+            {teamSessions.map((s) => {
               const client = s.client_id ? clientById.get(s.client_id) : null;
               const clientName =
                 client?.name ?? s.client_name_snapshot ?? "Client supprimé";
+              const author = profileById.get(s.user_id) ?? "Anonyme";
+              const isMe = s.user_id === myUserId;
               return (
                 <Link
                   key={s.id}
@@ -213,12 +229,27 @@ export default async function DashboardPage() {
                           {s.status === "active" && (
                             <StatusPill tone="success">En cours</StatusPill>
                           )}
+                          {isMe && (
+                            <span
+                              className="badge"
+                              style={{
+                                background: "rgba(60, 200, 121, 0.10)",
+                                color: "#1F6A3F",
+                              }}
+                            >
+                              Toi
+                            </span>
+                          )}
                         </div>
                         <p
                           className="text-small"
                           style={{ color: "var(--color-gray)" }}
                         >
-                          {formatRelativeFr(s.started_at)}
+                          <span style={{ color: "var(--color-dark)", fontWeight: 500 }}>
+                            {author}
+                          </span>
+                          {" · "}
+                          {formatDateTimeFr(s.started_at)}
                         </p>
                       </div>
                       <div className="flex items-center gap-3">
@@ -241,8 +272,8 @@ export default async function DashboardPage() {
               style={{ color: "var(--color-gray)" }}
             >
               {configured
-                ? "Lance ta première simulation. Restitution immédiate."
-                : "Mode démo. Connecte Supabase pour voir tes vraies sessions."}
+                ? "Lance la première simulation de l'équipe. Restitution immédiate."
+                : "Mode démo. Connecte Supabase pour voir les sessions."}
             </p>
             <Link
               href="/sessions/new"

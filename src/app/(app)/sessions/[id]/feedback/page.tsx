@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Badge, DifficultyBadge } from "@/components/ui/Badge";
 import { createClient } from "@/lib/supabase/server";
-import { formatDuration } from "@/lib/format";
+import { formatDateTimeFr, formatDuration } from "@/lib/format";
 import type { Evaluation, MessageRow, SessionRow } from "@/lib/supabase/types";
 import { FeedbackEvaluator } from "./FeedbackEvaluator";
 
@@ -25,11 +25,18 @@ export default async function FeedbackPage({
   const s = session as SessionRow;
   if (s.status === "active") redirect(`/sessions/${id}`);
 
-  const { data: messages } = await supabase
-    .from("messages")
-    .select("*")
-    .eq("session_id", id)
-    .order("created_at", { ascending: true });
+  const [{ data: messages }, { data: profileData }] = await Promise.all([
+    supabase
+      .from("messages")
+      .select("*")
+      .eq("session_id", id)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", s.user_id)
+      .single(),
+  ]);
 
   if (!s.evaluation) {
     return <FeedbackEvaluator sessionId={id} />;
@@ -38,6 +45,7 @@ export default async function FeedbackPage({
   const evaluation = s.evaluation as Evaluation;
   const messagesList = (messages ?? []) as MessageRow[];
   const isLegacyFormat = !Array.isArray(evaluation.categories);
+  const author = (profileData as { full_name?: string | null } | null)?.full_name ?? "Anonyme";
 
   const personaName = (s.scenario_data as { persona_name?: string } | null)?.persona_name ?? "";
 
@@ -65,9 +73,13 @@ export default async function FeedbackPage({
             )}
           </span>
           <DifficultyBadge difficulty={s.difficulty} />
-          <span className="text-meta" style={{ color: "var(--color-gray)" }}>
-            {formatDuration(s.started_at, s.ended_at)}
-          </span>
+        </div>
+        <div className="mt-2 flex items-center gap-3 flex-wrap text-small" style={{ color: "var(--color-gray)" }}>
+          <span style={{ color: "var(--color-dark)", fontWeight: 500 }}>{author}</span>
+          <span>·</span>
+          <span>{formatDateTimeFr(s.started_at)}</span>
+          <span>·</span>
+          <span>Durée : {formatDuration(s.started_at, s.ended_at)}</span>
         </div>
       </header>
 
