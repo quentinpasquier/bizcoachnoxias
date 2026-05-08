@@ -227,10 +227,20 @@ export async function speak(
     const openAIAvailable = await isOpenAITtsAvailable();
     if (openAIAvailable) {
       const ok = await speakOpenAI(opts);
-      if (ok) return { engine: "openai" };
+      if (ok) {
+        if (typeof window !== "undefined") {
+          console.info("[TTS] Engine: OpenAI (tts-1-hd)");
+        }
+        return { engine: "openai" };
+      }
     }
   }
 
+  if (typeof window !== "undefined") {
+    console.warn(
+      "[TTS] Engine: Web Speech API (fallback). OpenAI non disponible.",
+    );
+  }
   speakWebSpeech(opts);
   return { engine: "webspeech" };
 }

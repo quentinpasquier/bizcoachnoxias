@@ -52,6 +52,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
   const [interimTranscript, setInterimTranscript] = useState("");
   const [draft, setDraft] = useState("");
   const [voiceSupported, setVoiceSupported] = useState({ tts: false, stt: false });
+  const [ttsEngine, setTtsEngine] = useState<"openai" | "webspeech" | null>(null);
 
   const transcriptRef = useRef<HTMLDivElement>(null);
   const hasOpenedRef = useRef(false);
@@ -98,7 +99,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
   async function playProspectAudio(text: string) {
     if (!voiceMode || !voiceSupported.tts || ended) return;
     setIsSpeaking(true);
-    await speak({
+    const result = await speak({
       text,
       gender,
       seed: session.id,
@@ -106,6 +107,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
       onEnd: () => setIsSpeaking(false),
       onError: () => setIsSpeaking(false),
     });
+    setTtsEngine(result.engine);
   }
 
   async function requestProspectOpening() {
@@ -380,6 +382,28 @@ export function ChatRoom({ session, initialMessages }: Props) {
             <DifficultyBadge difficulty={session.difficulty} />
           </div>
           <div className="flex items-center gap-3">
+            {ttsEngine && (
+              <span
+                className="text-meta hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-pill"
+                style={{
+                  background:
+                    ttsEngine === "openai"
+                      ? "rgba(60, 200, 121, 0.10)"
+                      : "rgba(245, 165, 36, 0.12)",
+                  color:
+                    ttsEngine === "openai" ? "#1F6A3F" : "#8A5A0E",
+                  border: `1px solid ${
+                    ttsEngine === "openai"
+                      ? "rgba(60, 200, 121, 0.32)"
+                      : "rgba(245, 165, 36, 0.32)"
+                  }`,
+                }}
+              >
+                {ttsEngine === "openai"
+                  ? "Voix : OpenAI HD"
+                  : "Voix : navigateur (fallback)"}
+              </span>
+            )}
             {!ended && (
               <button
                 type="button"
