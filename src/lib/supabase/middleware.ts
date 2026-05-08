@@ -6,7 +6,14 @@ import {
   isSupabaseConfigured,
 } from "./env";
 
-const PUBLIC_ROUTES = ["/", "/login", "/signup", "/auth/callback", "/auth/confirm"];
+const PUBLIC_ROUTES = [
+  "/",
+  "/login",
+  "/signup",
+  "/auth/callback",
+  "/auth/confirm",
+  "/api/debug",
+];
 
 export async function updateSession(request: NextRequest) {
   // Mode démo : si Supabase n'est pas configuré, on laisse passer toutes
