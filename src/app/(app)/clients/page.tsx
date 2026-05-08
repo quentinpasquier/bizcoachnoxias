@@ -2,17 +2,26 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Client } from "@/lib/supabase/types";
 
 export default async function ClientsPage() {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("clients")
-    .select("*")
-    .order("active", { ascending: false })
-    .order("name", { ascending: true });
+  const configured = isSupabaseConfigured();
 
-  const clients = (data ?? []) as Client[];
+  let clients: Client[] = [];
+  let errorMessage: string | null = null;
+
+  if (configured) {
+    const { data, error } = await supabase
+      .from("clients")
+      .select("*")
+      .order("active", { ascending: false })
+      .order("name", { ascending: true });
+
+    clients = (data ?? []) as Client[];
+    if (error) errorMessage = error.message;
+  }
 
   return (
     <div className="container-noxias py-10 space-y-8">
@@ -29,7 +38,7 @@ export default async function ClientsPage() {
         </Link>
       </div>
 
-      {error && (
+      {errorMessage && (
         <div
           className="rounded-md px-4 py-3 text-small"
           style={{
@@ -38,7 +47,7 @@ export default async function ClientsPage() {
             border: "1px solid rgba(233, 75, 75, 0.24)",
           }}
         >
-          Erreur de chargement : {error.message}
+          Erreur de chargement : {errorMessage}
         </div>
       )}
 
@@ -46,7 +55,9 @@ export default async function ClientsPage() {
         <Card variant="lavender" className="text-center py-12">
           <h3 className="text-h3 mb-2">Aucun client pour l'instant.</h3>
           <p className="text-body mb-6" style={{ color: "var(--color-gray)" }}>
-            Ajoute un premier client pour démarrer les sessions de prospection.
+            {configured
+              ? "Ajoute un premier client pour démarrer les sessions de prospection."
+              : "Mode démo : connecte Supabase pour voir tes clients réels."}
           </p>
           <Link href="/clients/new" className="btn btn-primary inline-flex">
             Ajouter le premier client

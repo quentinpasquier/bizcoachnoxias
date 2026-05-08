@@ -1,30 +1,44 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { getSupabaseUrl, getSupabaseAnonKey } from "./env";
+import {
+  getSupabaseUrlOrPlaceholder,
+  getSupabaseAnonKeyOrPlaceholder,
+  isSupabaseConfigured,
+} from "./env";
 
 const PUBLIC_ROUTES = ["/", "/login", "/signup", "/auth/callback", "/auth/confirm"];
 
 export async function updateSession(request: NextRequest) {
+  // Mode démo : si Supabase n'est pas configuré, on laisse passer toutes
+  // les routes pour permettre la prévisualisation de l'UI.
+  if (!isSupabaseConfigured()) {
+    return NextResponse.next({ request });
+  }
+
   let response = NextResponse.next({ request });
 
-  const supabase = createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(
-        cookiesToSet: { name: string; value: string; options?: CookieOptions }[],
-      ) {
-        cookiesToSet.forEach(({ name, value }) =>
-          request.cookies.set(name, value),
-        );
-        response = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) =>
-          response.cookies.set(name, value, options),
-        );
+  const supabase = createServerClient(
+    getSupabaseUrlOrPlaceholder(),
+    getSupabaseAnonKeyOrPlaceholder(),
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(
+          cookiesToSet: { name: string; value: string; options?: CookieOptions }[],
+        ) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value),
+          );
+          response = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options),
+          );
+        },
       },
     },
-  });
+  );
 
   const {
     data: { user },

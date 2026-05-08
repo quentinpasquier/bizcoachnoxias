@@ -2,26 +2,35 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Badge, DifficultyBadge, ScoreBadge } from "@/components/ui/Badge";
 import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { formatRelativeFr, formatDuration } from "@/lib/format";
 import type { Client, SessionRow } from "@/lib/supabase/types";
 
 export default async function HistoryPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const configured = isSupabaseConfigured();
 
-  const [{ data: sessionsData }, { data: clientsData }] = await Promise.all([
-    supabase
-      .from("sessions")
-      .select("*")
-      .eq("user_id", user!.id)
-      .order("started_at", { ascending: false }),
-    supabase.from("clients").select("id, name, sector"),
-  ]);
+  let sessions: SessionRow[] = [];
+  let clients: Pick<Client, "id" | "name" | "sector">[] = [];
 
-  const sessions = (sessionsData ?? []) as SessionRow[];
-  const clients = (clientsData ?? []) as Pick<Client, "id" | "name" | "sector">[];
+  if (configured) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const [{ data: sessionsData }, { data: clientsData }] = await Promise.all([
+        supabase
+          .from("sessions")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("started_at", { ascending: false }),
+        supabase.from("clients").select("id, name, sector"),
+      ]);
+      sessions = (sessionsData ?? []) as SessionRow[];
+      clients = (clientsData ?? []) as typeof clients;
+    }
+  }
+
   const clientById = new Map(clients.map((c) => [c.id, c]));
 
   return (

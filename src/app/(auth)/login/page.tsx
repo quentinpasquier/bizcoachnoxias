@@ -1,12 +1,19 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { LoginForm } from "./LoginForm";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 
 export default async function LoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ next?: string; error?: string }>;
 }) {
+  // Mode démo : pas d'auth, on va direct au dashboard.
+  if (!isSupabaseConfigured()) {
+    redirect("/dashboard");
+  }
+
   const params = await searchParams;
   return (
     <div
@@ -68,12 +75,12 @@ export default async function LoginPage({
           >
             ENTRAÎNE-TOI AVANT
             <br />
-            <span style={{ color: "var(--color-green)" }}>D'APPELER LE VRAI.</span>
+            <span style={{ color: "var(--color-green)" }}>D&apos;APPELER LE VRAI.</span>
           </h2>
           <p className="text-body-l text-white/80 mt-6">
-            Choisis un client, choisis un prospect, lance l'appel. L'IA joue le
-            rôle du dirigeant — objections réalistes, raccrochage possible —
-            et tu reçois une restitution chiffrée à la fin.
+            Choisis un client, choisis un prospect, lance l&apos;appel. L&apos;IA
+            joue le rôle du dirigeant — objections réalistes, raccrochage
+            possible — et tu reçois une restitution chiffrée à la fin.
           </p>
 
           <div className="mt-10 grid grid-cols-3 gap-4 pt-8 border-t border-white/10">

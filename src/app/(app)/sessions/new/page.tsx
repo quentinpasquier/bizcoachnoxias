@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { NewSessionForm } from "./NewSessionForm";
 import { PERSONAS, DIFFICULTY_CONFIG } from "@/lib/personas";
 import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Client } from "@/lib/supabase/types";
 
 export default async function NewSessionPage({
@@ -13,14 +14,17 @@ export default async function NewSessionPage({
 }) {
   const params = await searchParams;
   const supabase = await createClient();
+  const configured = isSupabaseConfigured();
 
-  const { data: clientsData } = await supabase
-    .from("clients")
-    .select("*")
-    .eq("active", true)
-    .order("name", { ascending: true });
-
-  const clients = (clientsData ?? []) as Client[];
+  let clients: Client[] = [];
+  if (configured) {
+    const { data: clientsData } = await supabase
+      .from("clients")
+      .select("*")
+      .eq("active", true)
+      .order("name", { ascending: true });
+    clients = (clientsData ?? []) as Client[];
+  }
 
   if (clients.length === 0) {
     return (
@@ -30,9 +34,13 @@ export default async function NewSessionPage({
           <h1 className="text-h2">Nouvelle session</h1>
         </div>
         <Card variant="lavender" className="text-center py-12">
-          <h3 className="text-h3 mb-2">Aucun client actif.</h3>
+          <h3 className="text-h3 mb-2">
+            {configured ? "Aucun client actif." : "Aucun client (mode démo)."}
+          </h3>
           <p className="text-body mb-6" style={{ color: "var(--color-gray)" }}>
-            Avant de lancer une session, ajoute au moins un client à prospecter.
+            {configured
+              ? "Avant de lancer une session, ajoute au moins un client à prospecter."
+              : "Connecte Supabase pour voir tes clients réels et démarrer des sessions."}
           </p>
           <Link href="/clients/new" className="btn btn-primary inline-flex">
             Ajouter un client

@@ -2,41 +2,52 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Badge, DifficultyBadge, ScoreBadge } from "@/components/ui/Badge";
 import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { formatRelativeFr } from "@/lib/format";
 import type { Client, SessionRow } from "@/lib/supabase/types";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const configured = isSupabaseConfigured();
 
-  const [{ data: sessionsData }, { data: completedData }, { data: clientsData }] =
-    await Promise.all([
-      supabase
-        .from("sessions")
-        .select("*")
-        .eq("user_id", user!.id)
-        .order("started_at", { ascending: false })
-        .limit(5),
-      supabase
-        .from("sessions")
-        .select("score, appointment_secured, difficulty, client_id")
-        .eq("user_id", user!.id)
-        .eq("status", "completed"),
-      supabase
-        .from("clients")
-        .select("id, name, sector")
-        .eq("active", true)
-        .order("name", { ascending: true }),
-    ]);
-
-  const sessions = (sessionsData ?? []) as SessionRow[];
-  const completedSessions = (completedData ?? []) as Pick<
+  let sessions: SessionRow[] = [];
+  let completedSessions: Pick<
     SessionRow,
     "score" | "appointment_secured" | "difficulty" | "client_id"
-  >[];
-  const clients = (clientsData ?? []) as Pick<Client, "id" | "name" | "sector">[];
+  >[] = [];
+  let clients: Pick<Client, "id" | "name" | "sector">[] = [];
+
+  if (configured) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      const [{ data: sessionsData }, { data: completedData }, { data: clientsData }] =
+        await Promise.all([
+          supabase
+            .from("sessions")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("started_at", { ascending: false })
+            .limit(5),
+          supabase
+            .from("sessions")
+            .select("score, appointment_secured, difficulty, client_id")
+            .eq("user_id", user.id)
+            .eq("status", "completed"),
+          supabase
+            .from("clients")
+            .select("id, name, sector")
+            .eq("active", true)
+            .order("name", { ascending: true }),
+        ]);
+
+      sessions = (sessionsData ?? []) as SessionRow[];
+      completedSessions = (completedData ?? []) as typeof completedSessions;
+      clients = (clientsData ?? []) as typeof clients;
+    }
+  }
 
   const totalSessions = completedSessions.length;
   const avgScore =
@@ -202,7 +213,9 @@ export default async function DashboardPage() {
               className="text-body mb-6"
               style={{ color: "var(--color-gray)" }}
             >
-              Démarre ta première simulation. 5 minutes, restitution immédiate.
+              {configured
+                ? "Démarre ta première simulation. 5 minutes, restitution immédiate."
+                : "Mode démo : connecte Supabase pour voir tes vraies sessions."}
             </p>
             <Link
               href="/sessions/new"
