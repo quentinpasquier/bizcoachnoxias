@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { NewSessionForm } from "./NewSessionForm";
-import { PERSONAS, DIFFICULTY_CONFIG } from "@/lib/personas";
+import { DIFFICULTY_CONFIG } from "@/lib/personas";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Client } from "@/lib/supabase/types";
@@ -38,9 +38,7 @@ export default async function NewSessionPage({
             {configured ? "Aucun client actif." : "Aucun client (mode démo)."}
           </h3>
           <p className="text-body mb-6" style={{ color: "var(--color-gray)" }}>
-            {configured
-              ? "Avant de lancer une session, ajoute au moins un client à prospecter."
-              : "Connecte Supabase pour voir tes clients réels et démarrer des sessions."}
+            Avant de lancer une session, ajoute au moins un client avec ses docs.
           </p>
           <Link href="/clients/new" className="btn btn-primary inline-flex">
             Ajouter un client
@@ -50,7 +48,6 @@ export default async function NewSessionPage({
     );
   }
 
-  // Si un seul client actif et pas de paramètre, on présélectionne d'office.
   if (!params.client && clients.length === 1) {
     redirect(`/sessions/new?client=${clients[0].id}`);
   }
@@ -64,7 +61,8 @@ export default async function NewSessionPage({
         <span className="divider-green block mb-3" />
         <h1 className="text-h2">Nouvelle session</h1>
         <p className="text-body mt-1" style={{ color: "var(--color-gray)" }}>
-          Choisis le client pour qui tu prospectes, le persona à appeler, le niveau.
+          Choisis le client, le persona, le genre et le niveau. Un scénario réaliste sera
+          généré à partir des docs du client.
         </p>
       </div>
 
@@ -75,14 +73,10 @@ export default async function NewSessionPage({
           sector: c.sector,
           value_proposition: c.value_proposition,
           product_pitch: c.product_pitch,
+          target_personas: c.target_personas ?? [],
+          has_docs: Boolean(c.synced_content),
         }))}
         preselectedClientId={preselectedClient?.id ?? ""}
-        personas={PERSONAS.map((p) => ({
-          key: p.key,
-          label: p.label,
-          role: p.role,
-          company: p.company,
-        }))}
         difficulties={Object.entries(DIFFICULTY_CONFIG).map(([key, cfg]) => ({
           key,
           label: cfg.label,

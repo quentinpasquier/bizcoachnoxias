@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateProspectReply } from "@/lib/prospect-engine";
-import type { Client, Difficulty, MessageRow, SessionRow } from "@/lib/supabase/types";
+import type {
+  Client,
+  Difficulty,
+  Gender,
+  MessageRow,
+  Scenario,
+  SessionRow,
+} from "@/lib/supabase/types";
+
+export const maxDuration = 60;
 
 export async function POST(
   request: Request,
@@ -41,7 +50,14 @@ export async function POST(
     );
   }
 
-  // Charge le client lié — la session a un client_id (sinon fallback vers un client virtuel via le snapshot)
+  if (!session.scenario_data || !session.gender) {
+    return NextResponse.json(
+      { error: "Session sans scénario ou sans genre — création legacy non supportée." },
+      { status: 409 },
+    );
+  }
+  const scenario = session.scenario_data as Scenario;
+
   let client: Client | null = null;
   if (session.client_id) {
     const { data } = await supabase
@@ -52,24 +68,12 @@ export async function POST(
     client = (data as Client) ?? null;
   }
   if (!client) {
-    // Fallback de sécurité (client supprimé) : on reconstruit un minimum à partir du snapshot.
-    client = {
-      id: session.client_id ?? "deleted",
-      name: session.client_name_snapshot ?? "Client",
-      sector: null,
-      description: null,
-      value_proposition: null,
-      product_pitch: session.product_pitch ?? "",
-      ideal_targets: null,
-      typical_objections: [],
-      active: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      created_by: null,
-    };
+    return NextResponse.json(
+      { error: "Client introuvable pour cette session" },
+      { status: 404 },
+    );
   }
 
-  // Insert user message si fourni.
   if (body.content && body.content.trim().length > 0) {
     const { error: insertErr } = await supabase.from("messages").insert({
       session_id: sessionId,
@@ -80,13 +84,9 @@ export async function POST(
       return NextResponse.json({ error: insertErr.message }, { status: 500 });
     }
   } else if (!body.opening) {
-    return NextResponse.json(
-      { error: "Message vide" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Message vide" }, { status: 400 });
   }
 
-  // Récup historique complet.
   const { data: history } = await supabase
     .from("messages")
     .select("role, content")
@@ -99,23 +99,19 @@ export async function POST(
     content: (m as { role: string; content: string }).content,
   }));
 
-  // Génère la réponse du prospect.
   let reply;
   try {
     reply = await generateProspectReply({
       difficulty: session.difficulty as Difficulty,
-      personaKey: session.persona_key,
+      gender: session.gender as Gender,
       client,
+      scenario,
       history: turns,
     });
   } catch (err) {
-    return NextResponse.json(
-      { error: (err as Error).message },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
 
-  // Insert prospect message si non vide.
   let prospectMessage: Pick<MessageRow, "id" | "content"> | null = null;
   if (reply.text && reply.text.length > 0) {
     const { data: inserted, error: insertProspectErr } = await supabase
@@ -142,7 +138,6 @@ export async function POST(
     prospectMessage = inserted as Pick<MessageRow, "id" | "content">;
   }
 
-  // Si signal hangup ou appointment, on ferme la session.
   let sessionEnded = false;
   if (reply.signal.type === "hangup") {
     await supabase

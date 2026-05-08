@@ -31,6 +31,11 @@ export async function POST(request: Request) {
       value_proposition: body.value_proposition ?? null,
       product_pitch: body.product_pitch.trim(),
       ideal_targets: body.ideal_targets ?? null,
+      matrice_url: body.matrice_url ?? null,
+      toolbox_url: body.toolbox_url ?? null,
+      target_personas: Array.isArray(body.target_personas)
+        ? body.target_personas
+        : [],
       typical_objections: Array.isArray(body.typical_objections)
         ? body.typical_objections
         : [],

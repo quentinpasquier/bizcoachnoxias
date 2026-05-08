@@ -1,10 +1,10 @@
 import { getAnthropic, EVALUATOR_MODEL } from "./anthropic";
-import { DIFFICULTY_CONFIG, getPersona } from "./personas";
-import type { Client, Difficulty, Evaluation } from "./supabase/types";
+import { DIFFICULTY_CONFIG } from "./personas";
+import type { Client, Difficulty, Evaluation, Scenario } from "./supabase/types";
 
 export interface EvaluationInput {
   difficulty: Difficulty;
-  personaKey: string;
+  scenario: Scenario;
   client: Client;
   conversation: { role: "user" | "prospect"; content: string }[];
   endedBy: "user" | "prospect" | "timeout";
@@ -27,8 +27,11 @@ const EVALUATION_SCHEMA = `{
   "outcome_summary": "<2 à 3 phrases : ce qui s'est passé, pourquoi, et ce que ça dit du commercial>"
 }`;
 
+function truncate(s: string, n: number): string {
+  return s.length > n ? `${s.slice(0, n)}\n\n[... contenu tronqué ...]` : s;
+}
+
 export async function evaluateSession(input: EvaluationInput): Promise<Evaluation> {
-  const persona = getPersona(input.personaKey);
   const cfg = DIFFICULTY_CONFIG[input.difficulty];
 
   const transcript = input.conversation
@@ -46,38 +49,57 @@ export async function evaluateSession(input: EvaluationInput): Promise<Evaluatio
         ? "RÉSULTAT : Le commercial a mis fin à l'appel."
         : "RÉSULTAT : Appel terminé par expiration.";
 
-  const system = `Tu es coach commercial senior chez Noxias, agence de prospection externalisée. Tu évalues les commerciaux Noxias avec une rigueur exigeante mais bienveillante. Ton style : direct, concret, dirigeant à dirigeant. Pas de blabla, pas de mots anglais inutiles.
+  const docsBlock = input.client.synced_content
+    ? `\n# RÉFÉRENTIEL DE PROSPECTION DU CLIENT (matrice + boîte à outils)
+Ce que le commercial Noxias est censé maîtriser pour porter ${input.client.name}.
 
-Tu vas analyser un appel de prospection téléphonique entre un commercial Noxias (en formation) et un prospect simulé. Le commercial appelle au nom d'un client de Noxias et pitche l'offre de ce client.
+\`\`\`
+${truncate(input.client.synced_content, 25000)}
+\`\`\`
+`
+    : "";
 
-Tu dois noter sur 5 axes (chacun /20) :
-- ACCROCHE : pertinence des 30 premières secondes, accroche personnalisée vs générique, capacité à se présenter comme appelant pour le bon compte
-- DECOUVERTE : qualité des questions ouvertes, écoute active, capacité à creuser
-- OBJECTIONS : gestion des résistances (acquittement → reformulation → réponse), surtout face aux objections typiques du client
-- VALEUR : capacité à transmettre la value proposition du client de Noxias de manière concrète et liée au contexte du prospect
-- CLOSING : assertivité dans la demande de RDV, proposition d'un créneau précis, gestion du « non »
+  const system = `Tu es coach commercial senior chez Noxias, agence de prospection externalisée. Tu évalues les commerciaux Noxias avec rigueur exigeante mais bienveillante. Style : direct, concret, dirigeant à dirigeant. Pas de blabla, pas d'anglicismes inutiles.
+
+Tu analyses un appel de prospection téléphonique entre un commercial Noxias (en formation) et un prospect simulé. Le commercial appelle au nom d'un client de Noxias et porte son pitch.
+
+Tu notes sur 5 axes (chacun /20) :
+- ACCROCHE : pertinence des 30 premières secondes, accroche personnalisée, conformité au script référencé dans la boîte à outils
+- DECOUVERTE : qualité des questions ouvertes, écoute active, capacité à creuser les KPI/pains du référentiel
+- OBJECTIONS : gestion des résistances (acquittement → reformulation → réponse), particulièrement face aux objections référencées
+- VALEUR : capacité à transmettre la value proposition de manière concrète et liée au contexte du prospect
+- CLOSING : assertivité dans la demande de RDV, créneau précis, gestion du « non »
 
 Score global = somme des 5 axes (sur 100).
 
-Tu réponds UNIQUEMENT avec un JSON valide, sans texte avant ni après, sans bloc markdown. Schéma exact :
+Tu réponds UNIQUEMENT en JSON valide, sans markdown, sans texte avant/après. Schéma exact :
 
 ${EVALUATION_SCHEMA}
 
 Règles :
-- Sois EXIGEANT : sur du Débutant, 60/100 c'est correct ; sur de l'Expert, 60/100 c'est déjà très bon.
-- Cite des extraits de l'appel quand c'est pertinent (« Quand tu dis "...", tu... »).
-- Tutoie le commercial dans tes commentaires (formation = proximité).
-- Pas de langue de bois. Si c'était mauvais, dis-le. Si c'était excellent, dis-le aussi.
-- Tu peux et dois faire référence à l'offre du client (sa value proposition, son pitch) pour juger si elle a été bien transmise.`;
+- Sois EXIGEANT : sur Débutant, 60/100 c'est correct ; sur Expert, 60/100 c'est déjà très bon.
+- Cite des extraits de l'appel (« Quand tu dis "...", tu... »).
+- Réfère-toi aux concepts du référentiel client.
+- Tutoie le commercial dans tes commentaires.
+- Pas de langue de bois.`;
 
   const userMessage = `# CONTEXTE DE LA SESSION
 
 Niveau : ${cfg.label}
-Persona simulé : ${persona?.label ?? input.personaKey} (${persona?.role ?? "?"} chez ${persona?.company ?? "?"})
+Persona joué (scénario généré) :
+- Nom : ${input.scenario.persona_name} (${input.scenario.persona_role})
+- Entreprise : ${input.scenario.company_name}
+- Contexte : ${input.scenario.company_context}
+- Situation : ${input.scenario.current_situation}
+- Pains cachés : ${input.scenario.hidden_pain_points.join(" ; ")}
+- KPIs surveillés : ${input.scenario.kpis_to_probe.join(" ; ")}
+- Critères de décision RDV : ${input.scenario.decision_criteria}
 
-Client Noxias pour qui le commercial prospectait : ${input.client.name}${input.client.sector ? ` (${input.client.sector})` : ""}
+Client Noxias : ${input.client.name}${input.client.sector ? ` (${input.client.sector})` : ""}
 Pitch que le commercial était censé porter : ${input.client.product_pitch}
 ${input.client.value_proposition ? `Value prop : ${input.client.value_proposition}` : ""}
+
+${docsBlock}
 
 ${outcomeLine}
 

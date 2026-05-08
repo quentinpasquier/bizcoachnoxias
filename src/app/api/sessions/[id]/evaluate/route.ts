@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { evaluateSession } from "@/lib/evaluator";
-import type { Client, Difficulty, SessionRow } from "@/lib/supabase/types";
+import type { Client, Difficulty, Scenario, SessionRow } from "@/lib/supabase/types";
 
 export const maxDuration = 60;
 
@@ -44,7 +44,14 @@ export async function POST(
     );
   }
 
-  // Charge client (avec fallback snapshot si supprimé).
+  if (!session.scenario_data) {
+    return NextResponse.json(
+      { error: "Session legacy sans scénario — pas évaluable." },
+      { status: 409 },
+    );
+  }
+  const scenario = session.scenario_data as Scenario;
+
   let client: Client | null = null;
   if (session.client_id) {
     const { data } = await supabase
@@ -55,20 +62,10 @@ export async function POST(
     client = (data as Client) ?? null;
   }
   if (!client) {
-    client = {
-      id: session.client_id ?? "deleted",
-      name: session.client_name_snapshot ?? "Client",
-      sector: null,
-      description: null,
-      value_proposition: null,
-      product_pitch: session.product_pitch ?? "",
-      ideal_targets: null,
-      typical_objections: [],
-      active: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      created_by: null,
-    };
+    return NextResponse.json(
+      { error: "Client introuvable pour cette session" },
+      { status: 404 },
+    );
   }
 
   const { data: messagesData } = await supabase
@@ -111,7 +108,6 @@ export async function POST(
     return NextResponse.json({ ok: true });
   }
 
-  // Détecter raison de hangup depuis le metadata du dernier message prospect.
   let hangupReason: string | undefined;
   for (let i = messages.length - 1; i >= 0; i--) {
     const m = messages[i];
@@ -126,7 +122,7 @@ export async function POST(
   try {
     const evaluation = await evaluateSession({
       difficulty: session.difficulty as Difficulty,
-      personaKey: session.persona_key,
+      scenario,
       client,
       conversation: messages.map((m) => ({
         role: m.role as "user" | "prospect",

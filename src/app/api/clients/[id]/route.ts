@@ -28,6 +28,10 @@ export async function PATCH(
   if (typeof body.product_pitch === "string")
     update.product_pitch = body.product_pitch.trim();
   if ("ideal_targets" in body) update.ideal_targets = body.ideal_targets;
+  if ("matrice_url" in body) update.matrice_url = body.matrice_url;
+  if ("toolbox_url" in body) update.toolbox_url = body.toolbox_url;
+  if (Array.isArray(body.target_personas))
+    update.target_personas = body.target_personas;
   if (Array.isArray(body.typical_objections))
     update.typical_objections = body.typical_objections;
   if (typeof body.active === "boolean") update.active = body.active;
