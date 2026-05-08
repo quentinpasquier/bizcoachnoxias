@@ -1,9 +1,12 @@
-// Helpers Web Speech API : TTS (parole prospect) + STT (parole commercial).
-// Tout fonctionne côté navigateur, sans backend, sans coût.
+// Helpers vocaux : TTS (parole prospect) + STT (parole commercial).
+// TTS : OpenAI en priorité (qualité), fallback Web Speech (gratuit).
+// STT : Web Speech API (gratuit, en local navigateur).
 
 import type { Gender } from "./supabase/types";
 
-// ---------- Speech Synthesis (TTS) ----------
+// ====================================================================
+// Speech Synthesis (TTS) — Web Speech API (fallback navigateur)
+// ====================================================================
 
 let cachedVoices: SpeechSynthesisVoice[] | null = null;
 
@@ -29,7 +32,6 @@ export function loadVoices(): Promise<SpeechSynthesisVoice[]> {
     };
     window.speechSynthesis.addEventListener("voiceschanged", handler);
 
-    // Safety fallback : si l'event ne se déclenche pas après 1s
     setTimeout(() => {
       const voices = window.speechSynthesis.getVoices();
       if (voices.length > 0) {
@@ -47,8 +49,6 @@ export function getVoices(): SpeechSynthesisVoice[] {
   return window.speechSynthesis.getVoices();
 }
 
-// Heuristique simple : choisit une voix française qui matche le genre.
-// Fallback : première voix française dispo, puis n'importe quelle voix.
 export function pickFrenchVoice(gender: Gender): SpeechSynthesisVoice | null {
   const voices = getVoices();
   if (voices.length === 0) return null;
@@ -56,7 +56,6 @@ export function pickFrenchVoice(gender: Gender): SpeechSynthesisVoice | null {
   const french = voices.filter((v) => v.lang.toLowerCase().startsWith("fr"));
   if (french.length === 0) return voices[0] ?? null;
 
-  // Mots-clés par genre — pas parfait mais marche sur la plupart des OS.
   const masculineKeywords = [
     "thomas",
     "henri",
@@ -92,25 +91,23 @@ export function pickFrenchVoice(gender: Gender): SpeechSynthesisVoice | null {
     }
   }
 
-  // Fallback : première voix française "normale" (pas Compact)
   const standard = french.find((v) => !v.name.toLowerCase().includes("compact"));
   return standard ?? french[0];
 }
 
-export interface SpeakOptions {
+interface SpeakOptions {
   text: string;
   gender: Gender;
-  rate?: number; // 0.1 - 10, défaut 1
-  pitch?: number; // 0 - 2, défaut 1
+  rate?: number;
+  pitch?: number;
   onStart?: () => void;
   onEnd?: () => void;
-  onError?: (err: SpeechSynthesisErrorEvent) => void;
+  onError?: (err: Event) => void;
 }
 
-export function speak(opts: SpeakOptions): SpeechSynthesisUtterance | null {
+function speakWebSpeech(opts: SpeakOptions): SpeechSynthesisUtterance | null {
   if (typeof window === "undefined" || !window.speechSynthesis) return null;
 
-  // Coupe ce qui était en cours
   window.speechSynthesis.cancel();
 
   const utterance = new SpeechSynthesisUtterance(opts.text);
@@ -124,22 +121,125 @@ export function speak(opts: SpeakOptions): SpeechSynthesisUtterance | null {
   if (opts.onStart) utterance.addEventListener("start", opts.onStart);
   if (opts.onEnd) utterance.addEventListener("end", opts.onEnd);
   if (opts.onError) {
-    utterance.addEventListener("error", (e) =>
-      opts.onError!(e as SpeechSynthesisErrorEvent),
-    );
+    utterance.addEventListener("error", (e) => opts.onError!(e));
   }
 
   window.speechSynthesis.speak(utterance);
   return utterance;
 }
 
+// ====================================================================
+// OpenAI TTS — qualité supérieure, via /api/tts
+// ====================================================================
+
+let openaiAvailableCache: boolean | null = null;
+
+export async function isOpenAITtsAvailable(): Promise<boolean> {
+  if (openaiAvailableCache !== null) return openaiAvailableCache;
+  try {
+    const res = await fetch("/api/tts");
+    if (!res.ok) {
+      openaiAvailableCache = false;
+      return false;
+    }
+    const data = (await res.json()) as { available?: boolean };
+    openaiAvailableCache = Boolean(data.available);
+    return openaiAvailableCache;
+  } catch {
+    openaiAvailableCache = false;
+    return false;
+  }
+}
+
+let currentAudio: HTMLAudioElement | null = null;
+let currentObjectUrl: string | null = null;
+
+function stopOpenAIAudio() {
+  if (currentAudio) {
+    try {
+      currentAudio.pause();
+      currentAudio.src = "";
+    } catch {}
+    currentAudio = null;
+  }
+  if (currentObjectUrl) {
+    try {
+      URL.revokeObjectURL(currentObjectUrl);
+    } catch {}
+    currentObjectUrl = null;
+  }
+}
+
+async function speakOpenAI(opts: SpeakOptions): Promise<boolean> {
+  try {
+    const res = await fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: opts.text, gender: opts.gender }),
+    });
+    if (!res.ok) return false;
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+
+    stopOpenAIAudio();
+    currentObjectUrl = url;
+    const audio = new Audio(url);
+    currentAudio = audio;
+
+    audio.addEventListener("play", () => opts.onStart?.());
+    audio.addEventListener("ended", () => {
+      opts.onEnd?.();
+      stopOpenAIAudio();
+    });
+    audio.addEventListener("error", (e) => {
+      opts.onError?.(e as unknown as Event);
+      stopOpenAIAudio();
+    });
+
+    await audio.play();
+    return true;
+  } catch (err) {
+    opts.onError?.(err as Event);
+    return false;
+  }
+}
+
+export type TtsEngine = "openai" | "webspeech";
+
+export interface SpeakResult {
+  engine: TtsEngine;
+}
+
+// Point d'entrée unique pour parler. Tente OpenAI puis Web Speech.
+// Renvoie l'engine effectivement utilisé.
+export async function speak(
+  opts: SpeakOptions & { preferOpenAI?: boolean },
+): Promise<SpeakResult> {
+  const prefer = opts.preferOpenAI ?? true;
+
+  if (prefer) {
+    const openAIAvailable = await isOpenAITtsAvailable();
+    if (openAIAvailable) {
+      const ok = await speakOpenAI(opts);
+      if (ok) return { engine: "openai" };
+    }
+  }
+
+  speakWebSpeech(opts);
+  return { engine: "webspeech" };
+}
+
 export function stopSpeaking(): void {
+  stopOpenAIAudio();
   if (typeof window !== "undefined" && window.speechSynthesis) {
     window.speechSynthesis.cancel();
   }
 }
 
-// ---------- Speech Recognition (STT) ----------
+// ====================================================================
+// Speech Recognition (STT) — Web Speech API
+// ====================================================================
 
 interface MinimalSpeechRecognition {
   lang: string;
@@ -198,7 +298,8 @@ export function createRecognition(): MinimalSpeechRecognition | null {
 
   const recognition = new Ctor();
   recognition.lang = "fr-FR";
-  recognition.continuous = false;
+  // Mode continu : la reco écoute jusqu'à ce qu'on l'arrête manuellement
+  recognition.continuous = true;
   recognition.interimResults = true;
   return recognition;
 }

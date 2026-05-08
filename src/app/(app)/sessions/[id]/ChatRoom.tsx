@@ -91,7 +91,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
         .reverse()
         .find((m) => m.role === "prospect");
       if (lastProspect && voiceMode) {
-        playProspectAudio(lastProspect.content);
+        void playProspectAudio(lastProspect.content);
       }
       return;
     }
@@ -99,10 +99,10 @@ export function ChatRoom({ session, initialMessages }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function playProspectAudio(text: string) {
+  async function playProspectAudio(text: string) {
     if (!voiceMode || !voiceSupported.tts || ended) return;
     setIsSpeaking(true);
-    speak({
+    await speak({
       text,
       gender,
       onStart: () => setIsSpeaking(true),
@@ -147,7 +147,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
           content: data.prospectMessage!.content,
         },
       ]);
-      playProspectAudio(data.prospectMessage.content);
+      void playProspectAudio(data.prospectMessage.content);
     }
 
     if (data.signal.type === "hangup") {
@@ -310,7 +310,16 @@ export function ChatRoom({ session, initialMessages }: Props) {
 
   function replayProspect() {
     const lastProspect = [...messages].reverse().find((m) => m.role === "prospect");
-    if (lastProspect) playProspectAudio(lastProspect.content);
+    if (lastProspect) void playProspectAudio(lastProspect.content);
+  }
+
+  function toggleListening() {
+    if (sending || ended || isSpeaking) return;
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
   }
 
   return (
@@ -433,21 +442,12 @@ export function ChatRoom({ session, initialMessages }: Props) {
               </div>
             )}
 
-            {/* Bouton micro géant */}
+            {/* Bouton micro géant — click-to-toggle */}
             {!ended && (
               <div className="flex flex-col items-center gap-3">
                 <button
                   type="button"
-                  onMouseDown={startListening}
-                  onMouseUp={stopListening}
-                  onTouchStart={(e) => {
-                    e.preventDefault();
-                    startListening();
-                  }}
-                  onTouchEnd={(e) => {
-                    e.preventDefault();
-                    stopListening();
-                  }}
+                  onClick={toggleListening}
                   disabled={sending || isSpeaking}
                   className="rounded-pill flex items-center justify-center transition-all duration-base disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{
@@ -461,8 +461,9 @@ export function ChatRoom({ session, initialMessages }: Props) {
                       ? "0 0 0 8px rgba(233, 75, 75, 0.32)"
                       : "var(--shadow-lg)",
                     transform: isListening ? "scale(1.06)" : "scale(1)",
+                    animation: isListening ? "micPulse 1.4s ease-in-out infinite" : "none",
                   }}
-                  aria-label={isListening ? "Relâche pour envoyer" : "Maintiens pour parler"}
+                  aria-label={isListening ? "Cliquer pour envoyer" : "Cliquer pour parler"}
                 >
                   <MicIcon size={56} />
                 </button>
@@ -470,7 +471,11 @@ export function ChatRoom({ session, initialMessages }: Props) {
                   className="text-meta uppercase tracking-widest"
                   style={{ color: "var(--color-gray)" }}
                 >
-                  {isListening ? "Relâche pour envoyer" : "Maintiens pour parler"}
+                  {isListening
+                    ? "Cliquer pour envoyer"
+                    : isSpeaking
+                      ? "Le prospect parle, attends"
+                      : "Cliquer pour parler"}
                 </div>
                 <button
                   type="button"
@@ -480,6 +485,12 @@ export function ChatRoom({ session, initialMessages }: Props) {
                 >
                   Réécouter le prospect
                 </button>
+                <style>{`
+                  @keyframes micPulse {
+                    0%, 100% { box-shadow: 0 0 0 8px rgba(233, 75, 75, 0.32); }
+                    50% { box-shadow: 0 0 0 16px rgba(233, 75, 75, 0.10); }
+                  }
+                `}</style>
               </div>
             )}
           </div>
