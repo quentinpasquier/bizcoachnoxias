@@ -66,13 +66,23 @@ export function pickFrenchVoice(gender: Gender): SpeechSynthesisVoice | null {
     "male",
     "man",
     "daniel",
+    "remi",
+    "rémi",
+    "jean",
+    "yves",
+    "antoine",
+    "claude",
+    "nicolas",
   ];
   const feminineKeywords = [
     "amelie",
+    "amélie",
     "audrey",
     "aurelie",
+    "aurélie",
     "marie",
     "celine",
+    "céline",
     "virginie",
     "sophie",
     "femme",
@@ -80,19 +90,53 @@ export function pickFrenchVoice(gender: Gender): SpeechSynthesisVoice | null {
     "woman",
     "hortense",
     "julie",
+    "lea",
+    "léa",
+    "denise",
+    "brigitte",
   ];
 
-  const targets = gender === "homme" ? masculineKeywords : feminineKeywords;
+  const qualityKeywords = [
+    "premium",
+    "enhanced",
+    "neural",
+    "natural",
+    "online",
+    "siri",
+    "wavenet",
+    "studio",
+  ];
+  const lowQualityKeywords = ["compact", "espeak"];
 
-  for (const v of french) {
+  const genderTargets = gender === "homme" ? masculineKeywords : feminineKeywords;
+  const oppositeTargets = gender === "homme" ? feminineKeywords : masculineKeywords;
+
+  const scored = french.map((v) => {
     const name = v.name.toLowerCase();
-    if (targets.some((kw) => name.includes(kw))) {
-      return v;
-    }
+    let score = 0;
+
+    if (genderTargets.some((kw) => name.includes(kw))) score += 100;
+    if (oppositeTargets.some((kw) => name.includes(kw))) score -= 100;
+
+    if (qualityKeywords.some((kw) => name.includes(kw))) score += 50;
+    if (lowQualityKeywords.some((kw) => name.includes(kw))) score -= 30;
+
+    if (v.localService === false) score += 20;
+    if (v.lang.toLowerCase() === "fr-fr") score += 5;
+    if (v.default) score += 1;
+
+    return { voice: v, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+
+  if (typeof window !== "undefined" && scored[0]) {
+    console.info(
+      `[TTS] Voix navigateur : ${scored[0].voice.name} (score ${scored[0].score})`,
+    );
   }
 
-  const standard = french.find((v) => !v.name.toLowerCase().includes("compact"));
-  return standard ?? french[0];
+  return scored[0]?.voice ?? french[0] ?? null;
 }
 
 interface SpeakOptions {
