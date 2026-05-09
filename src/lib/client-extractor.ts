@@ -22,7 +22,7 @@ const SCHEMA = `{
   "value_proposition": "<la promesse de valeur en une phrase, idéalement avec un chiffre>",
   "product_pitch": "<le pitch que le commercial doit porter en RDV, en 1-2 phrases concrètes>",
   "ideal_targets": "<une phrase qui résume les cibles idéales (rôles, secteurs, tailles)>",
-  "typical_objections": ["<top 8 objections les plus représentatives, formulées comme un prospect les dirait à l'oral en première personne>", "..."],
+  "typical_objections": ["<INCLUS TOUTES LES OBJECTIONS de la boîte à outils, généralement 25-35. Chaque objection est formulée comme un prospect la dirait à l'oral, en 1ère personne (ex: 'On a déjà un prestataire'). Ne synthétise pas, ne déduplique pas si elles ont des nuances différentes. Vise EXHAUSTIF.>", "...", "..."],
   "target_personas": ["<liste des labels distincts des personas, ex: ['Avocat', 'Gérant Escape Game']>"],
   "persona_profiles": [
     {
@@ -30,9 +30,9 @@ const SCHEMA = `{
       "label": "<label du persona, ex: 'Avocat'>",
       "role": "<intitulé précis du rôle, ex: 'Avocat associé en droit des affaires'>",
       "typical_company": "<1 phrase : taille et type d'entreprise typique pour ce persona>",
-      "key_pains": ["<3 douleurs principales spécifiques à ce persona, telles que décrites dans les docs>", "...", "..."],
+      "key_pains": ["<3-5 douleurs principales spécifiques à ce persona, telles que décrites dans les docs>", "...", "..."],
       "key_kpis": ["<2-3 KPI/métriques que ce persona surveille>", "...", "..."],
-      "main_objections": ["<3-5 objections les plus représentatives pour CE persona spécifiquement>", "...", "..."],
+      "main_objections": ["<8 à 12 objections les plus représentatives pour CE persona spécifiquement, sélectionnées intelligemment depuis la liste complète des objections de la boîte à outils. Chaque persona doit avoir un large panel pour entraîner les commerciaux à toutes les variantes. Une objection peut apparaître chez plusieurs personas si elle est universelle.>", "...", "..."],
       "decision_signals": "<1 phrase : ce qui fait dire OUI à un RDV pour ce persona>",
       "prep_briefing": "<2-3 paragraphes en français à destination du commercial Noxias pour préparer l'appel : qui il est, ce qui le préoccupe, ce qu'il faut éviter, ce qu'il faut creuser. Ton direct, concret, dirigeant à dirigeant. Pas de jargon corporate.>",
       "prep_bullets": ["<EXACTEMENT 4 missions courtes (max 12 mots), formulées comme des consignes 'Mission Impossible' à un commercial. Format impératif et tactique. Exemples : 'Vise le coût d'acquisition, pas la visibilité', 'Évite le SEO long terme, attaque par le SEA', 'Demande son taux de remplissage avant tout pitch'. Sois précis, actionnable, opérationnel. Pas de description, des ORDRES.>"]
@@ -54,6 +54,13 @@ Règles :
 - target_personas et persona_profiles doivent contenir EXACTEMENT les mêmes personas (la liste de labels et les profils correspondent un à un).
 - Si le doc ne mentionne qu'un seul persona, génère un seul profil.
 
+OBJECTIONS - règle critique :
+- La boîte à outils du client contient typiquement entre 25 et 35 objections différentes, classées (par catégorie : prix, timing, autorité, besoin, confiance, concurrent...).
+- AVANT d'écrire ton JSON, lis et identifie EXHAUSTIVEMENT toutes les objections présentes dans les docs (pas seulement les premières que tu vois). C'est crucial.
+- typical_objections doit contenir TOUTES les objections de la boîte à outils, sans exception. N'en omets aucune sous prétexte qu'elle se ressemble — les nuances comptent pour entraîner les commerciaux.
+- Pour chaque persona, sélectionne 8 à 12 objections parmi la liste complète, celles qui sont les plus probables pour ce profil. Une même objection peut apparaître chez plusieurs personas si elle est universelle (ex: prix, timing).
+- Cible : un commercial qui s'entraîne sur n'importe quel persona doit affronter une diversité large d'objections, pas toujours les mêmes 3.
+
 Schéma JSON EXACT à respecter :
 
 ${SCHEMA}`;
@@ -61,14 +68,19 @@ ${SCHEMA}`;
   const user = `Contenu fusionné des docs (matrice + boîte à outils + tous les fichiers uploadés) :
 
 ---
-${syncedContent.slice(0, 80000)}
+${syncedContent.slice(0, 120000)}
 ---
 
-Extrait le profil complet du client + les profils personas avec briefing. Réponds en JSON pur.`;
+Étape 1 : parcours TOUTE la boîte à outils et compte mentalement le nombre exact d'objections différentes que tu y trouves (généralement 25 à 35).
+Étape 2 : extrait le profil complet du client + les profils personas avec briefing.
+Étape 3 : remplis typical_objections avec TOUTES les objections trouvées (sans en oublier).
+Étape 4 : pour chaque persona, sélectionne 8-12 objections parmi la liste complète qui collent à ce profil.
+
+Réponds en JSON pur, rien d'autre.`;
 
   const response = await getAnthropic().messages.create({
     model: EXTRACT_MODEL,
-    max_tokens: 6000,
+    max_tokens: 12000,
     system,
     messages: [{ role: "user", content: user }],
   });
@@ -104,7 +116,7 @@ Extrait le profil complet du client + les profils personas avec briefing. Répon
         : "(à compléter)",
     ideal_targets: parsed.ideal_targets ?? null,
     typical_objections: Array.isArray(parsed.typical_objections)
-      ? parsed.typical_objections.map(String).filter(Boolean).slice(0, 12)
+      ? parsed.typical_objections.map(String).filter(Boolean).slice(0, 40)
       : [],
     target_personas: Array.isArray(parsed.target_personas)
       ? parsed.target_personas.map(String).filter(Boolean).slice(0, 8)
@@ -122,13 +134,13 @@ Extrait le profil complet du client + les profils personas avec briefing. Répon
             typical_company:
               typeof p.typical_company === "string" ? p.typical_company : "",
             key_pains: Array.isArray(p.key_pains)
-              ? p.key_pains.map(String).filter(Boolean).slice(0, 5)
+              ? p.key_pains.map(String).filter(Boolean).slice(0, 6)
               : [],
             key_kpis: Array.isArray(p.key_kpis)
               ? p.key_kpis.map(String).filter(Boolean).slice(0, 5)
               : [],
             main_objections: Array.isArray(p.main_objections)
-              ? p.main_objections.map(String).filter(Boolean).slice(0, 8)
+              ? p.main_objections.map(String).filter(Boolean).slice(0, 15)
               : [],
             decision_signals:
               typeof p.decision_signals === "string" ? p.decision_signals : "",
