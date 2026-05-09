@@ -47,14 +47,22 @@ export function QuizRunner({ clientId, initialQuiz }: Props) {
       const res = await fetch(`/api/clients/${clientId}/quiz`, {
         method: "POST",
       });
-      const data = (await res.json().catch(() => ({}))) as {
-        quiz?: QuizData;
-        error?: string;
-      };
-      if (!res.ok || !data.quiz) {
-        throw new Error(data.error ?? "Erreur génération");
+      let payload: { quiz?: QuizData; error?: string } = {};
+      const text = await res.text();
+      try {
+        payload = text ? JSON.parse(text) : {};
+      } catch {
+        throw new Error(
+          `Réponse non-JSON (HTTP ${res.status}) : ${text.slice(0, 220) || "(corps vide)"}`,
+        );
       }
-      setQuiz(data.quiz);
+      if (!res.ok) {
+        throw new Error(payload.error ?? `HTTP ${res.status} sans détail`);
+      }
+      if (!payload.quiz) {
+        throw new Error("La réponse ne contient pas de quiz.");
+      }
+      setQuiz(payload.quiz);
     } catch (e) {
       setGenError((e as Error).message);
     } finally {
@@ -129,12 +137,17 @@ export function QuizRunner({ clientId, initialQuiz }: Props) {
           Claude va lire les docs du client et préparer 12 questions.
         </p>
         {genError && (
-          <p
-            className="text-small mb-4"
-            style={{ color: "var(--color-error)" }}
+          <div
+            className="mb-4 mx-auto max-w-2xl text-left rounded-md px-4 py-3 text-small"
+            style={{
+              background: "rgba(233, 75, 75, 0.08)",
+              color: "#A61F1F",
+              border: "1px solid rgba(233, 75, 75, 0.24)",
+              whiteSpace: "pre-wrap",
+            }}
           >
-            {genError}
-          </p>
+            <strong>Erreur :</strong> {genError}
+          </div>
         )}
         <button
           onClick={handleGenerate}
