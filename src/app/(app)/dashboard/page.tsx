@@ -3,10 +3,11 @@ import { Card } from "@/components/ui/Card";
 import { StatusPill } from "@/components/ui/Status";
 import { DifficultyBadge, ScoreBadge } from "@/components/ui/Badge";
 import { CoachAvatar } from "@/components/CoachAvatar";
+import { Avatar } from "@/components/ui/Avatar";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { formatDateTimeFr } from "@/lib/format";
-import type { Client, SessionRow } from "@/lib/supabase/types";
+import type { Client, SessionRow, UserRole } from "@/lib/supabase/types";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -18,9 +19,10 @@ export default async function DashboardPage() {
   >[] = [];
   let teamSessions: SessionRow[] = [];
   let clients: Pick<Client, "id" | "name" | "sector">[] = [];
-  let profileById = new Map<string, string>();
+  let profileById = new Map<string, { full_name: string; avatar_url: string | null }>();
   let userName = "Commercial";
   let myUserId: string | null = null;
+  let role: UserRole = "commercial";
 
   if (configured) {
     const {
@@ -31,11 +33,18 @@ export default async function DashboardPage() {
       myUserId = user.id;
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name")
+        .select("full_name, first_name, role")
         .eq("id", user.id)
         .single();
-      const fullName = (profile as { full_name?: string | null } | null)?.full_name;
-      if (fullName) userName = fullName.split(" ")[0];
+      const p = profile as {
+        full_name?: string | null;
+        first_name?: string | null;
+        role?: UserRole;
+      } | null;
+      role = p?.role ?? "commercial";
+      const firstName = p?.first_name?.trim();
+      if (firstName) userName = firstName;
+      else if (p?.full_name) userName = p.full_name.split(" ")[0];
 
       const [
         { data: mySessionsData },
@@ -58,19 +67,27 @@ export default async function DashboardPage() {
           .select("id, name, sector")
           .eq("active", true)
           .order("name", { ascending: true }),
-        supabase.from("profiles").select("id, full_name"),
+        supabase.from("profiles").select("id, full_name, avatar_url"),
       ]);
 
       mySessions = (mySessionsData ?? []) as typeof mySessions;
       teamSessions = (teamSessionsData ?? []) as SessionRow[];
       clients = (clientsData ?? []) as typeof clients;
       profileById = new Map(
-        ((profilesData ?? []) as { id: string; full_name: string | null }[]).map(
-          (p) => [p.id, p.full_name ?? "Anonyme"],
-        ),
+        (
+          (profilesData ?? []) as {
+            id: string;
+            full_name: string | null;
+            avatar_url: string | null;
+          }[]
+        ).map((p) => [
+          p.id,
+          { full_name: p.full_name ?? "Anonyme", avatar_url: p.avatar_url },
+        ]),
       );
     }
   }
+  const isManager = role === "manager";
 
   const totalSessions = mySessions.length;
   const avgScore =
@@ -184,7 +201,7 @@ export default async function DashboardPage() {
       {/* ACTIVITE EQUIPE */}
       <section className="space-y-5">
         <SectionHeader
-          title="L'équipe en action"
+          title={isManager ? "L'équipe en action" : "Tes derniers appels"}
           action={
             teamSessions.length > 0 ? (
               <Link
@@ -204,7 +221,9 @@ export default async function DashboardPage() {
               const client = s.client_id ? clientById.get(s.client_id) : null;
               const clientName =
                 client?.name ?? s.client_name_snapshot ?? "Client supprimé";
-              const author = profileById.get(s.user_id) ?? "Anonyme";
+              const authorProfile = profileById.get(s.user_id);
+              const author = authorProfile?.full_name ?? "Anonyme";
+              const authorAvatar = authorProfile?.avatar_url ?? null;
               const isMe = s.user_id === myUserId;
               return (
                 <Link
@@ -218,47 +237,52 @@ export default async function DashboardPage() {
                 >
                   <Card hoverable>
                     <div className="flex items-center justify-between gap-4 flex-wrap">
-                      <div className="flex-1 min-w-[200px]">
-                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                          <span
-                            className="text-meta font-bold uppercase tracking-widest"
-                            style={{ color: "var(--color-purple)" }}
-                          >
-                            {clientName}
-                          </span>
-                          <span
-                            className="text-meta"
+                      <div className="flex items-center gap-3 flex-1 min-w-[200px]">
+                        {isManager && (
+                          <Avatar src={authorAvatar} name={author} size={36} />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <span
+                              className="text-meta font-bold uppercase tracking-widest"
+                              style={{ color: "var(--color-purple)" }}
+                            >
+                              {clientName}
+                            </span>
+                            <span
+                              className="text-meta"
+                              style={{ color: "var(--color-gray)" }}
+                            >
+                              ·
+                            </span>
+                            <span className="text-h4">{s.persona_label}</span>
+                            <DifficultyBadge difficulty={s.difficulty} />
+                            {s.status === "active" && (
+                              <StatusPill tone="success">En cours</StatusPill>
+                            )}
+                            {isMe && (
+                              <span
+                                className="badge"
+                                style={{
+                                  background: "rgba(60, 200, 121, 0.10)",
+                                  color: "#1F6A3F",
+                                }}
+                              >
+                                Toi
+                              </span>
+                            )}
+                          </div>
+                          <p
+                            className="text-small"
                             style={{ color: "var(--color-gray)" }}
                           >
-                            ·
-                          </span>
-                          <span className="text-h4">{s.persona_label}</span>
-                          <DifficultyBadge difficulty={s.difficulty} />
-                          {s.status === "active" && (
-                            <StatusPill tone="success">En cours</StatusPill>
-                          )}
-                          {isMe && (
-                            <span
-                              className="badge"
-                              style={{
-                                background: "rgba(60, 200, 121, 0.10)",
-                                color: "#1F6A3F",
-                              }}
-                            >
-                              Toi
+                            <span style={{ color: "var(--color-dark)", fontWeight: 500 }}>
+                              {author}
                             </span>
-                          )}
+                            {" · "}
+                            {formatDateTimeFr(s.started_at)}
+                          </p>
                         </div>
-                        <p
-                          className="text-small"
-                          style={{ color: "var(--color-gray)" }}
-                        >
-                          <span style={{ color: "var(--color-dark)", fontWeight: 500 }}>
-                            {author}
-                          </span>
-                          {" · "}
-                          {formatDateTimeFr(s.started_at)}
-                        </p>
                       </div>
                       <div className="flex items-center gap-3">
                         {s.appointment_secured && (

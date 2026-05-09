@@ -10,9 +10,15 @@ export type CategoryKey =
   | "objections"
   | "closing";
 
+export type UserRole = "commercial" | "manager";
+
 export interface Profile {
   id: string;
   full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+  role: UserRole;
   company: string | null;
   role_title: string | null;
   created_at: string;

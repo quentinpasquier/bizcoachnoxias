@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/Card";
+import { Avatar } from "@/components/ui/Avatar";
 import { DifficultyBadge, ScoreBadge } from "@/components/ui/Badge";
 import { StatusPill } from "@/components/ui/Status";
 import { FilterChip } from "@/components/ui/FilterChip";
@@ -12,8 +13,9 @@ import type { SessionRow } from "@/lib/supabase/types";
 interface Props {
   sessions: SessionRow[];
   clientById: Record<string, { name: string; sector: string | null }>;
-  profileById: Record<string, string>;
+  profileById: Record<string, { full_name: string; avatar_url: string | null }>;
   myUserId: string | null;
+  isManager?: boolean;
 }
 
 type FilterKey = "all" | "mine" | "rdv" | "hangup" | "active";
@@ -23,6 +25,7 @@ export function HistoryBoard({
   clientById,
   profileById,
   myUserId,
+  isManager = false,
 }: Props) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [search, setSearch] = useState("");
@@ -55,7 +58,7 @@ export function HistoryBoard({
       if (q) {
         const client =
           (s.client_id && clientById[s.client_id]?.name) ?? s.client_name_snapshot ?? "";
-        const author = profileById[s.user_id] ?? "";
+        const author = profileById[s.user_id]?.full_name ?? "";
         const haystack = [
           client.toLowerCase(),
           author.toLowerCase(),
@@ -89,13 +92,15 @@ export function HistoryBoard({
             >
               Toutes
             </FilterChip>
-            <FilterChip
-              active={filter === "mine"}
-              count={counts.mine}
-              onClick={() => setFilter("mine")}
-            >
-              Les miennes
-            </FilterChip>
+            {isManager && (
+              <FilterChip
+                active={filter === "mine"}
+                count={counts.mine}
+                onClick={() => setFilter("mine")}
+              >
+                Les miennes
+              </FilterChip>
+            )}
             <FilterChip
               active={filter === "rdv"}
               count={counts.rdv}
@@ -133,7 +138,9 @@ export function HistoryBoard({
             const client = s.client_id ? clientById[s.client_id] : null;
             const clientName =
               client?.name ?? s.client_name_snapshot ?? "Client supprimé";
-            const author = profileById[s.user_id] ?? "Anonyme";
+            const authorProfile = profileById[s.user_id];
+            const author = authorProfile?.full_name ?? "Anonyme";
+            const authorAvatar = authorProfile?.avatar_url ?? null;
             const isMe = s.user_id === myUserId;
             return (
               <Link
@@ -146,55 +153,60 @@ export function HistoryBoard({
               >
                 <Card hoverable className="mb-3">
                   <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <div className="flex-1 min-w-[200px]">
-                      <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                        <span
-                          className="text-meta font-bold uppercase tracking-widest"
-                          style={{ color: "var(--color-purple)" }}
-                        >
-                          {clientName}
-                        </span>
-                        <span
-                          className="text-meta"
+                    <div className="flex items-center gap-3 flex-1 min-w-[200px]">
+                      {isManager && (
+                        <Avatar src={authorAvatar} name={author} size={40} />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                          <span
+                            className="text-meta font-bold uppercase tracking-widest"
+                            style={{ color: "var(--color-purple)" }}
+                          >
+                            {clientName}
+                          </span>
+                          <span
+                            className="text-meta"
+                            style={{ color: "var(--color-gray)" }}
+                          >
+                            ·
+                          </span>
+                          <span className="text-h4">{s.persona_label}</span>
+                          <DifficultyBadge difficulty={s.difficulty} />
+                          {s.status === "active" && (
+                            <StatusPill tone="success">En cours</StatusPill>
+                          )}
+                          {s.appointment_secured && (
+                            <StatusPill tone="success">RDV</StatusPill>
+                          )}
+                          {s.ended_by === "prospect" && !s.appointment_secured && (
+                            <StatusPill tone="error">Raccroché</StatusPill>
+                          )}
+                          {isMe && (
+                            <span
+                              className="badge"
+                              style={{
+                                background: "rgba(60, 200, 121, 0.10)",
+                                color: "#1F6A3F",
+                              }}
+                            >
+                              Toi
+                            </span>
+                          )}
+                        </div>
+                        <p
+                          className="text-small"
                           style={{ color: "var(--color-gray)" }}
                         >
-                          ·
-                        </span>
-                        <span className="text-h4">{s.persona_label}</span>
-                        <DifficultyBadge difficulty={s.difficulty} />
-                        {s.status === "active" && (
-                          <StatusPill tone="success">En cours</StatusPill>
-                        )}
-                        {s.appointment_secured && (
-                          <StatusPill tone="success">RDV</StatusPill>
-                        )}
-                        {s.ended_by === "prospect" && !s.appointment_secured && (
-                          <StatusPill tone="error">Raccroché</StatusPill>
-                        )}
-                        {isMe && (
-                          <span
-                            className="badge"
-                            style={{
-                              background: "rgba(60, 200, 121, 0.10)",
-                              color: "#1F6A3F",
-                            }}
-                          >
-                            Toi
+                          <span style={{ color: "var(--color-dark)", fontWeight: 500 }}>
+                            {author}
                           </span>
-                        )}
+                          {" · "}
+                          {formatDateTimeFr(s.started_at)}
+                          {" · "}
+                          {formatDuration(s.started_at, s.ended_at)}
+                        </p>
                       </div>
-                      <p
-                        className="text-small"
-                        style={{ color: "var(--color-gray)" }}
-                      >
-                        <span style={{ color: "var(--color-dark)", fontWeight: 500 }}>
-                          {author}
-                        </span>
-                        {" · "}
-                        {formatDateTimeFr(s.started_at)}
-                        {" · "}
-                        {formatDuration(s.started_at, s.ended_at)}
-                      </p>
                     </div>
                     <ScoreBadge score={s.score} />
                   </div>
