@@ -92,17 +92,17 @@ export default async function DashboardPage() {
         eyebrowGreen
         title={
           <>
-            Bonjour <span style={{ color: "var(--color-green)" }}>{userName}</span>
+            Salut <span style={{ color: "var(--color-green)" }}>{userName}</span>
           </>
         }
-        subtitle="Choisis un client, lance un appel, progresse à chaque session."
+        subtitle="Prêt pour ta session ? Choisis un client, je m'occupe du reste."
         action={
           <>
             <Link href="/clients" className="btn btn-ghost">
               Voir les clients
             </Link>
             <Link href="/sessions/new" className="btn btn-dark">
-              + Démarrer une session
+              + On démarre
             </Link>
           </>
         }
@@ -111,20 +111,20 @@ export default async function DashboardPage() {
 
       {/* MES STATS */}
       <section>
-        <h2 className="text-h3 mb-4">Tes performances</h2>
+        <h2 className="text-h3 mb-4">Ta progression</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <StatCard
             number={totalSessions.toString()}
-            label="Sessions terminées"
+            label="Appels menés"
           />
           <StatCard
             number={avgScore !== null ? `${avgScore}` : "·"}
             suffix={avgScore !== null ? "/100" : undefined}
-            label="Score moyen"
+            label="Ta note moyenne"
           />
           <StatCard
             number={`${rdvRate}%`}
-            label="Taux de RDV"
+            label="RDV décrochés"
             accent
           />
         </div>
@@ -134,7 +134,7 @@ export default async function DashboardPage() {
       {clients.length > 0 && (
         <section className="space-y-5">
           <SectionHeader
-            title="Démarrer pour un client"
+            title="Tes terrains de jeu"
             action={
               clients.length > 6 ? (
                 <Link
@@ -176,7 +176,7 @@ export default async function DashboardPage() {
       {/* ACTIVITE EQUIPE */}
       <section className="space-y-5">
         <SectionHeader
-          title="Activité de l'équipe"
+          title="L'équipe en action"
           action={
             teamSessions.length > 0 ? (
               <Link
@@ -266,20 +266,20 @@ export default async function DashboardPage() {
           </div>
         ) : (
           <Card variant="lavender" className="text-center py-14">
-            <h3 className="text-h3 mb-2">Pas encore de session.</h3>
+            <h3 className="text-h3 mb-2">L&apos;équipe attaque bientôt.</h3>
             <p
               className="text-body mb-6"
               style={{ color: "var(--color-gray)" }}
             >
               {configured
-                ? "Lance la première simulation de l'équipe. Restitution immédiate."
+                ? "Sois le premier à décrocher. 5 minutes, débrief immédiat."
                 : "Mode démo. Connecte Supabase pour voir les sessions."}
             </p>
             <Link
               href="/sessions/new"
               className="btn btn-primary inline-flex"
             >
-              Démarrer maintenant
+              On y va
             </Link>
           </Card>
         )}

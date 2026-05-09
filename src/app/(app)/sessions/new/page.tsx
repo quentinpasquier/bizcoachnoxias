@@ -58,11 +58,10 @@ export default async function NewSessionPage({
   return (
     <div className="container-noxias py-12 max-w-6xl">
       <div className="mb-8">
-        <span className="divider-green block mb-3" />
-        <h1 className="text-h2">Nouvelle session</h1>
+        <div className="eyebrow-green mb-2">Coach Noxias</div>
+        <h1 className="text-h2">On configure ton appel.</h1>
         <p className="text-body mt-1" style={{ color: "var(--color-gray)" }}>
-          Choisis le persona, le genre et le niveau.
-          Un scénario réaliste est généré à la volée.
+          Quatre choix, ton prospect prend vie. Je te génère un scénario sur mesure.
         </p>
       </div>
 

@@ -133,8 +133,8 @@ export function NewSessionForm({
           {/* Étape 1 : Client */}
           <StepSection
             number="01"
-            title="Pour quel client ?"
-            subtitle={`${clients.length} client${clients.length > 1 ? "s" : ""} disponible${clients.length > 1 ? "s" : ""}`}
+            title="Tu prospectes pour..."
+            subtitle={`${clients.length} client${clients.length > 1 ? "s" : ""} dans ton arsenal`}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {clients.map((c) => (
@@ -163,11 +163,11 @@ export function NewSessionForm({
           {selectedClient && (
             <StepSection
               number="02"
-              title="Quel prospect appelles-tu ?"
+              title="Tu vas appeler..."
               subtitle={
                 personaOptions.length === 0
                   ? "Aucun persona pour ce client"
-                  : `${personaOptions.length} persona${personaOptions.length > 1 ? "s" : ""} pour ${selectedClient.name}`
+                  : `${personaOptions.length} persona${personaOptions.length > 1 ? "s" : ""} dispo pour ${selectedClient.name}`
               }
             >
               {personaOptions.length === 0 ? (
@@ -236,8 +236,8 @@ export function NewSessionForm({
           {/* Étape 3 : Niveau */}
           <StepSection
             number="03"
-            title="Quelle difficulté ?"
-            subtitle="Plus c'est haut, plus le prospect est dur"
+            title="Tu veux quel niveau ?"
+            subtitle="Plus c'est haut, plus le prospect te fait suer"
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {difficulties.map((d) => {
@@ -267,8 +267,8 @@ export function NewSessionForm({
           {/* Étape 4 : Genre */}
           <StepSection
             number="04"
-            title="Genre du prospect"
-            subtitle="Le scénario adaptera le nom et le ton"
+            title="Un homme ou une femme ?"
+            subtitle="J'adapte le nom et le ton"
           >
             <div className="grid grid-cols-2 gap-3 max-w-md">
               {(["homme", "femme"] as Gender[]).map((g) => (
@@ -524,7 +524,7 @@ function AvatarCard({
           color: ready ? "rgba(255,255,255,0.55)" : "var(--color-gray)",
         }}
       >
-        {ready ? "Prospect prêt" : "Compose ton prospect"}
+        {ready ? "Ton prospect est prêt" : "Compose ton prospect"}
       </div>
 
       {/* AVATAR ORB */}
@@ -742,7 +742,7 @@ function LaunchBar({
                   : "var(--color-gray)",
               }}
             >
-              {ready ? "Prêt à démarrer" : "Configuration en cours"}
+              {ready ? "Prêt à décrocher" : "Encore quelques choix..."}
             </div>
             {ready ? (
               <p className="text-body-l" style={{ lineHeight: "1.4" }}>
@@ -760,7 +760,7 @@ function LaunchBar({
                 className="text-body"
                 style={{ color: "var(--color-gray)" }}
               >
-                Complète les 4 étapes pour lancer l&apos;appel.
+                Termine les 4 étapes et on attaque.
               </p>
             )}
           </div>
@@ -772,7 +772,7 @@ function LaunchBar({
             loading={loading}
             onClick={onLaunch}
           >
-            {loading ? "Génération..." : "Lancer l'appel →"}
+            {loading ? "Je prépare ton scénario..." : "On décroche →"}
           </Button>
         </div>
       </div>

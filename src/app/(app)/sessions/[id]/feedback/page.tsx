@@ -60,8 +60,8 @@ export default async function FeedbackPage({
         >
           ← Retour à l&apos;historique
         </Link>
-        <span className="divider-green block mb-4" />
-        <h1 className="text-h2">Restitution</h1>
+        <div className="eyebrow-green mb-2">Le débrief de ton appel</div>
+        <h1 className="text-h2">Voilà ce que j&apos;ai vu.</h1>
         <div className="flex items-center gap-3 mt-3 flex-wrap">
           {s.client_name_snapshot && (
             <Badge tone="purple">{s.client_name_snapshot}</Badge>
@@ -90,7 +90,7 @@ export default async function FeedbackPage({
             className="section-eyebrow mb-3"
             style={{ color: "rgba(255,255,255,0.55)" }}
           >
-            Score global
+            Ta note
           </div>
           <div
             className="font-display"
@@ -229,17 +229,17 @@ export default async function FeedbackPage({
       {/* FORCES / IMPROVEMENTS / NEXT */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <FeedbackList
-          title="Tes forces"
+          title="Ce que t'as bien fait"
           items={evaluation.strengths ?? []}
           tone="green"
         />
         <FeedbackList
-          title="Axes d'amélioration"
+          title="Là où tu peux grandir"
           items={evaluation.improvements ?? []}
           tone="warning"
         />
         <FeedbackList
-          title="Prochaines actions"
+          title="Ton plan pour la prochaine"
           items={evaluation.next_steps ?? []}
           tone="purple"
         />
@@ -290,7 +290,7 @@ export default async function FeedbackPage({
           </Link>
         )}
         <Link href="/sessions/new" className="btn btn-primary">
-          Nouvelle session
+          On en remet une
         </Link>
       </section>
     </div>

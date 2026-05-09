@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+  <rect width="180" height="180" rx="40" fill="#221932"/>
+  <text x="90" y="128" text-anchor="middle" font-family="Arial Black, Helvetica, sans-serif" font-weight="900" font-size="108" fill="#FFFFFF" letter-spacing="-3">N</text>
+  <rect x="124" y="118" width="32" height="32" transform="rotate(45 140 134)" fill="#3CC879"/>
+</svg>

@@ -17,10 +17,16 @@ const ubuntu = Ubuntu({
 });
 
 export const metadata: Metadata = {
-  title: "Noxias Coach · Entraînez vos commerciaux face aux vrais prospects",
+  title: "Noxias Coach · Ton coach commercial",
   description:
-    "Coach IA pour commerciaux. Simulez des appels de prospection avec un prospect non sollicité, mesurez votre performance, progressez.",
+    "Ton coach commercial. Entraîne-toi face à de vrais prospects, mesure ta progression, décroche plus de RDV.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+  applicationName: "Noxias Coach",
+  appleWebApp: {
+    capable: true,
+    title: "Noxias Coach",
+    statusBarStyle: "default",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

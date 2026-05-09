@@ -328,11 +328,11 @@ export function ChatRoom({ session, initialMessages }: Props) {
   }
 
   const stateLabel = isSpeaking
-    ? "Le prospect parle"
+    ? "Il te répond"
     : isListening
-      ? "À toi"
+      ? "À toi de jouer"
       : sending
-        ? "Le prospect réfléchit"
+        ? "Il prend son temps..."
         : ended
           ? "Appel terminé"
           : "En ligne";
@@ -513,7 +513,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
                     Tu dis
                   </div>
                   <div className="text-body" style={{ color: "var(--color-dark)" }}>
-                    {interimTranscript || "Parle, je t'écoute..."}
+                    {interimTranscript || "Vas-y, je t'écoute..."}
                   </div>
                 </div>
               ) : (
@@ -521,8 +521,8 @@ export function ChatRoom({ session, initialMessages }: Props) {
                   {ended
                     ? "L'appel est terminé."
                     : sending
-                      ? "..."
-                      : "Clique le micro pour parler."}
+                      ? "Il prend son temps..."
+                      : "Clique le micro et lance-toi."}
                 </div>
               )}
             </div>
@@ -655,7 +655,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
                       className="text-meta ml-2"
                       style={{ color: "var(--color-gray)" }}
                     >
-                      Le prospect réfléchit...
+                      Il prend son temps...
                     </span>
                   </div>
                 )}

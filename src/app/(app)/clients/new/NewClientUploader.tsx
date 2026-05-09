@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Loader } from "@/components/Loader";
 
 export function NewClientUploader() {
   const router = useRouter();
@@ -110,24 +111,15 @@ export function NewClientUploader() {
           )}
 
           {loading && (
-            <div>
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <span className="typing-dot" />
-                <span className="typing-dot" />
-                <span className="typing-dot" />
-              </div>
-              <p className="text-body" style={{ color: "var(--color-green)" }}>
-                {step === "uploading"
-                  ? "Upload des fichiers..."
-                  : "Claude lit les docs et paramètre le client..."}
-              </p>
-              <p
-                className="text-meta mt-2"
-                style={{ color: "var(--color-gray)" }}
-              >
-                Ça peut prendre 20-40 secondes selon la taille des docs.
-              </p>
-            </div>
+            <Loader
+              size="lg"
+              message={
+                step === "uploading"
+                  ? "J'embarque tes documents..."
+                  : "Je lis tout ça et je te prépare le client."
+              }
+              detail="20 à 40 secondes selon la taille des docs. Promis, ça vaut le coup."
+            />
           )}
         </div>
 

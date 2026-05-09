@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Loader } from "@/components/Loader";
 
 export function FeedbackEvaluator({ sessionId }: { sessionId: string }) {
   const router = useRouter();
@@ -22,7 +23,7 @@ export function FeedbackEvaluator({ sessionId }: { sessionId: string }) {
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           throw new Error(
-            data.error ?? "L'évaluation n'a pas pu être générée.",
+            data.error ?? "Le débrief n'a pas pu être généré.",
           );
         }
         router.refresh();
@@ -33,15 +34,15 @@ export function FeedbackEvaluator({ sessionId }: { sessionId: string }) {
   }, [sessionId, router]);
 
   return (
-    <div className="container-noxias py-10 max-w-2xl">
-      <div className="mb-8">
-        <span className="divider-green block mb-3" />
-        <h1 className="text-h2">Restitution en cours...</h1>
+    <div className="container-noxias py-16 max-w-2xl">
+      <div className="mb-8 text-center">
+        <span className="eyebrow-green block mb-3">Coach Noxias</span>
+        <h1 className="text-h2">Je débriefe ton appel.</h1>
       </div>
 
-      <Card>
+      <Card className="py-12">
         {error ? (
-          <div className="space-y-4">
+          <div className="space-y-4 text-center">
             <p className="text-body" style={{ color: "var(--color-error)" }}>
               {error}
             </p>
@@ -50,16 +51,11 @@ export function FeedbackEvaluator({ sessionId }: { sessionId: string }) {
             </Button>
           </div>
         ) : (
-          <div className="flex items-center gap-4">
-            <div className="flex gap-2">
-              <span className="typing-dot" />
-              <span className="typing-dot" />
-              <span className="typing-dot" />
-            </div>
-            <p className="text-body" style={{ color: "var(--color-dark)" }}>
-              Le coach analyse ton appel. Quelques secondes...
-            </p>
-          </div>
+          <Loader
+            size="lg"
+            message="J'écoute, je note, je décortique..."
+            detail="Quelques secondes, je te prépare un débrief carré."
+          />
         )}
       </Card>
     </div>
