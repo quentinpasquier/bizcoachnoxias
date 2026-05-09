@@ -134,22 +134,38 @@ function speakWebSpeech(opts: SpeakOptions): SpeechSynthesisUtterance | null {
 // ====================================================================
 
 let openaiAvailableCache: boolean | null = null;
+let openaiAvailableCacheTime = 0;
+const OPENAI_CACHE_TTL = 30000; // 30 sec
 
 export async function isOpenAITtsAvailable(): Promise<boolean> {
-  if (openaiAvailableCache !== null) return openaiAvailableCache;
+  const now = Date.now();
+  if (
+    openaiAvailableCache !== null &&
+    now - openaiAvailableCacheTime < OPENAI_CACHE_TTL
+  ) {
+    return openaiAvailableCache;
+  }
   try {
     const res = await fetch("/api/tts");
     if (!res.ok) {
       openaiAvailableCache = false;
+      openaiAvailableCacheTime = now;
       return false;
     }
     const data = (await res.json()) as { available?: boolean };
     openaiAvailableCache = Boolean(data.available);
+    openaiAvailableCacheTime = now;
     return openaiAvailableCache;
   } catch {
     openaiAvailableCache = false;
+    openaiAvailableCacheTime = now;
     return false;
   }
+}
+
+export function clearTtsCache(): void {
+  openaiAvailableCache = null;
+  openaiAvailableCacheTime = 0;
 }
 
 let currentAudio: HTMLAudioElement | null = null;
@@ -302,7 +318,9 @@ export function isSpeechSynthesisSupported(): boolean {
   return typeof window !== "undefined" && Boolean(window.speechSynthesis);
 }
 
-export function createRecognition(): MinimalSpeechRecognition | null {
+export function createRecognition(
+  options: { continuous?: boolean } = {},
+): MinimalSpeechRecognition | null {
   if (typeof window === "undefined") return null;
   const w = window as unknown as {
     SpeechRecognition?: SpeechRecognitionConstructor;
@@ -313,8 +331,9 @@ export function createRecognition(): MinimalSpeechRecognition | null {
 
   const recognition = new Ctor();
   recognition.lang = "fr-FR";
-  // Mode continu : la reco écoute jusqu'à ce qu'on l'arrête manuellement
-  recognition.continuous = true;
+  // continuous: true → écoute en boucle (manuel)
+  // continuous: false → s'arrête tout seul après un silence (auto-VAD)
+  recognition.continuous = options.continuous ?? true;
   recognition.interimResults = true;
   return recognition;
 }

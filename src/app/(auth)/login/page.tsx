@@ -37,10 +37,11 @@ export default async function LoginPage({
               className="text-h1"
               style={{
                 fontSize: "clamp(2.25rem, 4vw, 3rem)",
-                lineHeight: "1.1",
+                lineHeight: "1.15",
               }}
             >
-              <span style={{ color: "var(--color-dark)" }}>Salut.</span>{" "}
+              <span style={{ color: "var(--color-dark)" }}>Salut.</span>
+              <br />
               <span style={{ color: "var(--color-green)" }}>
                 Prêt pour ta session ?
               </span>

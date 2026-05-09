@@ -35,7 +35,7 @@ const SCHEMA = `{
       "main_objections": ["<3-5 objections les plus représentatives pour CE persona spécifiquement>", "...", "..."],
       "decision_signals": "<1 phrase : ce qui fait dire OUI à un RDV pour ce persona>",
       "prep_briefing": "<2-3 paragraphes en français à destination du commercial Noxias pour préparer l'appel : qui il est, ce qui le préoccupe, ce qu'il faut éviter, ce qu'il faut creuser. Ton direct, concret, dirigeant à dirigeant. Pas de jargon corporate.>",
-      "prep_bullets": ["<EXACTEMENT 4 bullets ultra-courts (max 8 mots chacun), action-oriented : profil prospect en 1 ligne, sa douleur n°1, l'angle qui marche, ce qu'il faut éviter>"]
+      "prep_bullets": ["<EXACTEMENT 4 missions courtes (max 12 mots), formulées comme des consignes 'Mission Impossible' à un commercial. Format impératif et tactique. Exemples : 'Vise le coût d'acquisition, pas la visibilité', 'Évite le SEO long terme, attaque par le SEA', 'Demande son taux de remplissage avant tout pitch'. Sois précis, actionnable, opérationnel. Pas de description, des ORDRES.>"]
     }
   ]
 }`;

@@ -601,27 +601,35 @@ function AvatarCard({
           <div
             className="text-meta uppercase tracking-widest mb-3 font-bold"
             style={{
-              color: ready ? "var(--color-green)" : "var(--color-green)",
+              color: "var(--color-green)",
               fontSize: "0.6875rem",
             }}
           >
-            Brief de préparation
+            Ta mission, si tu l&apos;acceptes
           </div>
-          <ul className="space-y-2">
+          <ul className="space-y-2.5">
             {bullets.map((b, i) => (
               <li
                 key={i}
-                className="text-small flex gap-2"
+                className="text-small flex gap-2.5"
                 style={{
                   color: ready ? "rgba(255,255,255,0.92)" : "var(--color-dark)",
                   lineHeight: "1.45",
                 }}
               >
                 <span
-                  className="flex-shrink-0 mt-1.5 w-1.5 h-1.5 rounded-pill"
-                  style={{ background: "var(--color-green)" }}
+                  className="flex-shrink-0 mt-0.5 inline-flex items-center justify-center text-meta font-bold rounded-pill"
+                  style={{
+                    width: "18px",
+                    height: "18px",
+                    background: "var(--color-green)",
+                    color: "var(--color-dark)",
+                    fontSize: "0.6875rem",
+                  }}
                   aria-hidden="true"
-                />
+                >
+                  {i + 1}
+                </span>
                 <span>{b}</span>
               </li>
             ))}

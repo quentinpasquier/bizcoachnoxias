@@ -55,6 +55,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const [voiceMode, setVoiceMode] = useState<boolean>(true);
+  const [autoMode, setAutoMode] = useState<boolean>(true);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [interimTranscript, setInterimTranscript] = useState("");
@@ -102,9 +103,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
     }
     void requestProspectOpening();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function playProspectAudio(text: string) {
+  }, []);  async function playProspectAudio(text: string) {
     if (!voiceMode || !voiceSupported.tts || ended) return;
     setIsSpeaking(true);
     const result = await speak({
@@ -112,7 +111,17 @@ export function ChatRoom({ session, initialMessages }: Props) {
       gender,
       seed: session.id,
       onStart: () => setIsSpeaking(true),
-      onEnd: () => setIsSpeaking(false),
+      onEnd: () => {
+        setIsSpeaking(false);
+        // Auto-mode : redémarre l'écoute dès que le prospect a fini de parler
+        if (autoMode && !ended && voiceSupported.stt) {
+          setTimeout(() => {
+            if (!isListening && !sending && !ended) {
+              startListening();
+            }
+          }, 350);
+        }
+      },
       onError: () => setIsSpeaking(false),
     });
     setTtsEngine(result.engine);
@@ -227,7 +236,9 @@ export function ChatRoom({ session, initialMessages }: Props) {
 
     finalTranscriptRef.current = "";
     setInterimTranscript("");
-    const recognition = createRecognition();
+    // Mode auto = continuous false → la reco s'arrête seule sur silence
+    // Mode manuel = continuous true → on stop avec le bouton
+    const recognition = createRecognition({ continuous: !autoMode });
     if (!recognition) {
       setError("Reconnaissance vocale non disponible dans ce navigateur.");
       return;
@@ -264,6 +275,14 @@ export function ChatRoom({ session, initialMessages }: Props) {
       const err = (e as unknown as { error?: string }).error ?? "unknown";
       if (err === "no-speech" || err === "aborted") {
         setIsListening(false);
+        // En auto-mode, on retente après une pause si no-speech
+        if (autoMode && err === "no-speech" && !ended && !sending && !isSpeaking) {
+          setTimeout(() => {
+            if (!isListening && !sending && !ended && !isSpeaking) {
+              startListening();
+            }
+          }, 800);
+        }
         return;
       }
       setError(`Erreur micro : ${err}. Bascule en mode texte si besoin.`);
@@ -522,7 +541,9 @@ export function ChatRoom({ session, initialMessages }: Props) {
                     ? "L'appel est terminé."
                     : sending
                       ? "Il prend son temps..."
-                      : "Clique le micro et lance-toi."}
+                      : autoMode
+                        ? "Le micro va se relancer tout seul"
+                        : "Clique le micro et lance-toi. Re-clique pour envoyer."}
                 </div>
               )}
             </div>
