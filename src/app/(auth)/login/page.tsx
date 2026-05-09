@@ -16,54 +16,123 @@ export default async function LoginPage({
 
   const params = await searchParams;
   return (
-    <div
-      className="min-h-screen flex flex-col"
-      style={{ background: "var(--bg-app)" }}
-    >
-      <header className="container-noxias h-16 flex items-center">
-        <Link href="/login">
-          <Logo variant="light" size={28} />
+    <div className="login-page">
+      <div className="login-bg-grid" aria-hidden="true" />
+      <div className="login-blob login-blob-purple" aria-hidden="true" />
+      <div className="login-blob login-blob-green" aria-hidden="true" />
+      <div className="login-blob login-blob-violet" aria-hidden="true" />
+
+      <header className="container-noxias h-16 flex items-center relative z-10">
+        <Link href="/login" className="inline-flex items-center">
+          <Logo variant="dark" size={28} />
         </Link>
       </header>
 
-      <main className="flex-1 flex items-center justify-center px-6 pb-20">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-10">
-            <div className="flex justify-center mb-5">
-              <CoachAvatar state="idle" size={72} />
-            </div>
-            <div className="eyebrow-green mb-3">Coach commercial</div>
-            <h1
-              className="text-h1"
-              style={{
-                fontSize: "clamp(2.25rem, 4vw, 3rem)",
-                lineHeight: "1.15",
-              }}
-            >
-              <span style={{ color: "var(--color-dark)" }}>Salut.</span>
-              <br />
-              <span style={{ color: "var(--color-green)" }}>
-                Prêt pour ta session ?
+      <main className="flex-1 container-noxias relative z-10 grid lg:grid-cols-[1.05fr_minmax(0,440px)] items-center gap-10 lg:gap-16 pt-2 pb-16 lg:py-0">
+        <section className="login-hero">
+          <div className="login-avatar-stage">
+            <span className="login-halo login-halo-1" aria-hidden="true" />
+            <span className="login-halo login-halo-2" aria-hidden="true" />
+            <span className="login-halo login-halo-3" aria-hidden="true" />
+            <CoachAvatar state="happy" size={96} />
+          </div>
+
+          <div className="login-hero-text">
+            <span className="login-eyebrow">Coach commercial</span>
+            <h1 className="login-headline">
+              <span className="login-headline-light">Salut.</span>
+              <span className="login-headline-green">
+                Prêt pour ta session&nbsp;?
               </span>
             </h1>
-            <p
-              className="text-body mt-4"
-              style={{ color: "var(--color-gray)" }}
-            >
-              Connecte-toi pour rejoindre ton coach.
+            <p className="login-subtitle">
+              Reprends l&apos;entraînement là où tu t&apos;es arrêté. Scoring
+              sur 20 critères, classement équipe, badges déblocables.
             </p>
           </div>
 
-          <LoginForm next={params.next} initialError={params.error} />
+          <ul className="login-pills">
+            <li className="login-pill">
+              <span className="login-pill-icon">
+                <PillIconTarget />
+              </span>
+              <div>
+                <strong>20 critères</strong>
+                <span>évalués par appel</span>
+              </div>
+            </li>
+            <li className="login-pill">
+              <span className="login-pill-icon">
+                <PillIconTrophy />
+              </span>
+              <div>
+                <strong>Classement</strong>
+                <span>équipe en direct</span>
+              </div>
+            </li>
+            <li className="login-pill">
+              <span className="login-pill-icon">
+                <PillIconMic />
+              </span>
+              <div>
+                <strong>Voix IA</strong>
+                <span>prospect réaliste</span>
+              </div>
+            </li>
+          </ul>
+        </section>
 
-          <p
-            className="text-meta mt-8 text-center"
-            style={{ color: "var(--color-gray)" }}
-          >
-            Accès réservé aux commerciaux Noxias.
-          </p>
-        </div>
+        <section className="login-form-stage">
+          <div className="login-form-card">
+            <div className="login-form-head">
+              <h2 className="login-form-title">Reconnecte-toi</h2>
+              <p className="login-form-sub">
+                Ton coach virtuel t&apos;attend. 5 minutes, débrief immédiat.
+              </p>
+            </div>
+            <div className="login-form-inner">
+              <LoginForm next={params.next} initialError={params.error} />
+            </div>
+            <p className="login-form-foot">
+              <span className="login-foot-dot" aria-hidden="true" />
+              Accès réservé aux commerciaux Noxias
+            </p>
+          </div>
+        </section>
       </main>
     </div>
+  );
+}
+
+function PillIconTarget() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+function PillIconTrophy() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M7 4h10v5a5 5 0 0 1-10 0V4z" />
+      <path d="M7 6H4v2a3 3 0 0 0 3 3" />
+      <path d="M17 6h3v2a3 3 0 0 1-3 3" />
+      <path d="M9 17h6" />
+      <path d="M12 14v3" />
+      <path d="M8 21h8" />
+    </svg>
+  );
+}
+
+function PillIconMic() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="9" y="3" width="6" height="12" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0" />
+      <path d="M12 18v3" />
+    </svg>
   );
 }
