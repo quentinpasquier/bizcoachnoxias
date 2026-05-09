@@ -114,7 +114,11 @@ export default async function ClientDetailPage({
             )}
           </div>
         </div>
-        <div className="flex gap-3 shrink-0">
+        <div className="flex gap-3 shrink-0 flex-wrap">
+          <Link href={`/clients/${id}/quiz`} className="btn btn-dark">
+            <QuizCtaIcon />
+            Quiz de validation
+          </Link>
           <Link href={`/clients/${id}/edit`} className="btn btn-ghost">
             Éditer
           </Link>
@@ -526,5 +530,25 @@ function MicroStat({
         )}
       </div>
     </Card>
+  );
+}
+
+function QuizCtaIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
   );
 }

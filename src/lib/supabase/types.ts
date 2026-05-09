@@ -46,6 +46,46 @@ export interface PersonaProfile {
   prep_bullets?: string[]; // 4-6 points clés ultra-courts pour la sidebar
 }
 
+export type QuizCategory =
+  | "qui"
+  | "pourquoi"
+  | "quoi"
+  | "douleurs"
+  | "objections";
+
+export interface QuizQuestion {
+  id: string;
+  category: QuizCategory;
+  question: string;
+  options: string[];
+  correct_index: number;
+  explanation: string;
+}
+
+export interface QuizData {
+  questions: QuizQuestion[];
+  generated_at: string;
+  source_version: string;
+}
+
+export interface QuizAttemptAnswer {
+  question_id: string;
+  selected_index: number;
+  correct: boolean;
+}
+
+export interface QuizAttemptRow {
+  id: string;
+  client_id: string;
+  user_id: string;
+  total_questions: number;
+  correct_answers: number;
+  score: number;
+  answers: QuizAttemptAnswer[];
+  started_at: string;
+  completed_at: string;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -61,6 +101,8 @@ export interface Client {
   synced_files: SyncedFile[];
   target_personas: string[];
   persona_profiles: PersonaProfile[];
+  quiz_data: QuizData | null;
+  quiz_generated_at: string | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
