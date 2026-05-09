@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Loader } from "@/components/Loader";
+import { CoachAvatar } from "@/components/CoachAvatar";
 
 export function FeedbackEvaluator({ sessionId }: { sessionId: string }) {
   const router = useRouter();
@@ -35,14 +36,9 @@ export function FeedbackEvaluator({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="container-noxias py-16 max-w-2xl">
-      <div className="mb-8 text-center">
-        <span className="eyebrow-green block mb-3">Coach Noxias</span>
-        <h1 className="text-h2">Je débriefe ton appel.</h1>
-      </div>
-
-      <Card className="py-12">
+      <Card className="py-14">
         {error ? (
-          <div className="space-y-4 text-center">
+          <div className="text-center space-y-4">
             <p className="text-body" style={{ color: "var(--color-error)" }}>
               {error}
             </p>
@@ -51,11 +47,20 @@ export function FeedbackEvaluator({ sessionId }: { sessionId: string }) {
             </Button>
           </div>
         ) : (
-          <Loader
-            size="lg"
-            message="J'écoute, je note, je décortique..."
-            detail="Quelques secondes, je te prépare un débrief carré."
-          />
+          <div className="flex flex-col items-center text-center gap-6">
+            <CoachAvatar state="thinking" size={96} withHalo />
+            <div>
+              <div className="eyebrow-green mb-2">Coach Noxias</div>
+              <h1 className="text-h2">Je débriefe ton appel.</h1>
+              <p
+                className="text-body mt-3"
+                style={{ color: "var(--color-gray)" }}
+              >
+                J&apos;écoute, je note, je décortique. Quelques secondes.
+              </p>
+            </div>
+            <Loader size="md" />
+          </div>
         )}
       </Card>
     </div>

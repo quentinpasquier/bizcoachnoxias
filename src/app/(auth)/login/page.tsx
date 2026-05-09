@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Logo } from "@/components/Logo";
+import { CoachAvatar } from "@/components/CoachAvatar";
 import { LoginForm } from "./LoginForm";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
@@ -28,6 +29,9 @@ export default async function LoginPage({
       <main className="flex-1 flex items-center justify-center px-6 pb-20">
         <div className="w-full max-w-md">
           <div className="text-center mb-10">
+            <div className="flex justify-center mb-5">
+              <CoachAvatar state="idle" size={72} />
+            </div>
             <div className="eyebrow-green mb-3">Coach commercial</div>
             <h1
               className="text-h1"

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { StatusPill } from "@/components/ui/Status";
 import { DifficultyBadge, ScoreBadge } from "@/components/ui/Badge";
-import { PageHeader } from "@/components/PageHeader";
+import { CoachAvatar } from "@/components/CoachAvatar";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { formatDateTimeFr } from "@/lib/format";
@@ -87,27 +87,35 @@ export default async function DashboardPage() {
 
   return (
     <div className="container-noxias py-12 space-y-12">
-      <PageHeader
-        eyebrow="MON COACH"
-        eyebrowGreen
-        title={
-          <>
-            Salut <span style={{ color: "var(--color-green)" }}>{userName}</span>
-          </>
-        }
-        subtitle="Prêt pour ta session ? Choisis un client, je m'occupe du reste."
-        action={
-          <>
-            <Link href="/clients" className="btn btn-ghost">
-              Voir les clients
-            </Link>
-            <Link href="/sessions/new" className="btn btn-dark">
-              + On démarre
-            </Link>
-          </>
-        }
-        divider={false}
-      />
+      <header className="flex items-end justify-between gap-6 flex-wrap">
+        <div className="flex items-center gap-5">
+          <CoachAvatar state="idle" size={80} />
+          <div>
+            <div className="eyebrow-green mb-2">Coach Noxias</div>
+            <h1
+              className="text-h2"
+              style={{ fontSize: "clamp(2rem, 4vw, 3rem)", lineHeight: "1.05" }}
+            >
+              <span style={{ color: "var(--color-dark)" }}>Salut </span>
+              <span style={{ color: "var(--color-green)" }}>{userName}</span>
+            </h1>
+            <p
+              className="text-body-l mt-2"
+              style={{ color: "var(--color-gray)" }}
+            >
+              Prêt pour ta session ? Choisis un client, je m&apos;occupe du reste.
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-3 shrink-0">
+          <Link href="/clients" className="btn btn-ghost">
+            Voir les clients
+          </Link>
+          <Link href="/sessions/new" className="btn btn-dark">
+            + On démarre
+          </Link>
+        </div>
+      </header>
 
       {/* MES STATS */}
       <section>

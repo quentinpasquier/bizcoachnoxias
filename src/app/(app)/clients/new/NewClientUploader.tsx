@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Loader } from "@/components/Loader";
+import { CoachAvatar } from "@/components/CoachAvatar";
 
 export function NewClientUploader() {
   const router = useRouter();
@@ -111,15 +112,18 @@ export function NewClientUploader() {
           )}
 
           {loading && (
-            <Loader
-              size="lg"
-              message={
-                step === "uploading"
-                  ? "J'embarque tes documents..."
-                  : "Je lis tout ça et je te prépare le client."
-              }
-              detail="20 à 40 secondes selon la taille des docs. Promis, ça vaut le coup."
-            />
+            <div className="flex flex-col items-center gap-5">
+              <CoachAvatar state="thinking" size={72} withHalo />
+              <Loader
+                size="lg"
+                message={
+                  step === "uploading"
+                    ? "J'embarque tes documents..."
+                    : "Je lis tout ça et je te prépare le client."
+                }
+                detail="20 à 40 secondes selon la taille. Promis, ça vaut le coup."
+              />
+            </div>
           )}
         </div>
 
