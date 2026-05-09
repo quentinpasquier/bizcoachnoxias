@@ -365,7 +365,7 @@ function StepSection({
     <section className="space-y-4">
       <div className="flex items-baseline gap-3">
         <span
-          className="font-display"
+          className=""
           style={{
             fontSize: "2.5rem",
             lineHeight: "1",

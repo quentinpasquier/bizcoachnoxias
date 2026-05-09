@@ -15,7 +15,7 @@ export default function NotFound() {
       <main className="flex-1 flex items-center justify-center px-6">
         <div className="text-center max-w-lg">
           <div
-            className="font-display"
+            className=""
             style={{
               fontSize: "8rem",
               lineHeight: "1",

@@ -56,6 +56,7 @@
   }
 
   h1, h2, h3, h4 {
+    font-family: var(--font-ubuntu), Lato, Calibri, system-ui, sans-serif;
     color: var(--color-dark);
     line-height: 1.1;
     letter-spacing: -0.015em;

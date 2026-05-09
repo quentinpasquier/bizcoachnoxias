@@ -318,7 +318,7 @@ function StatCard({
         {label}
       </div>
       <div
-        className="font-display"
+        className=""
         style={{
           fontSize: "3.75rem",
           lineHeight: "1",

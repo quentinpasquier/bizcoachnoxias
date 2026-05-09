@@ -9,13 +9,13 @@ export function Logo({ variant = "dark", size = 32 }: LogoProps) {
 
   return (
     <span
-      className="font-display select-none"
+      className="select-none"
       style={{
         color,
-        fontSize: Math.round(size * 0.85),
-        letterSpacing: "0.06em",
+        fontSize: Math.round(size * 0.7),
+        letterSpacing: "0.04em",
         lineHeight: 1,
-        fontWeight: 400,
+        fontWeight: 700,
         textTransform: "uppercase",
         display: "inline-block",
       }}

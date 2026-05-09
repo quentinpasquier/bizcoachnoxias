@@ -93,7 +93,7 @@ export default async function FeedbackPage({
             Ta note
           </div>
           <div
-            className="font-display"
+            className=""
             style={{
               fontSize: "6.5rem",
               lineHeight: "1",
@@ -156,7 +156,7 @@ export default async function FeedbackPage({
                 <div className="flex items-baseline justify-between mb-4 gap-3">
                   <h3 className="text-h4">{cat.label}</h3>
                   <span
-                    className="font-display"
+                    className=""
                     style={{
                       fontSize: "2.25rem",
                       lineHeight: "1",

@@ -359,7 +359,7 @@ function PersonaCard({
             Douleurs clés
           </div>
           <div
-            className="font-display mt-1"
+            className="mt-1"
             style={{
               fontSize: "1.5rem",
               color: "var(--color-red)",
@@ -377,7 +377,7 @@ function PersonaCard({
             Objections
           </div>
           <div
-            className="font-display mt-1"
+            className="mt-1"
             style={{
               fontSize: "1.5rem",
               color: "var(--color-warning)",
@@ -508,7 +508,7 @@ function MicroStat({
     <Card>
       <div className="eyebrow">{label}</div>
       <div
-        className="font-display mt-2"
+        className="mt-2"
         style={{
           fontSize: "2.25rem",
           lineHeight: "1",
