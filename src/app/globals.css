@@ -498,6 +498,24 @@
   width: 96px;
   height: 96px;
 }
+.login-avatar-disc {
+  position: absolute;
+  inset: -14px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.95) 0%, rgba(244, 241, 248, 0.85) 35%, rgba(232, 245, 237, 0.7) 70%, rgba(232, 245, 237, 0) 100%);
+  box-shadow:
+    0 0 0 1px rgba(60, 200, 121, 0.18),
+    0 18px 40px rgba(11, 6, 22, 0.55),
+    inset 0 -8px 20px rgba(60, 200, 121, 0.10);
+  pointer-events: none;
+  z-index: 0;
+}
+.login-avatar-stage > svg,
+.login-avatar-stage > div {
+  position: relative;
+  z-index: 1;
+}
 .login-halo {
   position: absolute;
   inset: 0;
@@ -505,6 +523,7 @@
   border: 1.5px solid rgba(60, 200, 121, 0.32);
   animation: login-halo-pulse 2.6s ease-out infinite;
   pointer-events: none;
+  z-index: 0;
 }
 .login-halo-2 { animation-delay: 0.85s; }
 .login-halo-3 { animation-delay: 1.7s; }
@@ -554,11 +573,31 @@
   100% { background-position: 200% center; }
 }
 
+.login-tagline {
+  margin-top: 22px;
+  font-family: var(--font-ubuntu), Lato, system-ui, sans-serif;
+  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #FFFFFF;
+  max-width: 30em;
+}
+.login-tagline-accent {
+  background: linear-gradient(95deg, #3CC879 0%, #6BE89F 50%, #3CC879 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+  animation: login-shine 4s linear infinite;
+}
+
 .login-subtitle {
-  margin-top: 18px;
-  font-size: 1.0625rem;
+  margin-top: 12px;
+  font-size: 0.95rem;
   line-height: 1.55;
-  color: rgba(255, 255, 255, 0.66);
+  color: rgba(255, 255, 255, 0.55);
   max-width: 30em;
 }
 

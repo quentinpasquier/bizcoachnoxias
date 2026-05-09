@@ -31,6 +31,7 @@ export default async function LoginPage({
       <main className="flex-1 container-noxias relative z-10 grid lg:grid-cols-[1.05fr_minmax(0,440px)] items-center gap-10 lg:gap-16 pt-2 pb-16 lg:py-0">
         <section className="login-hero">
           <div className="login-avatar-stage">
+            <span className="login-avatar-disc" aria-hidden="true" />
             <span className="login-halo login-halo-1" aria-hidden="true" />
             <span className="login-halo login-halo-2" aria-hidden="true" />
             <span className="login-halo login-halo-3" aria-hidden="true" />
@@ -45,9 +46,14 @@ export default async function LoginPage({
                 Prêt pour ta session&nbsp;?
               </span>
             </h1>
+            <p className="login-tagline">
+              Deviens un expert du cold call et fais exploser{" "}
+              <span className="login-tagline-accent">tes primes</span>.
+            </p>
             <p className="login-subtitle">
-              Reprends l&apos;entraînement là où tu t&apos;es arrêté. Scoring
-              sur 20 critères, classement équipe, badges déblocables.
+              Scoring sur 20 critères, classement équipe en direct, badges
+              déblocables. Reprends l&apos;entraînement là où tu t&apos;es
+              arrêté.
             </p>
           </div>
 
