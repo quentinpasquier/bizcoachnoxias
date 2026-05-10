@@ -26,7 +26,7 @@ export function Header({ user }: HeaderProps) {
     >
       <div className="container-noxias flex h-16 items-center justify-between gap-4">
         <Link href={user ? "/dashboard" : "/login"} className="flex items-center shrink-0">
-          <Logo variant="dark" size={28} />
+          <Logo variant="dark" size={36} />
         </Link>
 
         {user && (

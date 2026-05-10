@@ -10,7 +10,7 @@ export default function SignUpPage() {
     >
       <header className="container-noxias flex h-16 items-center">
         <Link href="/login">
-          <Logo variant="light" size={28} />
+          <Logo variant="light" size={36} />
         </Link>
       </header>
 

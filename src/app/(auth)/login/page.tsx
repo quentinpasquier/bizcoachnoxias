@@ -24,7 +24,7 @@ export default async function LoginPage({
 
       <header className="container-noxias h-16 flex items-center relative z-10">
         <Link href="/login" className="inline-flex items-center">
-          <Logo variant="dark" size={28} />
+          <Logo variant="dark" size={42} />
         </Link>
       </header>
 

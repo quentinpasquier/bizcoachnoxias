@@ -3,25 +3,25 @@ interface LogoProps {
   size?: number;
 }
 
+// dark = sur fond sombre (header app, login) -> logo blanc
+// light = sur fond clair (carte profil, etc.)  -> logo violet
 export function Logo({ variant = "dark", size = 32 }: LogoProps) {
-  const color =
-    variant === "light" ? "var(--color-purple)" : "#FFFFFF";
+  const src =
+    variant === "light" ? "/logos/noxias-purple.svg" : "/logos/noxias-white.svg";
+
+  // Logos exportés en 1200x675 (16:9) -> on fixe la hauteur, largeur auto.
+  const height = size;
+  const width = Math.round(size * (1200 / 675));
 
   return (
-    <span
-      className="select-none"
-      style={{
-        color,
-        fontSize: Math.round(size * 0.7),
-        letterSpacing: "0.04em",
-        lineHeight: 1,
-        fontWeight: 700,
-        textTransform: "uppercase",
-        display: "inline-block",
-      }}
-      aria-label="Noxias"
-    >
-      NOXIAS
-    </span>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt="Noxias"
+      width={width}
+      height={height}
+      style={{ height, width: "auto", display: "block" }}
+      draggable={false}
+    />
   );
 }

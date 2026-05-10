@@ -9,7 +9,7 @@ export default function NotFound() {
     >
       <header className="container-noxias h-16 flex items-center">
         <Link href="/">
-          <Logo variant="dark" size={28} />
+          <Logo variant="dark" size={36} />
         </Link>
       </header>
       <main className="flex-1 flex items-center justify-center px-6">
