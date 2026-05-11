@@ -67,6 +67,15 @@ export function ChatRoom({ session, initialMessages }: Props) {
   const hasOpenedRef = useRef(false);
   const recognitionRef = useRef<MinimalSpeechRecognition | null>(null);
   const finalTranscriptRef = useRef("");
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Délai de silence avant de considérer que le commercial a fini sa phrase.
+  // L'auto-VAD natif du navigateur coupe vers 700-1000ms : trop court pour
+  // une vraie pause de réflexion. On gère manuellement avec 1800ms.
+  const SILENCE_END_MS = 1800;
+  // Délai après que le prospect a fini de parler avant de relancer le mic.
+  // Laisse au commercial le temps de respirer et de poser ses idées.
+  const POST_PROSPECT_DELAY_MS = 700;
 
   useEffect(() => {
     setVoiceSupported({
@@ -113,13 +122,13 @@ export function ChatRoom({ session, initialMessages }: Props) {
       onStart: () => setIsSpeaking(true),
       onEnd: () => {
         setIsSpeaking(false);
-        // Auto-mode : redémarre l'écoute dès que le prospect a fini de parler
+        // Auto-mode : redémarre l'écoute après une vraie respiration
         if (autoMode && !ended && voiceSupported.stt) {
           setTimeout(() => {
             if (!isListening && !sending && !ended) {
               startListening();
             }
-          }, 350);
+          }, POST_PROSPECT_DELAY_MS);
         }
       },
       onError: () => setIsSpeaking(false),
@@ -227,6 +236,26 @@ export function ChatRoom({ session, initialMessages }: Props) {
     }
   }
 
+  function clearSilenceTimer() {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+  }
+
+  function scheduleSilenceStop(recognition: MinimalSpeechRecognition) {
+    clearSilenceTimer();
+    silenceTimerRef.current = setTimeout(() => {
+      // On ne ferme que s'il y a effectivement quelque chose à envoyer.
+      // Sinon on laisse le mic ouvert : le commercial réfléchit encore.
+      if (finalTranscriptRef.current.trim().length > 0) {
+        try {
+          recognition.stop();
+        } catch {}
+      }
+    }, SILENCE_END_MS);
+  }
+
   function startListening() {
     if (!voiceSupported.stt || isListening || sending || ended) return;
     if (isSpeaking) {
@@ -236,9 +265,12 @@ export function ChatRoom({ session, initialMessages }: Props) {
 
     finalTranscriptRef.current = "";
     setInterimTranscript("");
-    // Mode auto = continuous false → la reco s'arrête seule sur silence
-    // Mode manuel = continuous true → on stop avec le bouton
-    const recognition = createRecognition({ continuous: !autoMode });
+    clearSilenceTimer();
+
+    // En mode auto, on garde continuous=true et on gère NOUS-MÊMES la fin
+    // de phrase via un timer de silence (1800ms). C'est plus permissif que
+    // le VAD natif du navigateur (700-1000ms) qui coupait trop tôt.
+    const recognition = createRecognition({ continuous: true });
     if (!recognition) {
       setError("Reconnaissance vocale non disponible dans ce navigateur.");
       return;
@@ -259,10 +291,17 @@ export function ChatRoom({ session, initialMessages }: Props) {
         finalTranscriptRef.current = (finalTranscriptRef.current + " " + final).trim();
       }
       setInterimTranscript(interim);
+
+      // En auto-mode, chaque update repousse le timer de silence.
+      // Tant que le commercial parle (final ou interim), on patiente.
+      if (autoMode && (final.length > 0 || interim.length > 0)) {
+        scheduleSilenceStop(recognition);
+      }
     };
 
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => {
+      clearSilenceTimer();
       setIsListening(false);
       const finalText = finalTranscriptRef.current.trim();
       setInterimTranscript("");
@@ -273,9 +312,11 @@ export function ChatRoom({ session, initialMessages }: Props) {
     };
     recognition.onerror = (e: Event) => {
       const err = (e as unknown as { error?: string }).error ?? "unknown";
+      clearSilenceTimer();
       if (err === "no-speech" || err === "aborted") {
         setIsListening(false);
-        // En auto-mode, on retente après une pause si no-speech
+        // En auto-mode, on retente après une pause si no-speech, mais SANS
+        // envoyer (le commercial n'a rien dit, on ne va pas lui envoyer du vide)
         if (autoMode && err === "no-speech" && !ended && !sending && !isSpeaking) {
           setTimeout(() => {
             if (!isListening && !sending && !ended && !isSpeaking) {
@@ -299,6 +340,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
   }
 
   function stopListening() {
+    clearSilenceTimer();
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();

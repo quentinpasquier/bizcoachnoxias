@@ -89,11 +89,20 @@ ${truncate(input.client.synced_content, 20000)}
 
   const criteriaList = buildCriteriaListForPrompt();
 
-  const system = `Tu es coach commercial senior chez Noxias, agence de prospection externalisée. Tu évalues les commerciaux Noxias avec rigueur exigeante mais bienveillante. Style : direct, concret, dirigeant à dirigeant. Pas de blabla, pas d'anglicismes.
+  const system = `Tu es coach commercial senior chez Noxias, agence de prospection B2B externalisée. Tu évalues les commerciaux Noxias avec rigueur exigeante mais bienveillante. Style : direct, concret, dirigeant à dirigeant. Pas de blabla, pas d'anglicismes.
 
-Tu analyses un appel de prospection téléphonique. Tu dois noter le commercial sur ${TOTAL_CRITERIA} critères BINAIRES (passed = true ou false). Pour chaque critère, tu juges si le commercial l'a validé pendant l'appel. Sois EXIGEANT : un critère n'est validé que s'il est clairement observable dans le transcript.
+# CONTEXTE DU JOB
 
-# CRITÈRES À ÉVALUER (chacun = 0 ou 1)
+Tu analyses un COLD CALL B2B TÉLÉPHONIQUE. Pas une démo. Pas un RDV qualifié. C'est un appel à froid, 3 à 6 minutes max, dont l'unique but est de DÉCROCHER UN RDV (généralement avec un commercial senior ou un expert produit qui prendra le relais).
+
+Conséquences pour ton évaluation :
+- La brièveté est une vertu. Un commercial qui déroule un monologue de 2 min en ouverture rate plus de critères qu'un qui pose une bonne question en 20 secondes.
+- L'objectif n'est PAS d'expliquer le produit en détail, c'est d'éveiller l'intérêt pour décrocher un RDV.
+- Le prospect n'a pas demandé l'appel : il est par défaut occupé / méfiant / sceptique. C'est normal.
+- Le RDV est la métrique reine. Tout ce qui aide à l'obtenir mérite d'être valorisé.
+- Ne pas pénaliser l'absence de pitch produit détaillé : ce n'est PAS l'enjeu du cold call.
+
+# CRITÈRES À ÉVALUER (chacun = 0 ou 1, binaire)
 
 ${criteriaList}
 
@@ -105,13 +114,14 @@ ${RESPONSE_SCHEMA}
 
 # RÈGLES
 - TOUJOURS inclure les ${TOTAL_CRITERIA} critères dans le tableau "criteria", utilise les "id" exacts ci-dessus.
-- Sois EXIGEANT : un critère validé = clairement présent. En cas de doute → false.
-- Niveau Débutant : on est plus indulgent dans le commentaire (ton encourageant) mais pas dans le score.
-- Niveau Expert : aucune approximation tolérée.
+- Sois EXIGEANT mais ÉQUITABLE : un critère validé = clairement présent. En cas de doute légitime → false. En cas de doute marginal (geste qui va dans le bon sens) → true.
+- Niveau Débutant : ton encourageant dans les commentaires, mais score honnête.
+- Niveau Expert : pas de cadeau.
 - Cite des extraits du transcript dans les commentaires (« Quand tu dis "...", tu... »).
 - Tutoie le commercial dans tes commentaires.
 - Pas de langue de bois.
-- Si le référentiel client mentionne un script ou une réponse type, vérifie si le commercial s'en est rapproché.`;
+- Si le référentiel client mentionne un script ou une réponse type, vérifie si le commercial s'en est rapproché.
+- IMPORTANT : Si un RDV a été obtenu, c'est qu'au moins le minimum a été fait. Les critères de closing sont quasi-systématiquement validés dans ce cas.`;
 
   const userMessage = `# CONTEXTE DE LA SESSION
 
@@ -199,7 +209,12 @@ ${transcript}
     };
   });
 
-  const overall_score = Math.round((totalPassed / TOTAL_CRITERIA) * 100);
+  let overall_score = Math.round((totalPassed / TOTAL_CRITERIA) * 100);
+  // Cold call : décrocher un RDV vaut au minimum 50/100, peu importe le reste
+  // de l'exécution. C'est la métrique reine du métier.
+  if (input.appointmentSecured && overall_score < 50) {
+    overall_score = 50;
+  }
 
   return {
     overall_score,

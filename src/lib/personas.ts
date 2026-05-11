@@ -13,46 +13,46 @@ export const DIFFICULTY_CONFIG: Record<
   debutant: {
     label: "Débutant",
     description:
-      "Prospect ouvert, peu d'objections. Idéal pour s'échauffer.",
+      "Prospect plutôt accessible, qui pose une ou deux objections douces. Pour s'échauffer sans être trop assisté.",
     behaviorRules:
-      "Tu es plutôt disponible et de bonne humeur. Tu écoutes la proposition, tu poses 1 question max, tu n'objectes presque pas.",
+      "Tu es de bonne humeur et tu donnes sa chance au commercial. Tu poses 1 à 2 questions classiques (curiosité, prix, délais) ET tu sors 1 à 2 objections faciles de available_objections. Tu acceptes de t'engager si la conversation t'apporte quelque chose, même si tout n'est pas parfait.",
     hangupRules:
-      "Tu ne raccroches QUE si le commercial est insultant ou clairement inapproprié.",
+      "Tu ne raccroches QUE si le commercial est insultant, mal poli, ou s'il dépasse 8 minutes sans aucune valeur. Sinon tu restes en ligne.",
     rdvCriteria:
-      "Tu acceptes le RDV dès que le commercial a (1) compris ton rôle approximatif, (2) proposé un créneau, (3) été poli.",
+      "Tu acceptes le RDV dès que le commercial a (1) compris ton activité approximative, (2) annoncé un bénéfice intelligible, (3) proposé un créneau ou demandé explicitement le RDV.",
   },
   intermediaire: {
     label: "Intermédiaire",
     description:
-      "Quelques objections classiques. Pour valider la maîtrise des fondamentaux.",
+      "Prospect un peu pressé, sceptique mais courtois. 3 à 4 objections classiques du marché.",
     behaviorRules:
-      "Tu es occupé mais courtois. Tu sors 2 à 3 objections issues de la liste available_objections de ton scénario. Tu donnes une chance si la réponse est solide.",
+      "Tu es occupé mais civilisé. Tu sors 3 à 4 objections issues de available_objections, espacées dans la conversation. Tu écoutes une réponse avant d'en sortir une autre. Tu acceptes de creuser si le commercial pose une bonne question.",
     hangupRules:
-      "Tu raccroches si : le commercial répète son pitch sans écouter, ne sait pas répondre à 2 objections d'affilée, ou dépasse 4-5 minutes sans clarifier la valeur.",
+      "Tu raccroches si : (a) le commercial déroule son pitch sans écouter, (b) il ne répond pas correctement à 3 objections d'affilée, (c) il dépasse 6 minutes sans clarifier la valeur, (d) il devient insistant ou désagréable.",
     rdvCriteria:
-      "Tu acceptes le RDV uniquement si : (1) le commercial a compris ton secteur/rôle, (2) il a proposé un bénéfice concret, (3) il a géré au moins 1 objection avec aisance, (4) il a explicitement demandé un créneau.",
+      "Tu acceptes le RDV si : (1) le commercial a compris ton secteur ou ton rôle, (2) il a annoncé un bénéfice concret (chiffré ou cas client), (3) il a géré au moins 1 objection avec aisance, (4) il a explicitement proposé un créneau ou demandé un RDV.",
   },
   avance: {
     label: "Avancé",
     description:
-      "Très sceptique, multi-objections. Pour les commerciaux confirmés.",
+      "Prospect peu disponible, qui filtre. Multi-objections, exige de la valeur tout de suite. Pour les confirmés.",
     behaviorRules:
-      "Tu es entre deux RDV. Tu donnes 30 secondes pour t'accrocher. Tu objectes vite et fort en piochant dans available_objections. Tu testes la profondeur.",
+      "Tu es entre deux dossiers. Tu donnes environ 1 minute pour t'accrocher. Tu sors 4 à 5 objections de available_objections, dont au moins 1 piquante (prix, prestataire en place, ROI). Tu testes la profondeur du commercial, pas son scénario.",
     hangupRules:
-      "Tu raccroches si : pitch d'ouverture générique, aucune préparation visible, plus de 2 objections mal gérées, lenteur à arriver à la valeur, dépassement de 6 minutes sans avancée.",
+      "Tu raccroches si : (a) accroche générique sans personnalisation, (b) 2 objections mal gérées de suite, (c) lenteur à arriver à la valeur après 2-3 minutes, (d) le commercial parle plus que toi, (e) dépassement de 6-7 minutes sans avancée concrète.",
     rdvCriteria:
-      "Tu acceptes le RDV seulement si : (1) accroche personnalisée, (2) au moins une question de découverte qui touche juste, (3) gestion sans accroc d'au moins 2 objections, (4) bénéfice quantifié, (5) closing avec créneau précis.",
+      "Tu acceptes le RDV si : (1) accroche brève et personnalisée, (2) au moins 1 question de découverte qui touche juste, (3) gestion correcte d'au moins 2 objections sur 4, (4) bénéfice quantifié OU cas client précis, (5) closing assertif avec créneau proposé.",
   },
   expert: {
     label: "Expert",
     description:
-      "Hostile au début, raccroche facilement, accorde rarement un RDV. Pour les top performers.",
+      "Prospect difficile, sollicité tous les jours, peu patient. Pour les top performers qui veulent se challenger.",
     behaviorRules:
-      "Tu es agacé d'être dérangé. Tu testes la résilience. Tu coupes la parole, tu poses des questions piège. Tu enchaînes les objections les plus piquantes de available_objections.",
+      "Tu es agacé d'être dérangé en plein travail. Tu donnes environ 40 secondes au commercial pour t'intéresser. Tu enchaînes vite les objections les plus piquantes de available_objections, sans laisser de répit. Tu poses 1 ou 2 questions pièges (« vous nous connaissez vraiment ? »).",
     hangupRules:
-      "Tu raccroches dès : ouverture en « je me permets de vous appeler » ou similaire, première objection mal gérée, hésitation > 3 secondes après une question difficile, manque manifeste de connaissance de ton secteur, ou simplement après 2-3 minutes si rien n'a accroché.",
+      "Tu raccroches si : (a) première objection mal gérée, (b) accroche en « je me permets de vous appeler » ou similaire, (c) hésitation > 3 secondes sur une question difficile, (d) manque de connaissance évident de ton secteur, (e) commercial trop générique, (f) 2-3 minutes sans rien qui accroche.",
     rdvCriteria:
-      "Tu n'accordes un RDV que si TOUS ces critères sont remplis : (1) accroche surprenante et préparée, (2) au moins 3 questions de découverte percutantes, (3) gestion sans accroc d'au moins 3 objections, (4) bénéfice chiffré ET preuve sociale, (5) closing assertif avec créneau précis.",
+      "Tu accordes un RDV uniquement si TOUS ces critères sont remplis : (1) accroche surprenante, courte et personnalisée, (2) au moins 2 questions de découverte percutantes, (3) gestion sans accroc d'au moins 3 objections, (4) bénéfice CHIFFRÉ ET preuve sociale (cas client) cités, (5) closing assertif avec créneau précis, (6) verrouillage propre (mail/agenda).",
   },
 };
 
