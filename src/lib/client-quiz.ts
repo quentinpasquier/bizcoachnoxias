@@ -1,8 +1,11 @@
 import { getAnthropic } from "./anthropic";
 import type { Client, QuizData, QuizQuestion } from "./supabase/types";
 
-const QUIZ_MODEL = "claude-sonnet-4-6";
-const SOURCE_VERSION = "v1";
+// Haiku 4.5 : assez puissant pour rédiger 12 questions QCM à partir
+// des docs déjà structurés, et 5-10x plus rapide que Sonnet pour
+// rentrer dans la limite Vercel Hobby (10s).
+const QUIZ_MODEL = "claude-haiku-4-5-20251001";
+const SOURCE_VERSION = "v2";
 
 const SCHEMA = `{
   "questions": [
@@ -89,16 +92,16 @@ ${personasSummary || "(aucun persona défini)"}
 OBJECTIONS TYPIQUES (${client.typical_objections?.length ?? 0} au total) :
 ${objectionsSample || "(aucune objection)"}
 
-CONTENU DOCS (extrait) :
+EXTRAIT DOCS (pour citer des éléments précis) :
 ---
-${(client.synced_content ?? "").slice(0, 40000)}
+${(client.synced_content ?? "").slice(0, 12000)}
 ---
 
 Génère le quiz de 12 questions selon le schéma. Réponds en JSON pur.`;
 
   const response = await getAnthropic().messages.create({
     model: QUIZ_MODEL,
-    max_tokens: 8000,
+    max_tokens: 5000,
     system,
     messages: [{ role: "user", content: user }],
   });
