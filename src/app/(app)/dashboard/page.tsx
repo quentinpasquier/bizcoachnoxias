@@ -132,11 +132,7 @@ export default async function DashboardPage() {
     .slice(0, 6);
 
   return (
-    <div className="relative">
-      <div className="mission-blob mission-blob-purple" aria-hidden="true" />
-      <div className="mission-blob mission-blob-green" aria-hidden="true" />
-
-      <div className="container-noxias py-10 mission-content space-y-10">
+    <div className="container-noxias py-10 space-y-10">
         {/* HERO + QUICK CTA */}
         <header className="flex items-end justify-between gap-6 flex-wrap">
           <div className="flex items-center gap-5">
@@ -405,7 +401,6 @@ export default async function DashboardPage() {
             </div>
           </section>
         )}
-      </div>
     </div>
   );
 }

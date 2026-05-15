@@ -98,11 +98,7 @@ export default async function LeaderboardPage() {
   const myUnlocked = myBadges.filter((b) => b.unlocked).length;
 
   return (
-    <div className="relative">
-      <div className="mission-blob mission-blob-purple" aria-hidden="true" />
-      <div className="mission-blob mission-blob-green" aria-hidden="true" />
-
-      <div className="container-noxias py-10 mission-content space-y-10">
+    <div className="container-noxias py-10 space-y-10">
         <header className="space-y-3">
           <span className="mission-classified">
             <span
@@ -370,7 +366,6 @@ export default async function LeaderboardPage() {
           </div>
         </section>
       )}
-      </div>
     </div>
   );
 }
