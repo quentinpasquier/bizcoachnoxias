@@ -2008,6 +2008,217 @@
   100% { opacity: 0; transform: scale(1.4); }
 }
 
+/* =============================================================================
+   JARVIS-STYLE VOICE ORB
+   ============================================================================= */
+.jarvis-orb {
+  position: relative;
+  display: inline-block;
+}
+.jarvis-orb > * {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.jarvis-halo {
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    rgba(157, 107, 255, 0.32) 0%,
+    rgba(60, 200, 121, 0.12) 35%,
+    transparent 70%
+  );
+  filter: blur(28px);
+  animation: jarvisHalo 2.6s ease-in-out infinite;
+}
+@keyframes jarvisHalo {
+  0%, 100% { transform: scale(1); opacity: 0.65; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+
+.jarvis-ring {
+  width: 100%;
+  height: 100%;
+}
+.jarvis-ring-outer {
+  animation: jarvisRingSpin linear infinite;
+}
+.jarvis-ring-mid {
+  animation: jarvisRingSpinReverse linear infinite;
+}
+.jarvis-ring-inner {
+  animation: none;
+}
+@keyframes jarvisRingSpin {
+  to { transform: rotate(360deg); }
+}
+@keyframes jarvisRingSpinReverse {
+  to { transform: rotate(-360deg); }
+}
+
+.jarvis-core {
+  inset: 12%;
+  border-radius: 50%;
+  transition: background 0.5s ease, box-shadow 0.5s ease;
+}
+
+.jarvis-highlight {
+  inset: 18%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse 60% 40% at 50% 25%,
+    rgba(255, 255, 255, 0.40) 0%,
+    transparent 60%
+  );
+  filter: blur(8px);
+}
+
+.jarvis-bars {
+  inset: 30%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8%;
+}
+.jarvis-bar {
+  position: relative !important;
+  inset: auto !important;
+  width: 9%;
+  height: 35%;
+  border-radius: 999px;
+  transform-origin: center;
+  animation: jarvisBar ease-in-out infinite;
+}
+@keyframes jarvisBar {
+  0%, 100% { transform: scaleY(0.30); }
+  10% { transform: scaleY(0.85); }
+  20% { transform: scaleY(0.45); }
+  30% { transform: scaleY(1); }
+  40% { transform: scaleY(0.5); }
+  50% { transform: scaleY(0.92); }
+  60% { transform: scaleY(0.35); }
+  70% { transform: scaleY(0.75); }
+  80% { transform: scaleY(0.40); }
+  90% { transform: scaleY(0.65); }
+}
+
+.jarvis-thinking {
+  inset: 40%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14%;
+}
+.jarvis-thinking span {
+  position: relative !important;
+  inset: auto !important;
+  width: 22%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #b495ff;
+  box-shadow: 0 0 8px rgba(157, 107, 255, 0.7);
+  animation: jarvisThink 1.2s ease-in-out infinite;
+}
+.jarvis-thinking span:nth-child(2) { animation-delay: 0.15s; }
+.jarvis-thinking span:nth-child(3) { animation-delay: 0.30s; }
+@keyframes jarvisThink {
+  0%, 100% { transform: scale(0.6); opacity: 0.4; }
+  50% { transform: scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jarvis-halo,
+  .jarvis-ring-outer,
+  .jarvis-ring-mid,
+  .jarvis-bar,
+  .jarvis-thinking span {
+    animation: none !important;
+  }
+}
+
+/* =============================================================================
+   CHATROOM — page d'appel en violet
+   ============================================================================= */
+.chatroom {
+  position: relative;
+  color: #FFFFFF;
+  background: transparent;
+}
+.chatroom-topbar {
+  background: rgba(34, 25, 50, 0.55) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+.chatroom-topbar * {
+  color: inherit !important;
+}
+.chatroom-topbar h1,
+.chatroom-topbar h2,
+.chatroom-topbar h3 {
+  color: #FFFFFF !important;
+}
+
+/* Force tous les éléments du chatroom avec inline color: var(--color-dark)
+   à passer en blanc */
+.chatroom [style*="color: var(--color-dark)"],
+.chatroom [style*="color:var(--color-dark)"] {
+  color: #FFFFFF !important;
+}
+.chatroom [style*="color: var(--color-gray)"],
+.chatroom [style*="color:var(--color-gray)"] {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Background blocs blancs du chatroom -> verre dépoli */
+.chatroom [style*="background: #FFFFFF"],
+.chatroom [style*="background:#FFFFFF"],
+.chatroom [style*='background: "#FFFFFF"'] {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.10) !important;
+  color: #FFFFFF !important;
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+}
+
+/* Bulle commercial (vert) reste verte mais on adapte la teinte */
+.chatroom [style*="background: var(--color-green)"] {
+  background: linear-gradient(135deg, #3CC879 0%, #1F8A4F 100%) !important;
+  color: #0A1F12 !important;
+}
+
+/* Bordures grises -> blanc translucide */
+.chatroom [style*="borderColor: var(--color-gray-border)"],
+.chatroom [style*="border-color:var(--color-gray-border)"] {
+  border-color: rgba(255, 255, 255, 0.10) !important;
+}
+
+/* Bg du fond chatroom = transparent (le body shell s'occupe du dark) */
+.chatroom-bottombar {
+  background: rgba(34, 25, 50, 0.55) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+/* Bubbles de transcript */
+.chat-bubble-user {
+  background: linear-gradient(135deg, #3CC879 0%, #1F8A4F 100%);
+  color: #0A1F12;
+  border: 1px solid rgba(60, 200, 121, 0.55);
+  box-shadow: 0 6px 18px rgba(60, 200, 121, 0.22);
+}
+.chat-bubble-user .text-meta { color: rgba(10, 31, 18, 0.55) !important; }
+.chat-bubble-prospect {
+  background: rgba(255, 255, 255, 0.05);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+}
+.chat-bubble-prospect .text-meta { color: rgba(255, 255, 255, 0.45) !important; }
+
 @media (prefers-reduced-motion: reduce) {
   .mission-blob { animation: none !important; }
 }

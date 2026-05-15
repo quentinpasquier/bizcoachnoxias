@@ -412,14 +412,13 @@ export function ChatRoom({ session, initialMessages }: Props) {
 
   return (
     <div
-      className="flex flex-col"
-      style={{ minHeight: "calc(100vh - 4rem)", background: "#FAF9FC" }}
+      className="flex flex-col chatroom"
+      style={{ minHeight: "calc(100vh - 4rem)" }}
     >
       {/* TOP BAR */}
       <div
-        className="border-b"
+        className="border-b chatroom-topbar"
         style={{
-          background: "#FFFFFF",
           borderColor: "var(--color-gray-border)",
         }}
       >
@@ -643,8 +642,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
 
           {/* Transcript collapsible */}
           <div
-            className="border-t"
-            style={{ borderColor: "var(--color-gray-border)", background: "#FFFFFF" }}
+            className="border-t chatroom-bottombar"
           >
             <details className="container-noxias py-3">
               <summary
@@ -726,13 +724,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
             </div>
           </div>
 
-          <div
-            className="border-t"
-            style={{
-              background: "#FFFFFF",
-              borderColor: "var(--color-gray-border)",
-            }}
-          >
+          <div className="border-t chatroom-bottombar">
             <div className="container-noxias py-4 max-w-3xl">
               {error && (
                 <div
@@ -880,7 +872,7 @@ function TranscriptLine({ message }: { message: DisplayMessage }) {
       >
         {isUser ? "Toi" : "Prospect"}
       </span>
-      <span style={{ color: "var(--color-dark)" }}>{message.content}</span>
+      <span style={{ color: "#FFFFFF" }}>{message.content}</span>
     </div>
   );
 }
@@ -892,8 +884,9 @@ function Bubble({ message }: { message: DisplayMessage }) {
         <div
           className="rounded-pill px-4 py-2 text-small"
           style={{
-            background: "rgba(52, 36, 75, 0.08)",
-            color: "var(--color-purple)",
+            background: "rgba(157, 107, 255, 0.18)",
+            color: "#b495ff",
+            border: "1px solid rgba(157, 107, 255, 0.32)",
           }}
         >
           {message.content}
@@ -908,12 +901,9 @@ function Bubble({ message }: { message: DisplayMessage }) {
       className={`flex animate-fade-in ${isUser ? "justify-end" : "justify-start"}`}
     >
       <div
-        className="rounded-lg px-5 py-3 max-w-[80%]"
-        style={{
-          background: isUser ? "var(--color-green)" : "#FFFFFF",
-          color: "var(--color-dark)",
-          border: isUser ? "none" : "1px solid var(--color-gray-border)",
-        }}
+        className={`rounded-lg px-5 py-3 max-w-[80%] ${
+          isUser ? "chat-bubble-user" : "chat-bubble-prospect"
+        }`}
       >
         <div
           className="text-meta uppercase tracking-wider mb-1"
