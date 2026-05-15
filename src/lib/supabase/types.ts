@@ -120,6 +120,10 @@ export interface Scenario {
   available_objections: string[];
   decision_criteria: string;
   voice_notes: string;
+  // Champs enrichis pour rendre la simulation plus réaliste
+  current_setting?: string; // où se trouve physiquement le prospect au moment de l'appel
+  mood_baseline?: string; // humeur de base au décrochage
+  speech_quirks?: string[]; // tics de langage du persona
 }
 
 export interface SessionRow {

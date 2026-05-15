@@ -13,14 +13,17 @@ const SCHEMA = `{
   "persona_label": "<étiquette générique du persona joué>",
   "persona_name": "<prénom + nom français crédible, cohérent avec le genre>",
   "persona_role": "<intitulé exact du poste>",
-  "company_name": "<nom de l'entreprise/cabinet/établissement, fictif mais crédible>",
+  "company_name": "<nom de l'entreprise/cabinet/établissement, fictif mais crédible (jamais d'enseigne réelle)>",
   "company_context": "<2-3 phrases : taille, ville, secteur, particularités>",
   "current_situation": "<2-3 phrases : ce que vit le prospect en ce moment, déclencheurs potentiels>",
+  "current_setting": "<1 phrase concrète : où il est physiquement quand il décroche (au volant, dans son bureau porte ouverte, en cuisine de son restaurant, au bord du chantier, en pause cigarette, dans le métro, etc.). Ça influence sa disponibilité et son ton.>",
+  "mood_baseline": "<1 phrase : son humeur de base au décrochage (agacé d'être dérangé, neutre, pressé, curieux par défaut...). Cette humeur évoluera SELON ce que dit le commercial.>",
   "hidden_pain_points": ["<3 douleurs spécifiques qu'il ne révélera pas spontanément>", "...", "..."],
   "kpis_to_probe": ["<2-3 KPI/métriques que ce prospect surveille>", "...", "..."],
-  "available_objections": ["<5-7 objections concrètes formulées comme à l'oral>", "...", "..."],
+  "available_objections": ["<5-7 objections concrètes formulées comme à l'oral, en 1ère personne, COURTES (1 phrase max)>", "...", "..."],
+  "speech_quirks": ["<3-4 tics de langage RÉCURRENTS pour ce persona : ex 'franchement', 'en gros', 'tu vois ce que je veux dire', 'voilà', 'bon ben'. C'est crucial pour le réalisme oral.>", "...", "..."],
   "decision_criteria": "<1-2 phrases : ce qui le ferait dire OUI à un RDV>",
-  "voice_notes": "<1 phrase sur son style de parole : tutoiement/vouvoiement, vocabulaire, rythme>"
+  "voice_notes": "<2-3 phrases : tutoiement/vouvoiement, vocabulaire (technique/grand public), rythme (rapide/posé), niveau d'énergie, accent ou région éventuels.>"
 }`;
 
 function truncate(s: string, n: number): string {

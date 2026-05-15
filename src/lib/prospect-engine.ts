@@ -56,11 +56,14 @@ export async function generateProspectReply(args: {
   scenario: Scenario;
   history: ConversationTurn[];
 }): Promise<ProspectReply> {
+  const commercialTurns = args.history.filter((t) => t.role === "user").length;
+
   const system = buildProspectSystemPrompt({
     scenario: args.scenario,
     difficulty: args.difficulty,
     gender: args.gender,
     client: args.client,
+    commercialTurns,
   });
 
   const messages = args.history.map((turn) => ({
@@ -77,7 +80,7 @@ export async function generateProspectReply(args: {
 
   const response = await getAnthropic().messages.create({
     model: PROSPECT_MODEL,
-    max_tokens: 400,
+    max_tokens: 220,
     system,
     messages,
   });
