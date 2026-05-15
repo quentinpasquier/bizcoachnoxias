@@ -1,12 +1,8 @@
 import Link from "next/link";
-import { Card } from "@/components/ui/Card";
-import { StatusPill } from "@/components/ui/Status";
-import { DifficultyBadge, ScoreBadge } from "@/components/ui/Badge";
-import { CoachAvatar } from "@/components/CoachAvatar";
 import { Avatar } from "@/components/ui/Avatar";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { formatDateTimeFr } from "@/lib/format";
+import { formatRelativeFr } from "@/lib/format";
 import type { Client, SessionRow, UserRole } from "@/lib/supabase/types";
 import {
   filterTodaysSessions,
@@ -19,18 +15,21 @@ import {
   nextRank,
 } from "@/lib/xp";
 
+export const dynamic = "force-dynamic";
+
+const DAILY_TARGET_MINUTES = 30;
+
 export default async function DashboardPage() {
   const supabase = await createClient();
   const configured = isSupabaseConfigured();
 
-  let mySessions: Pick<
-    SessionRow,
-    "score" | "appointment_secured" | "difficulty" | "client_id"
-  >[] = [];
   let myAllSessions: SessionRow[] = [];
   let teamSessions: SessionRow[] = [];
   let clients: Pick<Client, "id" | "name" | "sector">[] = [];
-  let profileById = new Map<string, { full_name: string; avatar_url: string | null }>();
+  let profileById = new Map<
+    string,
+    { full_name: string; avatar_url: string | null }
+  >();
   let userName = "Commercial";
   let myUserId: string | null = null;
   let role: UserRole = "commercial";
@@ -72,7 +71,7 @@ export default async function DashboardPage() {
           .from("sessions")
           .select("*")
           .order("started_at", { ascending: false })
-          .limit(8),
+          .limit(12),
         supabase
           .from("clients")
           .select("id, name, sector")
@@ -82,14 +81,6 @@ export default async function DashboardPage() {
       ]);
 
       myAllSessions = (myAllSessionsData ?? []) as SessionRow[];
-      mySessions = myAllSessions
-        .filter((s) => s.status === "completed")
-        .map((s) => ({
-          score: s.score,
-          appointment_secured: s.appointment_secured,
-          difficulty: s.difficulty,
-          client_id: s.client_id,
-        }));
       teamSessions = (teamSessionsData ?? []) as SessionRow[];
       clients = (clientsData ?? []) as typeof clients;
       profileById = new Map(
@@ -108,441 +99,307 @@ export default async function DashboardPage() {
   }
   const isManager = role === "manager";
 
-  const totalSessions = mySessions.length;
-  const avgScore =
-    totalSessions > 0
-      ? Math.round(
-          mySessions.reduce((acc, s) => acc + (s.score ?? 0), 0) / totalSessions,
-        )
-      : null;
-  const rdvSecured = mySessions.filter((s) => s.appointment_secured).length;
+  // ---------- Stats perso ----------
+  const completed = myAllSessions.filter((s) => s.status === "completed");
+  const rdvSecured = completed.filter((s) => s.appointment_secured).length;
   const rdvRate =
-    totalSessions > 0 ? Math.round((rdvSecured / totalSessions) * 100) : 0;
+    completed.length > 0 ? Math.round((rdvSecured / completed.length) * 100) : 0;
 
-  const clientById = new Map(clients.map((c) => [c.id, c]));
-
-  // Gamification : XP, niveau, rang
+  // ---------- Gamification ----------
   const xpTotal = totalXp(myAllSessions);
   const lvl = levelProgress(xpTotal);
   const currentRank = rankForLevel(lvl.level);
   const upcomingRank = nextRank(lvl.level);
 
-  // Missions du jour : computed côté serveur depuis sessions d'aujourd'hui
+  // ---------- Today / streak ----------
   const todaySessions = filterTodaysSessions(myAllSessions);
+  const minutesToday = minutesPracticedToday(myAllSessions);
+  const streakDays = computeStreak(myAllSessions);
+
+  // ---------- Daily missions ----------
   const dailyMissions = myUserId
     ? pickDailyMissions(myUserId, todaySessions)
     : [];
   const dailyDone = dailyMissions.filter((m) => m.done).length;
-  const dailyTotalXp = dailyMissions
-    .filter((m) => m.done)
-    .reduce((acc, m) => acc + m.xpReward, 0);
+
+  // ---------- Live team feed ----------
+  const liveFeed = teamSessions
+    .filter((s) => s.status === "completed")
+    .slice(0, 6);
 
   return (
-    <div className="container-noxias py-12 space-y-12">
-      <header className="flex items-end justify-between gap-6 flex-wrap">
-        <div className="flex items-center gap-5">
-          <CoachAvatar state="idle" size={80} />
+    <div className="mission-page">
+      <div className="mission-blob mission-blob-purple" aria-hidden="true" />
+      <div className="mission-blob mission-blob-green" aria-hidden="true" />
+      <div className="mission-blob mission-blob-violet" aria-hidden="true" />
+
+      <div className="container-noxias py-10 mission-content space-y-10">
+        {/* HERO + QUICK CTA */}
+        <header className="flex items-end justify-between gap-6 flex-wrap">
           <div>
-            <div className="eyebrow-green mb-2">Coach Noxias</div>
-            <h1
-              className="text-h2"
-              style={{ fontSize: "clamp(2rem, 4vw, 3rem)", lineHeight: "1.05" }}
-            >
-              <span style={{ color: "var(--color-dark)" }}>Salut </span>
-              <span style={{ color: "var(--color-green)" }}>{userName}</span>
+            <span className="mission-classified">
+              <DotPulse />
+              MISSION CONTROL · NOXIAS
+            </span>
+            <h1 className="mission-h1 mt-3">
+              <span style={{ color: "rgba(255,255,255,0.85)" }}>
+                Salut{" "}
+              </span>
+              <span className="accent">{userName}</span>
+              <span style={{ color: "rgba(255,255,255,0.85)" }}>.</span>
             </h1>
-            <p
-              className="text-body-l mt-2"
-              style={{ color: "var(--color-gray)" }}
-            >
-              Prêt pour ta session ? Choisis un client, je m&apos;occupe du reste.
+            <p className="mission-subtitle">
+              {streakDays > 1
+                ? `${streakDays} jours d'affilée. On continue ?`
+                : minutesToday >= DAILY_TARGET_MINUTES
+                  ? "Quota du jour bouclé. Tu peux pousser plus."
+                  : minutesToday > 0
+                    ? `${minutesToday} min déjà aujourd'hui. ${DAILY_TARGET_MINUTES - minutesToday} min pour boucler ton quota.`
+                    : "30 minutes d'entraînement aujourd'hui = jamais surpris en RDV réel."}
             </p>
           </div>
-        </div>
-        <div className="flex gap-3 shrink-0">
-          <Link href="/clients" className="btn btn-ghost">
-            Voir les clients
-          </Link>
-          <Link href="/sessions/new" className="btn btn-dark">
-            + On démarre
-          </Link>
-        </div>
-      </header>
+          <div className="flex gap-3 shrink-0 flex-wrap">
+            <Link href="/clients" className="mission-cta mission-cta-ghost">
+              Mes clients
+            </Link>
+            <Link href="/sessions/new" className="mission-cta">
+              Lancer une mission →
+            </Link>
+          </div>
+        </header>
 
-      {/* PLAYER CARD : niveau, XP, rang */}
-      <section>
-        <PlayerCard
-          level={lvl.level}
-          xpTotal={lvl.xpTotal}
-          xpInLevel={lvl.xpInLevel}
-          xpToNext={lvl.xpToNext}
-          xpForNextLevel={lvl.xpForNextLevel - lvl.xpForCurrentLevel}
-          progressPct={lvl.progressPct}
-          rankLabel={currentRank.label}
-          rankPrimary={currentRank.primary}
-          rankSecondary={currentRank.secondary}
-          rankGlow={currentRank.glow}
-          nextRankLabel={upcomingRank?.label ?? null}
-          nextRankAtLevel={upcomingRank?.minLevel ?? null}
-        />
-      </section>
+        {/* MISSION CONTROL HQ : Player + Daily progress */}
+        <section className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-5">
+          <PlayerCard
+            level={lvl.level}
+            xpTotal={lvl.xpTotal}
+            xpInLevel={lvl.xpInLevel}
+            xpForLevel={lvl.xpForNextLevel - lvl.xpForCurrentLevel}
+            xpToNext={lvl.xpToNext}
+            progressPct={lvl.progressPct}
+            rankLabel={currentRank.label}
+            rankPrimary={currentRank.primary}
+            rankSecondary={currentRank.secondary}
+            rankGlow={currentRank.glow}
+            nextRankLabel={upcomingRank?.label ?? null}
+            nextRankAtLevel={upcomingRank?.minLevel ?? null}
+          />
+          <DailyProgressCard
+            minutesToday={minutesToday}
+            target={DAILY_TARGET_MINUTES}
+            streakDays={streakDays}
+            sessionsToday={todaySessions.length}
+          />
+        </section>
 
-      {/* MISSIONS DU JOUR */}
-      {dailyMissions.length > 0 && (
-        <section className="space-y-4">
-          <SectionHeader
-            title="Missions du jour"
-            action={
+        {/* DAILY MISSIONS */}
+        {dailyMissions.length > 0 && (
+          <section className="space-y-4">
+            <div className="flex items-end justify-between gap-3 flex-wrap">
+              <div>
+                <span className="mission-eyebrow mission-eyebrow-orange">
+                  Missions du jour
+                </span>
+                <h2 className="mission-h1" style={{ fontSize: "1.6rem" }}>
+                  Trois objectifs avant de partir prospecter.
+                </h2>
+              </div>
               <span
                 className="text-small font-semibold"
                 style={{
                   color:
                     dailyDone === dailyMissions.length
                       ? "var(--color-green)"
-                      : "var(--color-gray)",
+                      : "rgba(255,255,255,0.55)",
                 }}
               >
-                {dailyDone}/{dailyMissions.length} bouclées · +{dailyTotalXp} XP
-                récupérés
+                {dailyDone}/{dailyMissions.length} bouclées
               </span>
-            }
-          />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {dailyMissions.map((m) => (
-              <Card
-                key={m.id}
-                variant={m.done ? "default" : "lavender"}
-                hoverable={false}
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className="text-3xl shrink-0"
-                    style={{
-                      filter: m.done ? "none" : "grayscale(0.5)",
-                      opacity: m.done ? 1 : 0.8,
-                    }}
-                    aria-hidden="true"
-                  >
-                    {m.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-h4">{m.label}</span>
-                      {m.done && (
-                        <span
-                          className="badge"
-                          style={{
-                            background: "rgba(60, 200, 121, 0.18)",
-                            color: "#1F6A3F",
-                          }}
-                        >
-                          ✓ Validée
-                        </span>
-                      )}
-                    </div>
-                    <p
-                      className="text-small mt-1"
-                      style={{ color: "var(--color-gray)" }}
-                    >
-                      {m.description}
-                    </p>
-                    <div className="mt-3">
-                      <div
-                        className="h-1.5 rounded-full overflow-hidden"
-                        style={{ background: "rgba(139, 127, 163, 0.18)" }}
-                      >
-                        <div
-                          className="h-full rounded-full transition-all"
-                          style={{
-                            width: `${Math.min(100, (m.current / m.target) * 100)}%`,
-                            background: m.done
-                              ? "var(--color-green)"
-                              : "var(--color-purple)",
-                          }}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between mt-1.5">
-                        <span
-                          className="text-meta"
-                          style={{ color: "var(--color-gray)" }}
-                        >
-                          {m.current}/{m.target}
-                        </span>
-                        <span
-                          className="text-meta font-bold"
-                          style={{
-                            color: m.done
-                              ? "var(--color-green)"
-                              : "var(--color-purple)",
-                            letterSpacing: "0.05em",
-                          }}
-                        >
-                          +{m.xpReward} XP
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </section>
-      )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {dailyMissions.map((m) => (
+                <DailyMissionCard
+                  key={m.id}
+                  icon={m.icon}
+                  label={m.label}
+                  description={m.description}
+                  current={m.current}
+                  target={m.target}
+                  done={m.done}
+                  xp={m.xpReward}
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
-      {/* MES STATS */}
-      <section>
-        <h2 className="text-h3 mb-4">Ta progression</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <StatCard
-            number={totalSessions.toString()}
-            label="Appels menés"
-          />
-          <StatCard
-            number={avgScore !== null ? `${avgScore}` : "·"}
-            suffix={avgScore !== null ? "/100" : undefined}
-            label="Ta note moyenne"
-          />
-          <StatCard
-            number={`${rdvRate}%`}
-            label="RDV décrochés"
-            accent
-          />
-        </div>
-      </section>
-
-      {/* DEMARRER */}
-      {clients.length > 0 && (
-        <section className="space-y-5">
-          <SectionHeader
-            title="Tes terrains de jeu"
-            action={
-              clients.length > 6 ? (
-                <Link
-                  href="/clients"
-                  className="text-small font-semibold"
-                  style={{ color: "var(--color-purple)" }}
-                >
-                  Voir les {clients.length} clients →
+        {/* CLIENTS / TERRAINS DE JEU */}
+        {clients.length > 0 && (
+          <section className="space-y-4">
+            <div className="flex items-end justify-between gap-3 flex-wrap">
+              <div>
+                <span className="mission-eyebrow">Tes terrains de jeu</span>
+                <h2 className="mission-h1" style={{ fontSize: "1.6rem" }}>
+                  {clients.length} client{clients.length > 1 ? "s" : ""}{" "}
+                  en pipeline.
+                </h2>
+              </div>
+              {clients.length > 6 && (
+                <Link href="/clients" className="mission-link">
+                  Voir tous les clients →
                 </Link>
-              ) : undefined
-            }
-          />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {clients.slice(0, 6).map((c) => (
-              <Link key={c.id} href={`/clients/${c.id}`}>
-                <Card hoverable>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-h4 truncate">{c.name}</div>
-                      {c.sector && (
-                        <div className="eyebrow mt-1">{c.sector}</div>
-                      )}
+              )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {clients.slice(0, 6).map((c) => (
+                <Link key={c.id} href={`/clients/${c.id}`}>
+                  <div className="mission-card mission-card-hover h-full">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div
+                          className="text-h4"
+                          style={{ color: "#FFFFFF" }}
+                        >
+                          {c.name}
+                        </div>
+                        {c.sector && (
+                          <div
+                            className="mission-tile-label mt-1"
+                            style={{ color: "var(--color-green)" }}
+                          >
+                            {c.sector}
+                          </div>
+                        )}
+                      </div>
+                      <span
+                        className="text-h4"
+                        style={{ color: "var(--color-green)" }}
+                        aria-hidden="true"
+                      >
+                        →
+                      </span>
                     </div>
-                    <span
-                      className="text-h4"
-                      style={{ color: "var(--color-green)" }}
-                      aria-hidden="true"
-                    >
-                      →
-                    </span>
                   </div>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
-      {/* ACTIVITE EQUIPE */}
-      <section className="space-y-5">
-        <SectionHeader
-          title={isManager ? "L'équipe en action" : "Tes derniers appels"}
-          action={
-            teamSessions.length > 0 ? (
-              <Link
-                href="/history"
-                className="text-small font-semibold"
-                style={{ color: "var(--color-purple)" }}
-              >
+        {/* LIVE FEED ÉQUIPE */}
+        {liveFeed.length > 0 && (
+          <section className="space-y-4">
+            <div className="flex items-end justify-between gap-3 flex-wrap">
+              <div>
+                <span className="mission-eyebrow mission-eyebrow-violet">
+                  <DotPulse color="#9d6bff" />
+                  Activité équipe en direct
+                </span>
+                <h2 className="mission-h1" style={{ fontSize: "1.6rem" }}>
+                  {isManager
+                    ? "L'équipe sur le terrain."
+                    : "Les autres bossent. Tu fais quoi ?"}
+                </h2>
+              </div>
+              <Link href="/history" className="mission-link">
                 Tout l&apos;historique →
               </Link>
-            ) : undefined
-          }
-        />
-
-        {teamSessions.length > 0 ? (
-          <div className="space-y-3">
-            {teamSessions.map((s) => {
-              const client = s.client_id ? clientById.get(s.client_id) : null;
-              const clientName =
-                client?.name ?? s.client_name_snapshot ?? "Client supprimé";
-              const authorProfile = profileById.get(s.user_id);
-              const author = authorProfile?.full_name ?? "Anonyme";
-              const authorAvatar = authorProfile?.avatar_url ?? null;
-              const isMe = s.user_id === myUserId;
-              return (
-                <Link
-                  key={s.id}
-                  href={
-                    s.status === "active"
-                      ? `/sessions/${s.id}`
-                      : `/sessions/${s.id}/feedback`
-                  }
-                  className="block"
-                >
-                  <Card hoverable>
-                    <div className="flex items-center justify-between gap-4 flex-wrap">
-                      <div className="flex items-center gap-3 flex-1 min-w-[200px]">
-                        {isManager && (
-                          <Avatar src={authorAvatar} name={author} size={36} />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {liveFeed.map((s) => {
+                const author = profileById.get(s.user_id);
+                const name = author?.full_name ?? "Anonyme";
+                const isMe = s.user_id === myUserId;
+                return (
+                  <Link
+                    key={s.id}
+                    href={`/sessions/${s.id}/feedback`}
+                    className={`mission-feed-item mission-card-hover ${
+                      s.appointment_secured ? "mission-feed-item-success" : ""
+                    }`}
+                    style={{ textDecoration: "none" }}
+                  >
+                    <Avatar
+                      src={author?.avatar_url ?? null}
+                      name={name}
+                      size={36}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className="text-small font-semibold"
+                          style={{ color: "#FFFFFF" }}
+                        >
+                          {name}
+                          {isMe && (
                             <span
-                              className="text-meta font-bold uppercase tracking-widest"
-                              style={{ color: "var(--color-purple)" }}
+                              className="ml-1.5"
+                              style={{
+                                color: "var(--color-green)",
+                                fontSize: "0.65rem",
+                                letterSpacing: "0.18em",
+                              }}
                             >
-                              {clientName}
+                              · TOI
                             </span>
-                            <span
-                              className="text-meta"
-                              style={{ color: "var(--color-gray)" }}
-                            >
-                              ·
-                            </span>
-                            <span className="text-h4">{s.persona_label}</span>
-                            <DifficultyBadge difficulty={s.difficulty} />
-                            {s.status === "active" && (
-                              <StatusPill tone="success">En cours</StatusPill>
-                            )}
-                            {isMe && (
-                              <span
-                                className="badge"
-                                style={{
-                                  background: "rgba(60, 200, 121, 0.10)",
-                                  color: "#1F6A3F",
-                                }}
-                              >
-                                Toi
-                              </span>
-                            )}
-                          </div>
-                          <p
-                            className="text-small"
-                            style={{ color: "var(--color-gray)" }}
-                          >
-                            <span style={{ color: "var(--color-dark)", fontWeight: 500 }}>
-                              {author}
-                            </span>
-                            {" · "}
-                            {formatDateTimeFr(s.started_at)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
+                          )}
+                        </span>
                         {s.appointment_secured && (
-                          <StatusPill tone="success">RDV obtenu</StatusPill>
+                          <span
+                            className="badge"
+                            style={{
+                              background: "rgba(60, 200, 121, 0.18)",
+                              color: "var(--color-green)",
+                            }}
+                          >
+                            ✓ RDV
+                          </span>
                         )}
-                        <ScoreBadge score={s.score} />
                       </div>
+                      <p
+                        className="text-meta truncate"
+                        style={{ color: "rgba(255,255,255,0.55)" }}
+                      >
+                        {s.client_name_snapshot ?? "Client supprimé"} ·{" "}
+                        {s.persona_label} ·{" "}
+                        {formatRelativeFr(s.started_at)}
+                      </p>
                     </div>
-                  </Card>
-                </Link>
-              );
-            })}
-          </div>
-        ) : (
-          <Card variant="lavender" className="text-center py-14">
-            <h3 className="text-h3 mb-2">L&apos;équipe attaque bientôt.</h3>
-            <p
-              className="text-body mb-6"
-              style={{ color: "var(--color-gray)" }}
-            >
-              {configured
-                ? "Sois le premier à décrocher. 5 minutes, débrief immédiat."
-                : "Mode démo. Connecte Supabase pour voir les sessions."}
-            </p>
-            <Link
-              href="/sessions/new"
-              className="btn btn-primary inline-flex"
-            >
-              On y va
-            </Link>
-          </Card>
+                    {typeof s.score === "number" && (
+                      <span
+                        className="mission-stat-num"
+                        style={{
+                          fontSize: "1.3rem",
+                          color:
+                            s.score >= 75
+                              ? "var(--color-green)"
+                              : s.score >= 50
+                                ? "#b495ff"
+                                : "#FFB4B4",
+                        }}
+                      >
+                        {s.score}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
         )}
-      </section>
+      </div>
     </div>
   );
 }
 
-function StatCard({
-  number,
-  suffix,
-  label,
-  accent,
-}: {
-  number: string;
-  suffix?: string;
-  label: string;
-  accent?: boolean;
-}) {
-  return (
-    <Card variant={accent ? "dark" : "default"}>
-      <div
-        className="eyebrow mb-3"
-        style={{
-          color: accent ? "rgba(255,255,255,0.55)" : "var(--color-gray)",
-        }}
-      >
-        {label}
-      </div>
-      <div
-        className=""
-        style={{
-          fontSize: "3.75rem",
-          lineHeight: "1",
-          color: accent ? "var(--color-green)" : "var(--color-dark)",
-        }}
-      >
-        {number}
-        {suffix && (
-          <span
-            style={{
-              fontSize: "1.25rem",
-              opacity: 0.55,
-              marginLeft: "0.25rem",
-              fontWeight: 400,
-            }}
-          >
-            {suffix}
-          </span>
-        )}
-      </div>
-    </Card>
-  );
-}
-
-function SectionHeader({
-  title,
-  action,
-}: {
-  title: string;
-  action?: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-end justify-between gap-3 flex-wrap">
-      <h2 className="text-h3">{title}</h2>
-      {action}
-    </div>
-  );
-}
+// =================== Composants internes ===================
 
 interface PlayerCardProps {
   level: number;
   xpTotal: number;
   xpInLevel: number;
+  xpForLevel: number;
   xpToNext: number;
-  xpForNextLevel: number;
   progressPct: number;
   rankLabel: string;
   rankPrimary: string;
@@ -556,8 +413,8 @@ function PlayerCard({
   level,
   xpTotal,
   xpInLevel,
+  xpForLevel,
   xpToNext,
-  xpForNextLevel,
   progressPct,
   rankLabel,
   rankPrimary,
@@ -567,28 +424,33 @@ function PlayerCard({
   nextRankAtLevel,
 }: PlayerCardProps) {
   return (
-    <Card variant="dark">
+    <div className="mission-card">
       <div className="flex items-center gap-6 flex-wrap">
         <div
-          className="rounded-full flex flex-col items-center justify-center shrink-0"
+          className="rounded-full flex flex-col items-center justify-center shrink-0 relative"
           style={{
-            width: 96,
-            height: 96,
+            width: 110,
+            height: 110,
             background: `linear-gradient(135deg, ${rankPrimary} 0%, ${rankSecondary} 100%)`,
-            boxShadow: `0 0 0 4px ${rankGlow}, 0 0 0 8px rgba(255,255,255,0.06)`,
+            boxShadow: `0 0 0 4px ${rankGlow}, 0 0 0 8px rgba(255,255,255,0.04), 0 12px 30px ${rankGlow}`,
             color: "#FFFFFF",
           }}
         >
           <span
-            className="text-meta uppercase tracking-widest"
-            style={{ color: "rgba(255,255,255,0.85)", fontWeight: 700, fontSize: "0.62rem" }}
+            style={{
+              fontSize: "0.62rem",
+              letterSpacing: "0.22em",
+              fontWeight: 700,
+              opacity: 0.85,
+              textTransform: "uppercase",
+            }}
           >
             Niveau
           </span>
           <span
             style={{
               fontFamily: "var(--font-ubuntu), Lato, system-ui, sans-serif",
-              fontSize: "2.4rem",
+              fontSize: "2.6rem",
               fontWeight: 700,
               lineHeight: "1",
               letterSpacing: "-0.02em",
@@ -598,15 +460,17 @@ function PlayerCard({
           </span>
         </div>
         <div className="flex-1 min-w-[260px]">
-          <div className="flex items-center gap-3 flex-wrap mb-2">
+          <div className="flex items-center gap-3 flex-wrap mb-3">
             <span
-              className="px-3 py-1 rounded-full text-meta uppercase tracking-widest"
+              className="px-3 py-1 rounded-full"
               style={{
                 background: `linear-gradient(135deg, ${rankPrimary}33, ${rankSecondary}22)`,
                 border: `1px solid ${rankPrimary}66`,
                 color: rankPrimary,
                 fontWeight: 700,
                 fontSize: "0.68rem",
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
               }}
             >
               Rang {rankLabel}
@@ -623,7 +487,7 @@ function PlayerCard({
               className="text-small"
               style={{ color: "rgba(255,255,255,0.85)", fontWeight: 600 }}
             >
-              {xpInLevel}/{xpForNextLevel} XP
+              {xpInLevel}/{xpForLevel} XP
             </span>
             <span
               className="text-small"
@@ -656,6 +520,295 @@ function PlayerCard({
           )}
         </div>
       </div>
-    </Card>
+    </div>
   );
+}
+
+function DailyProgressCard({
+  minutesToday,
+  target,
+  streakDays,
+  sessionsToday,
+}: {
+  minutesToday: number;
+  target: number;
+  streakDays: number;
+  sessionsToday: number;
+}) {
+  const pct = Math.min(100, Math.round((minutesToday / target) * 100));
+  const done = minutesToday >= target;
+  const radius = 52;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (pct / 100) * circumference;
+  const color = done ? "var(--color-green)" : "#b495ff";
+
+  return (
+    <div className="mission-card">
+      <span className="mission-eyebrow">Aujourd&apos;hui</span>
+      <p
+        className="mt-1"
+        style={{
+          fontFamily: "var(--font-ubuntu), Lato, sans-serif",
+          fontSize: "1.2rem",
+          fontWeight: 700,
+          letterSpacing: "-0.01em",
+          color: "#FFFFFF",
+        }}
+      >
+        {done ? "Quota bouclé." : "Objectif 30 minutes"}
+      </p>
+      <div className="flex items-center gap-5 mt-4">
+        <div className="mission-progress-ring shrink-0">
+          <svg width="124" height="124">
+            <circle
+              cx="62"
+              cy="62"
+              r={radius}
+              stroke="rgba(255,255,255,0.08)"
+              strokeWidth="10"
+              fill="none"
+            />
+            <circle
+              cx="62"
+              cy="62"
+              r={radius}
+              stroke={color}
+              strokeWidth="10"
+              fill="none"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={offset}
+              style={{
+                transition: "stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+                filter: `drop-shadow(0 0 8px ${color}55)`,
+              }}
+            />
+          </svg>
+          <div className="mission-progress-ring-inner">
+            <span
+              style={{
+                fontFamily: "var(--font-ubuntu), Lato, sans-serif",
+                fontSize: "1.6rem",
+                fontWeight: 700,
+                lineHeight: "1",
+                color,
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {minutesToday}
+            </span>
+            <span
+              style={{
+                fontSize: "0.65rem",
+                letterSpacing: "0.18em",
+                color: "rgba(255,255,255,0.55)",
+                textTransform: "uppercase",
+                fontWeight: 700,
+              }}
+            >
+              / {target} min
+            </span>
+          </div>
+        </div>
+        <div className="flex-1 space-y-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {streakDays > 0 && (
+              <span className="mission-streak">
+                <FlameIcon />
+                {streakDays} {streakDays > 1 ? "jours" : "jour"}
+              </span>
+            )}
+            {sessionsToday > 0 && (
+              <span
+                className="mission-tile-label"
+                style={{ color: "rgba(255,255,255,0.65)" }}
+              >
+                {sessionsToday} appel{sessionsToday > 1 ? "s" : ""} aujourd&apos;hui
+              </span>
+            )}
+          </div>
+          <p
+            className="text-small"
+            style={{ color: "rgba(255,255,255,0.65)", lineHeight: "1.45" }}
+          >
+            {done
+              ? "Tu peux partir prospecter sereinement."
+              : `Encore ${target - minutesToday} min pour atteindre ton quota.`}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DailyMissionCard({
+  icon,
+  label,
+  description,
+  current,
+  target,
+  done,
+  xp,
+}: {
+  icon: string;
+  label: string;
+  description: string;
+  current: number;
+  target: number;
+  done: boolean;
+  xp: number;
+}) {
+  const pct = Math.min(100, (current / target) * 100);
+  return (
+    <div
+      className={`mission-card ${done ? "mission-card-accent" : ""}`}
+      style={{ position: "relative" }}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className="text-3xl shrink-0"
+          style={{
+            filter: done ? "none" : "grayscale(0.4)",
+            opacity: done ? 1 : 0.85,
+          }}
+          aria-hidden="true"
+        >
+          {icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span
+              className="text-h4"
+              style={{ color: "#FFFFFF" }}
+            >
+              {label}
+            </span>
+            {done && (
+              <span
+                className="badge"
+                style={{
+                  background: "rgba(60, 200, 121, 0.22)",
+                  color: "var(--color-green)",
+                  fontWeight: 700,
+                }}
+              >
+                ✓ Validée
+              </span>
+            )}
+          </div>
+          <p
+            className="text-small mt-1"
+            style={{ color: "rgba(255,255,255,0.65)", lineHeight: "1.45" }}
+          >
+            {description}
+          </p>
+          <div className="mt-3">
+            <div
+              className="h-1.5 rounded-full overflow-hidden"
+              style={{ background: "rgba(255,255,255,0.08)" }}
+            >
+              <div
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${pct}%`,
+                  background: done ? "var(--color-green)" : "#b495ff",
+                }}
+              />
+            </div>
+            <div className="flex items-center justify-between mt-1.5">
+              <span
+                className="text-meta"
+                style={{ color: "rgba(255,255,255,0.55)" }}
+              >
+                {current}/{target}
+              </span>
+              <span
+                className="text-meta font-bold"
+                style={{
+                  color: done ? "var(--color-green)" : "#b495ff",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                +{xp} XP
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DotPulse({ color = "#3CC879" }: { color?: string }) {
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        width: 7,
+        height: 7,
+        borderRadius: "50%",
+        background: color,
+        boxShadow: `0 0 0 0 ${color}88`,
+        animation: "login-dot-pulse 1.6s ease-out infinite",
+      }}
+      aria-hidden="true"
+    />
+  );
+}
+
+function FlameIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2c1 4 4 6 4 10 0 3-2 6-4 6s-4-3-4-6c0-2 1-3 1-5 0 1 1 2 2 2 1 0 1-1 1-2 0-2 0-3 0-5z" />
+    </svg>
+  );
+}
+
+// =================== Helpers ===================
+
+function minutesPracticedToday(sessions: SessionRow[]): number {
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = today.getMonth();
+  const d = today.getDate();
+  let totalMs = 0;
+  for (const s of sessions) {
+    if (!s.ended_at) continue;
+    const start = new Date(s.started_at);
+    if (
+      start.getFullYear() !== y ||
+      start.getMonth() !== m ||
+      start.getDate() !== d
+    )
+      continue;
+    const end = new Date(s.ended_at);
+    const diff = end.getTime() - start.getTime();
+    if (diff > 0) totalMs += diff;
+  }
+  return Math.round(totalMs / 60000);
+}
+
+function computeStreak(sessions: SessionRow[]): number {
+  const days = new Set<string>();
+  for (const s of sessions) {
+    if (s.status !== "completed") continue;
+    const d = new Date(s.started_at);
+    days.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+  }
+  let streak = 0;
+  const cur = new Date();
+  cur.setHours(0, 0, 0, 0);
+  // Si aujourd'hui sans pratique, on commence le compte à hier
+  // (le streak n'est pas "cassé" tant qu'on n'a pas raté 1 jour entier)
+  let key = `${cur.getFullYear()}-${cur.getMonth()}-${cur.getDate()}`;
+  if (!days.has(key)) {
+    cur.setDate(cur.getDate() - 1);
+  }
+  while (true) {
+    key = `${cur.getFullYear()}-${cur.getMonth()}-${cur.getDate()}`;
+    if (!days.has(key)) break;
+    streak += 1;
+    cur.setDate(cur.getDate() - 1);
+  }
+  return streak;
 }

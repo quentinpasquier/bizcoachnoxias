@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation";
-import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { Medal, rarityColors, rarityLabel } from "@/components/ui/Medal";
-import { PageHeader } from "@/components/PageHeader";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import {
@@ -44,13 +42,15 @@ export default async function LeaderboardPage() {
   const { data, error } = await supabase.rpc("get_leaderboard_stats");
   if (error) {
     return (
-      <div className="container-noxias py-12">
-        <PageHeader title="Classement" />
-        <Card variant="lavender" className="text-center py-14">
-          <p style={{ color: "var(--color-error)" }}>
-            Impossible de charger le classement : {error.message}
-          </p>
-        </Card>
+      <div className="mission-page">
+        <div className="container-noxias py-12 mission-content">
+          <h1 className="mission-h1">Classement</h1>
+          <div className="mission-card mt-6">
+            <p style={{ color: "#FFB4B4" }}>
+              Impossible de charger le classement : {error.message}
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -100,33 +100,56 @@ export default async function LeaderboardPage() {
   const myUnlocked = myBadges.filter((b) => b.unlocked).length;
 
   return (
-    <div className="container-noxias py-12 space-y-10">
-      <PageHeader
-        title="Classement"
-        subtitle="Les meilleurs prospecteurs Noxias. Plus de RDV, plus de points."
-      />
+    <div className="mission-page">
+      <div className="mission-blob mission-blob-purple" aria-hidden="true" />
+      <div className="mission-blob mission-blob-green" aria-hidden="true" />
+
+      <div className="container-noxias py-10 mission-content space-y-10">
+        <header className="space-y-3">
+          <span className="mission-classified">
+            <span
+              style={{
+                display: "inline-block",
+                width: 7,
+                height: 7,
+                borderRadius: "50%",
+                background: "var(--color-green)",
+                animation: "login-dot-pulse 1.6s ease-out infinite",
+              }}
+              aria-hidden="true"
+            />
+            HALL OF FAME · NOXIAS
+          </span>
+          <h1 className="mission-h1">
+            Le <span className="accent">classement</span>.
+          </h1>
+          <p className="mission-subtitle">
+            Plus de RDV décrochés, plus de XP, plus haut au tableau. Le score
+            cumulé valorise les performants ET les réguliers.
+          </p>
+        </header>
 
       {myRow && (
-        <Card variant="dark">
+        <div className="mission-card mission-card-accent">
           <div className="flex items-center gap-5 flex-wrap">
             <Avatar src={myRow.avatar_url} name={myRow.full_name} size={64} ring />
             <div className="flex-1">
               <div
-                className="eyebrow mb-1"
-                style={{ color: "rgba(255,255,255,0.55)" }}
+                className="mission-eyebrow"
+                style={{ color: "rgba(255,255,255,0.65)" }}
               >
-                Toi
+                Ta position
               </div>
-              <div className="flex items-baseline gap-3 flex-wrap">
+              <div className="flex items-baseline gap-3 flex-wrap mt-1">
                 <h2
-                  className="text-h2"
-                  style={{ color: "#FFFFFF", margin: 0 }}
+                  className="mission-stat-num"
+                  style={{ fontSize: "2.6rem", margin: 0 }}
                 >
                   #{myRank}
                 </h2>
                 <span
-                  className="text-h3"
-                  style={{ color: "var(--color-green)", margin: 0 }}
+                  className="mission-stat-num mission-stat-num-green"
+                  style={{ fontSize: "1.8rem", margin: 0 }}
                 >
                   {myRow.score} pts
                 </span>
@@ -142,24 +165,32 @@ export default async function LeaderboardPage() {
               </p>
             </div>
           </div>
-        </Card>
+        </div>
       )}
 
       <section className="space-y-4">
-        <h2 className="text-h3">Top équipe</h2>
+        <h2
+          className="mission-h1"
+          style={{ fontSize: "1.6rem" }}
+        >
+          Top équipe
+        </h2>
         {ranked.length === 0 ? (
-          <Card variant="lavender" className="text-center py-14">
-            <p style={{ color: "var(--color-gray)" }}>
+          <div className="mission-card text-center py-14">
+            <p style={{ color: "rgba(255,255,255,0.6)" }}>
               Personne n&apos;a encore terminé un appel. Sois le premier.
             </p>
-          </Card>
+          </div>
         ) : (
           <div className="space-y-3">
             {ranked.map((r, idx) => {
               const isMe = r.user_id === user.id;
               const rank = idx + 1;
               return (
-                <Card key={r.user_id} hoverable={false}>
+                <div
+                  key={r.user_id}
+                  className={`mission-card ${rank <= 3 ? "mission-card-violet" : ""}`}
+                >
                   <div className="flex items-center gap-4 flex-wrap">
                     <RankBadge rank={rank} />
                     <Avatar
@@ -172,7 +203,7 @@ export default async function LeaderboardPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span
                           className="text-h4"
-                          style={{ color: "var(--color-dark)" }}
+                          style={{ color: "#FFFFFF" }}
                         >
                           {r.full_name}
                         </span>
@@ -192,8 +223,8 @@ export default async function LeaderboardPage() {
                           <span
                             className="badge"
                             style={{
-                              background: "rgba(60, 200, 121, 0.16)",
-                              color: "#1F6A3F",
+                              background: "rgba(60, 200, 121, 0.22)",
+                              color: "var(--color-green)",
                             }}
                           >
                             Toi
@@ -202,7 +233,7 @@ export default async function LeaderboardPage() {
                       </div>
                       <p
                         className="text-small mt-1"
-                        style={{ color: "var(--color-gray)" }}
+                        style={{ color: "rgba(255,255,255,0.6)" }}
                       >
                         {r.stats.completedSessions} appels ·{" "}
                         <span style={{ color: "var(--color-green)", fontWeight: 600 }}>
@@ -214,24 +245,23 @@ export default async function LeaderboardPage() {
                     </div>
                     <div className="text-right">
                       <div
+                        className="mission-stat-num"
                         style={{
                           fontSize: "2rem",
-                          lineHeight: "1",
-                          color: "var(--color-purple)",
-                          fontWeight: 600,
+                          color: rank <= 3 ? "var(--color-green)" : "#FFFFFF",
                         }}
                       >
                         {r.score}
                       </div>
                       <div
-                        className="text-meta uppercase tracking-widest"
-                        style={{ color: "var(--color-gray)" }}
+                        className="mission-tile-label"
+                        style={{ color: "rgba(255,255,255,0.5)" }}
                       >
                         points
                       </div>
                     </div>
                   </div>
-                </Card>
+                </div>
               );
             })}
           </div>
@@ -240,10 +270,12 @@ export default async function LeaderboardPage() {
 
       {myBadges.length > 0 && (
         <section className="space-y-4">
-          <h2 className="text-h3">Tes badges</h2>
+          <h2 className="mission-h1" style={{ fontSize: "1.6rem" }}>
+            Tes badges
+          </h2>
           <p
             className="text-small"
-            style={{ color: "var(--color-gray)" }}
+            style={{ color: "rgba(255,255,255,0.55)" }}
           >
             {myUnlocked}/{myBadges.length} débloqués. Continue à enchaîner les
             appels pour décrocher les autres.
@@ -252,10 +284,9 @@ export default async function LeaderboardPage() {
             {myBadges.map((b) => {
               const cfg = rarityColors(b.rarity);
               return (
-              <Card
+              <div
                 key={b.id}
-                variant={b.unlocked ? "default" : "lavender"}
-                hoverable={false}
+                className={`mission-card ${b.unlocked ? "" : ""}`}
               >
                 <div className="flex items-start gap-3">
                   <Medal
@@ -268,16 +299,17 @@ export default async function LeaderboardPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
                         className="text-h4"
-                        style={{ color: "var(--color-dark)" }}
+                        style={{ color: "#FFFFFF" }}
                       >
                         {b.label}
                       </span>
                       <span
                         className="badge"
                         style={{
-                          background: `${cfg.primary}20`,
-                          color: cfg.secondary,
+                          background: `${cfg.primary}33`,
+                          color: cfg.primary,
                           fontWeight: 700,
+                          border: `1px solid ${cfg.primary}55`,
                         }}
                       >
                         {rarityLabel(b.rarity)}
@@ -286,8 +318,8 @@ export default async function LeaderboardPage() {
                         <span
                           className="badge"
                           style={{
-                            background: "rgba(60, 200, 121, 0.18)",
-                            color: "#1F6A3F",
+                            background: "rgba(60, 200, 121, 0.22)",
+                            color: "var(--color-green)",
                           }}
                         >
                           ✓ Débloqué
@@ -296,21 +328,21 @@ export default async function LeaderboardPage() {
                     </div>
                     <p
                       className="text-small mt-1"
-                      style={{ color: "var(--color-gray)" }}
+                      style={{ color: "rgba(255,255,255,0.6)" }}
                     >
                       {b.description}
                     </p>
                     <div className="mt-2 flex items-center gap-3 flex-wrap">
                       <span
                         className="text-meta font-bold"
-                        style={{ color: cfg.secondary, letterSpacing: "0.05em" }}
+                        style={{ color: cfg.primary, letterSpacing: "0.05em" }}
                       >
                         +{b.xpReward} XP
                       </span>
                       {b.progress && !b.unlocked && (
                         <span
                           className="text-meta"
-                          style={{ color: "var(--color-gray)" }}
+                          style={{ color: "rgba(255,255,255,0.55)" }}
                         >
                           {b.progress.current}/{b.progress.target}
                         </span>
@@ -320,7 +352,7 @@ export default async function LeaderboardPage() {
                       <div className="mt-2">
                         <div
                           className="h-1.5 rounded-full overflow-hidden"
-                          style={{ background: "rgba(139, 127, 163, 0.18)" }}
+                          style={{ background: "rgba(255,255,255,0.10)" }}
                         >
                           <div
                             className="h-full rounded-full transition-all"
@@ -334,12 +366,13 @@ export default async function LeaderboardPage() {
                     )}
                   </div>
                 </div>
-              </Card>
+              </div>
               );
             })}
           </div>
         </section>
       )}
+      </div>
     </div>
   );
 }
