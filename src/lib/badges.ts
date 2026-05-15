@@ -1,10 +1,14 @@
 import type { SessionRow } from "./supabase/types";
 
+export type BadgeRarity = "commun" | "rare" | "epique" | "legendaire";
+
 export interface Badge {
   id: string;
   label: string;
   description: string;
   icon: string;
+  rarity: BadgeRarity;
+  xpReward: number;
   unlocked: boolean;
   progress?: { current: number; target: number };
 }
@@ -89,6 +93,8 @@ export function computeBadges(stats: UserStats): Badge[] {
       label: "Premier appel",
       description: "Décroche ton tout premier appel d'entraînement.",
       icon: "🎯",
+      rarity: "commun",
+      xpReward: 25,
       unlocked: stats.completedSessions >= 1,
       progress: { current: Math.min(stats.completedSessions, 1), target: 1 },
     },
@@ -97,6 +103,8 @@ export function computeBadges(stats: UserStats): Badge[] {
       label: "Recrue",
       description: "Boucle 5 appels complets.",
       icon: "🥉",
+      rarity: "commun",
+      xpReward: 50,
       unlocked: stats.completedSessions >= 5,
       progress: { current: Math.min(stats.completedSessions, 5), target: 5 },
     },
@@ -105,6 +113,8 @@ export function computeBadges(stats: UserStats): Badge[] {
       label: "Régulier",
       description: "Atteins 25 appels d'entraînement.",
       icon: "🥈",
+      rarity: "rare",
+      xpReward: 150,
       unlocked: stats.completedSessions >= 25,
       progress: { current: Math.min(stats.completedSessions, 25), target: 25 },
     },
@@ -113,6 +123,8 @@ export function computeBadges(stats: UserStats): Badge[] {
       label: "Centurion",
       description: "Le cap des 100 appels passés.",
       icon: "🥇",
+      rarity: "legendaire",
+      xpReward: 500,
       unlocked: stats.completedSessions >= 100,
       progress: { current: Math.min(stats.completedSessions, 100), target: 100 },
     },
@@ -121,6 +133,8 @@ export function computeBadges(stats: UserStats): Badge[] {
       label: "Premier RDV",
       description: "Décroche ton premier rendez-vous.",
       icon: "📞",
+      rarity: "commun",
+      xpReward: 50,
       unlocked: stats.rdvCount >= 1,
       progress: { current: Math.min(stats.rdvCount, 1), target: 1 },
     },
@@ -129,6 +143,8 @@ export function computeBadges(stats: UserStats): Badge[] {
       label: "Closer",
       description: "10 RDV obtenus.",
       icon: "💼",
+      rarity: "rare",
+      xpReward: 200,
       unlocked: stats.rdvCount >= 10,
       progress: { current: Math.min(stats.rdvCount, 10), target: 10 },
     },
@@ -137,6 +153,8 @@ export function computeBadges(stats: UserStats): Badge[] {
       label: "Machine à RDV",
       description: "50 RDV au compteur.",
       icon: "🔥",
+      rarity: "legendaire",
+      xpReward: 600,
       unlocked: stats.rdvCount >= 50,
       progress: { current: Math.min(stats.rdvCount, 50), target: 50 },
     },
@@ -145,6 +163,8 @@ export function computeBadges(stats: UserStats): Badge[] {
       label: "Sans-faute",
       description: "Décroche un score de 90 ou plus sur un appel.",
       icon: "⭐",
+      rarity: "epique",
+      xpReward: 250,
       unlocked: stats.perfectScores >= 1,
     },
     {
@@ -152,6 +172,8 @@ export function computeBadges(stats: UserStats): Badge[] {
       label: "Régularité",
       description: "Atteins 70 % de RDV décrochés sur tes appels (min. 10).",
       icon: "📈",
+      rarity: "epique",
+      xpReward: 300,
       unlocked: stats.completedSessions >= 10 && stats.rdvRate >= 70,
     },
     {
@@ -159,6 +181,8 @@ export function computeBadges(stats: UserStats): Badge[] {
       label: "Boss final",
       description: "Boucle un appel en mode Expert avec un RDV.",
       icon: "🏆",
+      rarity: "epique",
+      xpReward: 250,
       unlocked: stats.expertSessions >= 1 && stats.rdvCount >= 1,
     },
     {
@@ -166,6 +190,8 @@ export function computeBadges(stats: UserStats): Badge[] {
       label: "Triple combo",
       description: "Enchaîne 3 RDV d'affilée.",
       icon: "🎰",
+      rarity: "rare",
+      xpReward: 150,
       unlocked: stats.consecutiveRdvs >= 3,
       progress: { current: Math.min(stats.consecutiveRdvs, 3), target: 3 },
     },
@@ -174,6 +200,8 @@ export function computeBadges(stats: UserStats): Badge[] {
       label: "Explorateur",
       description: "Travaille sur 5 clients différents.",
       icon: "🧭",
+      rarity: "rare",
+      xpReward: 150,
       unlocked: stats.distinctClients >= 5,
       progress: { current: Math.min(stats.distinctClients, 5), target: 5 },
     },
@@ -182,6 +210,8 @@ export function computeBadges(stats: UserStats): Badge[] {
       label: "Polyvalent",
       description: "Affronte 5 personas différents.",
       icon: "🎭",
+      rarity: "rare",
+      xpReward: 150,
       unlocked: stats.distinctPersonas >= 5,
       progress: { current: Math.min(stats.distinctPersonas, 5), target: 5 },
     },
@@ -190,6 +220,8 @@ export function computeBadges(stats: UserStats): Badge[] {
       label: "Discipliné",
       description: "Pratique sur 7 jours différents.",
       icon: "📅",
+      rarity: "epique",
+      xpReward: 200,
       unlocked: stats.daysActive >= 7,
       progress: { current: Math.min(stats.daysActive, 7), target: 7 },
     },

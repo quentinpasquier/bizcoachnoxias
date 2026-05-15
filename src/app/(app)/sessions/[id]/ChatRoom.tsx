@@ -198,7 +198,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
     }
 
     if (data.sessionEnded) {
-      setTimeout(() => router.push(`/sessions/${session.id}/feedback`), 3500);
+      setTimeout(() => router.push(`/sessions/${session.id}/feedback?celebrate=1`), 3500);
     }
   }
 
@@ -376,7 +376,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
         body: JSON.stringify({ endedBy: "user" }),
       });
       if (!res.ok) throw new Error("Impossible de terminer la session.");
-      router.push(`/sessions/${session.id}/feedback`);
+      router.push(`/sessions/${session.id}/feedback?celebrate=1`);
     } catch (err) {
       setError((err as Error).message);
       setEndLoading(false);
@@ -498,7 +498,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
                 type="button"
                 variant="primary"
                 size="sm"
-                onClick={() => router.push(`/sessions/${session.id}/feedback`)}
+                onClick={() => router.push(`/sessions/${session.id}/feedback?celebrate=1`)}
               >
                 Voir la restitution →
               </Button>
@@ -634,7 +634,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
               <Button
                 type="button"
                 variant="primary"
-                onClick={() => router.push(`/sessions/${session.id}/feedback`)}
+                onClick={() => router.push(`/sessions/${session.id}/feedback?celebrate=1`)}
               >
                 Voir la restitution
               </Button>

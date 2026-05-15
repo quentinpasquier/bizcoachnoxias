@@ -6,13 +6,20 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDateTimeFr, formatDuration } from "@/lib/format";
 import type { Evaluation, MessageRow, SessionRow } from "@/lib/supabase/types";
 import { FeedbackEvaluator } from "./FeedbackEvaluator";
+import { Celebration } from "./Celebration";
+import { computeBadges, computeStats } from "@/lib/badges";
+import { xpForSession } from "@/lib/xp";
 
 export default async function FeedbackPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ celebrate?: string }>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
+  const showCelebrate = sp.celebrate === "1";
   const supabase = await createClient();
 
   const { data: session } = await supabase
@@ -25,18 +32,26 @@ export default async function FeedbackPage({
   const s = session as SessionRow;
   if (s.status === "active") redirect(`/sessions/${id}`);
 
-  const [{ data: messages }, { data: profileData }] = await Promise.all([
-    supabase
-      .from("messages")
-      .select("*")
-      .eq("session_id", id)
-      .order("created_at", { ascending: true }),
-    supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("id", s.user_id)
-      .single(),
-  ]);
+  const [{ data: messages }, { data: profileData }, { data: allSessionsData }] =
+    await Promise.all([
+      supabase
+        .from("messages")
+        .select("*")
+        .eq("session_id", id)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", s.user_id)
+        .single(),
+      showCelebrate
+        ? supabase
+            .from("sessions")
+            .select("*")
+            .eq("user_id", s.user_id)
+            .order("started_at", { ascending: false })
+        : Promise.resolve({ data: null }),
+    ]);
 
   if (!s.evaluation) {
     return <FeedbackEvaluator sessionId={id} />;
@@ -49,8 +64,34 @@ export default async function FeedbackPage({
 
   const personaName = (s.scenario_data as { persona_name?: string } | null)?.persona_name ?? "";
 
+  // Calcul des badges nouvellement débloqués (diff avant/après cette session)
+  let newBadges: ReturnType<typeof computeBadges> = [];
+  let xpEarned = 0;
+  if (showCelebrate && allSessionsData) {
+    const allSessions = allSessionsData as SessionRow[];
+    const sessionsWith = allSessions;
+    const sessionsWithout = allSessions.filter((x) => x.id !== id);
+    const badgesAfter = computeBadges(computeStats(sessionsWith));
+    const badgesBefore = computeBadges(computeStats(sessionsWithout));
+    const beforeSet = new Set(
+      badgesBefore.filter((b) => b.unlocked).map((b) => b.id),
+    );
+    newBadges = badgesAfter.filter(
+      (b) => b.unlocked && !beforeSet.has(b.id),
+    );
+    xpEarned = xpForSession(s);
+  }
+
   return (
     <div className="container-noxias py-12 space-y-12 max-w-4xl">
+      {showCelebrate && (
+        <Celebration
+          score={evaluation.overall_score}
+          appointmentSecured={s.appointment_secured}
+          xpEarned={xpEarned}
+          newBadges={newBadges}
+        />
+      )}
       {/* HERO */}
       <header>
         <Link

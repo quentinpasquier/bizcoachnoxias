@@ -8,6 +8,16 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { formatDateTimeFr } from "@/lib/format";
 import type { Client, SessionRow, UserRole } from "@/lib/supabase/types";
+import {
+  filterTodaysSessions,
+  pickDailyMissions,
+} from "@/lib/daily-missions";
+import {
+  totalXp,
+  levelProgress,
+  rankForLevel,
+  nextRank,
+} from "@/lib/xp";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -17,6 +27,7 @@ export default async function DashboardPage() {
     SessionRow,
     "score" | "appointment_secured" | "difficulty" | "client_id"
   >[] = [];
+  let myAllSessions: SessionRow[] = [];
   let teamSessions: SessionRow[] = [];
   let clients: Pick<Client, "id" | "name" | "sector">[] = [];
   let profileById = new Map<string, { full_name: string; avatar_url: string | null }>();
@@ -47,16 +58,16 @@ export default async function DashboardPage() {
       else if (p?.full_name) userName = p.full_name.split(" ")[0];
 
       const [
-        { data: mySessionsData },
+        { data: myAllSessionsData },
         { data: teamSessionsData },
         { data: clientsData },
         { data: profilesData },
       ] = await Promise.all([
         supabase
           .from("sessions")
-          .select("score, appointment_secured, difficulty, client_id")
+          .select("*")
           .eq("user_id", user.id)
-          .eq("status", "completed"),
+          .order("started_at", { ascending: false }),
         supabase
           .from("sessions")
           .select("*")
@@ -70,7 +81,15 @@ export default async function DashboardPage() {
         supabase.from("profiles").select("id, full_name, avatar_url"),
       ]);
 
-      mySessions = (mySessionsData ?? []) as typeof mySessions;
+      myAllSessions = (myAllSessionsData ?? []) as SessionRow[];
+      mySessions = myAllSessions
+        .filter((s) => s.status === "completed")
+        .map((s) => ({
+          score: s.score,
+          appointment_secured: s.appointment_secured,
+          difficulty: s.difficulty,
+          client_id: s.client_id,
+        }));
       teamSessions = (teamSessionsData ?? []) as SessionRow[];
       clients = (clientsData ?? []) as typeof clients;
       profileById = new Map(
@@ -101,6 +120,22 @@ export default async function DashboardPage() {
     totalSessions > 0 ? Math.round((rdvSecured / totalSessions) * 100) : 0;
 
   const clientById = new Map(clients.map((c) => [c.id, c]));
+
+  // Gamification : XP, niveau, rang
+  const xpTotal = totalXp(myAllSessions);
+  const lvl = levelProgress(xpTotal);
+  const currentRank = rankForLevel(lvl.level);
+  const upcomingRank = nextRank(lvl.level);
+
+  // Missions du jour : computed côté serveur depuis sessions d'aujourd'hui
+  const todaySessions = filterTodaysSessions(myAllSessions);
+  const dailyMissions = myUserId
+    ? pickDailyMissions(myUserId, todaySessions)
+    : [];
+  const dailyDone = dailyMissions.filter((m) => m.done).length;
+  const dailyTotalXp = dailyMissions
+    .filter((m) => m.done)
+    .reduce((acc, m) => acc + m.xpReward, 0);
 
   return (
     <div className="container-noxias py-12 space-y-12">
@@ -133,6 +168,126 @@ export default async function DashboardPage() {
           </Link>
         </div>
       </header>
+
+      {/* PLAYER CARD : niveau, XP, rang */}
+      <section>
+        <PlayerCard
+          level={lvl.level}
+          xpTotal={lvl.xpTotal}
+          xpInLevel={lvl.xpInLevel}
+          xpToNext={lvl.xpToNext}
+          xpForNextLevel={lvl.xpForNextLevel - lvl.xpForCurrentLevel}
+          progressPct={lvl.progressPct}
+          rankLabel={currentRank.label}
+          rankPrimary={currentRank.primary}
+          rankSecondary={currentRank.secondary}
+          rankGlow={currentRank.glow}
+          nextRankLabel={upcomingRank?.label ?? null}
+          nextRankAtLevel={upcomingRank?.minLevel ?? null}
+        />
+      </section>
+
+      {/* MISSIONS DU JOUR */}
+      {dailyMissions.length > 0 && (
+        <section className="space-y-4">
+          <SectionHeader
+            title="Missions du jour"
+            action={
+              <span
+                className="text-small font-semibold"
+                style={{
+                  color:
+                    dailyDone === dailyMissions.length
+                      ? "var(--color-green)"
+                      : "var(--color-gray)",
+                }}
+              >
+                {dailyDone}/{dailyMissions.length} bouclées · +{dailyTotalXp} XP
+                récupérés
+              </span>
+            }
+          />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {dailyMissions.map((m) => (
+              <Card
+                key={m.id}
+                variant={m.done ? "default" : "lavender"}
+                hoverable={false}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className="text-3xl shrink-0"
+                    style={{
+                      filter: m.done ? "none" : "grayscale(0.5)",
+                      opacity: m.done ? 1 : 0.8,
+                    }}
+                    aria-hidden="true"
+                  >
+                    {m.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-h4">{m.label}</span>
+                      {m.done && (
+                        <span
+                          className="badge"
+                          style={{
+                            background: "rgba(60, 200, 121, 0.18)",
+                            color: "#1F6A3F",
+                          }}
+                        >
+                          ✓ Validée
+                        </span>
+                      )}
+                    </div>
+                    <p
+                      className="text-small mt-1"
+                      style={{ color: "var(--color-gray)" }}
+                    >
+                      {m.description}
+                    </p>
+                    <div className="mt-3">
+                      <div
+                        className="h-1.5 rounded-full overflow-hidden"
+                        style={{ background: "rgba(139, 127, 163, 0.18)" }}
+                      >
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{
+                            width: `${Math.min(100, (m.current / m.target) * 100)}%`,
+                            background: m.done
+                              ? "var(--color-green)"
+                              : "var(--color-purple)",
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between mt-1.5">
+                        <span
+                          className="text-meta"
+                          style={{ color: "var(--color-gray)" }}
+                        >
+                          {m.current}/{m.target}
+                        </span>
+                        <span
+                          className="text-meta font-bold"
+                          style={{
+                            color: m.done
+                              ? "var(--color-green)"
+                              : "var(--color-purple)",
+                            letterSpacing: "0.05em",
+                          }}
+                        >
+                          +{m.xpReward} XP
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* MES STATS */}
       <section>
@@ -379,5 +534,128 @@ function SectionHeader({
       <h2 className="text-h3">{title}</h2>
       {action}
     </div>
+  );
+}
+
+interface PlayerCardProps {
+  level: number;
+  xpTotal: number;
+  xpInLevel: number;
+  xpToNext: number;
+  xpForNextLevel: number;
+  progressPct: number;
+  rankLabel: string;
+  rankPrimary: string;
+  rankSecondary: string;
+  rankGlow: string;
+  nextRankLabel: string | null;
+  nextRankAtLevel: number | null;
+}
+
+function PlayerCard({
+  level,
+  xpTotal,
+  xpInLevel,
+  xpToNext,
+  xpForNextLevel,
+  progressPct,
+  rankLabel,
+  rankPrimary,
+  rankSecondary,
+  rankGlow,
+  nextRankLabel,
+  nextRankAtLevel,
+}: PlayerCardProps) {
+  return (
+    <Card variant="dark">
+      <div className="flex items-center gap-6 flex-wrap">
+        <div
+          className="rounded-full flex flex-col items-center justify-center shrink-0"
+          style={{
+            width: 96,
+            height: 96,
+            background: `linear-gradient(135deg, ${rankPrimary} 0%, ${rankSecondary} 100%)`,
+            boxShadow: `0 0 0 4px ${rankGlow}, 0 0 0 8px rgba(255,255,255,0.06)`,
+            color: "#FFFFFF",
+          }}
+        >
+          <span
+            className="text-meta uppercase tracking-widest"
+            style={{ color: "rgba(255,255,255,0.85)", fontWeight: 700, fontSize: "0.62rem" }}
+          >
+            Niveau
+          </span>
+          <span
+            style={{
+              fontFamily: "var(--font-ubuntu), Lato, system-ui, sans-serif",
+              fontSize: "2.4rem",
+              fontWeight: 700,
+              lineHeight: "1",
+              letterSpacing: "-0.02em",
+            }}
+          >
+            {level}
+          </span>
+        </div>
+        <div className="flex-1 min-w-[260px]">
+          <div className="flex items-center gap-3 flex-wrap mb-2">
+            <span
+              className="px-3 py-1 rounded-full text-meta uppercase tracking-widest"
+              style={{
+                background: `linear-gradient(135deg, ${rankPrimary}33, ${rankSecondary}22)`,
+                border: `1px solid ${rankPrimary}66`,
+                color: rankPrimary,
+                fontWeight: 700,
+                fontSize: "0.68rem",
+              }}
+            >
+              Rang {rankLabel}
+            </span>
+            <span
+              className="text-small"
+              style={{ color: "rgba(255,255,255,0.55)" }}
+            >
+              {xpTotal.toLocaleString("fr-FR")} XP cumulés
+            </span>
+          </div>
+          <div className="flex items-baseline justify-between mb-2">
+            <span
+              className="text-small"
+              style={{ color: "rgba(255,255,255,0.85)", fontWeight: 600 }}
+            >
+              {xpInLevel}/{xpForNextLevel} XP
+            </span>
+            <span
+              className="text-small"
+              style={{ color: "rgba(255,255,255,0.55)" }}
+            >
+              Plus que {xpToNext} XP avant niveau {level + 1}
+            </span>
+          </div>
+          <div
+            className="h-3 rounded-full overflow-hidden"
+            style={{ background: "rgba(255,255,255,0.08)" }}
+          >
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${progressPct}%`,
+                background: `linear-gradient(90deg, ${rankPrimary}, ${rankSecondary})`,
+                boxShadow: `0 0 12px ${rankGlow}`,
+                transition: "width 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+              }}
+            />
+          </div>
+          {nextRankLabel && nextRankAtLevel && (
+            <p
+              className="text-meta mt-2"
+              style={{ color: "rgba(255,255,255,0.5)" }}
+            >
+              Rang {nextRankLabel} débloqué au niveau {nextRankAtLevel}.
+            </p>
+          )}
+        </div>
+      </div>
+    </Card>
   );
 }

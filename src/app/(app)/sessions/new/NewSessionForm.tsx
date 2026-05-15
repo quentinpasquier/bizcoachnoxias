@@ -119,7 +119,7 @@ export function NewSessionForm({
     }
 
     const { sessionId } = await res.json();
-    router.push(`/sessions/${sessionId}`);
+    router.push(`/sessions/${sessionId}/briefing`);
   }
 
   return (

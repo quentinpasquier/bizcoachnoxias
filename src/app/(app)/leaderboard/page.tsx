@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
+import { Medal, rarityColors, rarityLabel } from "@/components/ui/Medal";
 import { PageHeader } from "@/components/PageHeader";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -248,25 +249,21 @@ export default async function LeaderboardPage() {
             appels pour décrocher les autres.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {myBadges.map((b) => (
+            {myBadges.map((b) => {
+              const cfg = rarityColors(b.rarity);
+              return (
               <Card
                 key={b.id}
                 variant={b.unlocked ? "default" : "lavender"}
                 hoverable={false}
               >
-                <div
-                  className="flex items-start gap-3"
-                  style={{ opacity: b.unlocked ? 1 : 0.55 }}
-                >
-                  <div
-                    className="text-3xl shrink-0"
-                    style={{
-                      filter: b.unlocked ? "none" : "grayscale(1)",
-                    }}
-                    aria-hidden="true"
-                  >
-                    {b.icon}
-                  </div>
+                <div className="flex items-start gap-3">
+                  <Medal
+                    icon={b.icon}
+                    rarity={b.rarity}
+                    size={72}
+                    locked={!b.unlocked}
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
@@ -274,6 +271,16 @@ export default async function LeaderboardPage() {
                         style={{ color: "var(--color-dark)" }}
                       >
                         {b.label}
+                      </span>
+                      <span
+                        className="badge"
+                        style={{
+                          background: `${cfg.primary}20`,
+                          color: cfg.secondary,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {rarityLabel(b.rarity)}
                       </span>
                       {b.unlocked && (
                         <span
@@ -283,7 +290,7 @@ export default async function LeaderboardPage() {
                             color: "#1F6A3F",
                           }}
                         >
-                          Débloqué
+                          ✓ Débloqué
                         </span>
                       )}
                     </div>
@@ -293,6 +300,22 @@ export default async function LeaderboardPage() {
                     >
                       {b.description}
                     </p>
+                    <div className="mt-2 flex items-center gap-3 flex-wrap">
+                      <span
+                        className="text-meta font-bold"
+                        style={{ color: cfg.secondary, letterSpacing: "0.05em" }}
+                      >
+                        +{b.xpReward} XP
+                      </span>
+                      {b.progress && !b.unlocked && (
+                        <span
+                          className="text-meta"
+                          style={{ color: "var(--color-gray)" }}
+                        >
+                          {b.progress.current}/{b.progress.target}
+                        </span>
+                      )}
+                    </div>
                     {b.progress && !b.unlocked && (
                       <div className="mt-2">
                         <div
@@ -303,22 +326,17 @@ export default async function LeaderboardPage() {
                             className="h-full rounded-full transition-all"
                             style={{
                               width: `${Math.min(100, (b.progress.current / b.progress.target) * 100)}%`,
-                              background: "var(--color-purple)",
+                              background: cfg.primary,
                             }}
                           />
                         </div>
-                        <span
-                          className="text-meta mt-1 block"
-                          style={{ color: "var(--color-gray)" }}
-                        >
-                          {b.progress.current}/{b.progress.target}
-                        </span>
                       </div>
                     )}
                   </div>
                 </div>
               </Card>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
