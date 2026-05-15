@@ -347,26 +347,11 @@
 
   /* ========== NAV SECTIONS (gaming + config) ========== */
   .nav-section {
-    position: relative;
-    display: flex;
-    align-items: center;
-    padding: 4px;
-    border-radius: 999px;
-  }
-  .nav-section-label {
-    position: absolute;
-    top: -16px;
-    left: 12px;
-    font-size: 0.55rem;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    font-weight: 700;
-    pointer-events: none;
-  }
-  .nav-section-inner {
     display: flex;
     align-items: center;
     gap: 2px;
+    padding: 4px;
+    border-radius: 999px;
   }
 
   .nav-section-gaming {
@@ -374,17 +359,10 @@
     border: 1px solid rgba(157, 107, 255, 0.32);
     box-shadow: 0 0 18px rgba(157, 107, 255, 0.12);
   }
-  .nav-section-gaming .nav-section-label {
-    color: #b495ff;
-  }
 
   .nav-section-config {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    margin-left: 12px;
-  }
-  .nav-section-config .nav-section-label {
-    color: rgba(255, 255, 255, 0.55);
   }
 
   .nav-pill {

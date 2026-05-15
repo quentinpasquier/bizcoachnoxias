@@ -130,58 +130,30 @@ export default async function NewSessionPage({
             color: "var(--color-dark)",
           }}
         >
-          <span>Configure </span>
-          <span style={{ color: "var(--color-green)" }}>ta mission</span>
-          <span>.</span>
+          <span>Lance </span>
+          <span style={{ color: "var(--color-green)" }}>ta prochaine</span>{" "}
+          <span>mission.</span>
         </h1>
         <p
           className="text-body-l"
           style={{ color: "var(--color-gray)", maxWidth: "56ch" }}
         >
-          Choisis client, persona, niveau et voix. C&apos;est ici que tu
-          fabriques le prospect le plus utile à ta progression.
+          Un clic dans le Quick Launch, ou configure précisément ton scénario
+          plus bas pour la progression.
         </p>
       </header>
 
-      <NewSessionForm
-        clients={formattedClients}
-        preselectedClientId={preselectedClientId}
-        preselectedPersonaLabel={preselectedPersonaLabel}
-        difficulties={Object.entries(DIFFICULTY_CONFIG).map(([key, cfg]) => ({
-          key,
-          label: cfg.label,
-          description: cfg.description,
-        }))}
-      />
-
-      {/* Quick Launch : raccourci secondaire en bas de page */}
-      <section
-        className="rounded-xl p-6"
-        style={{
-          background: "var(--color-lavender)",
-          border: "1px solid var(--color-gray-border)",
-        }}
-      >
-        <div className="flex items-end justify-between gap-3 flex-wrap mb-4">
+      {/* Quick Launch en haut : 1 clic pour démarrer */}
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-3 flex-wrap">
           <div>
-            <span
-              className="eyebrow"
-              style={{ color: "var(--color-gray)" }}
-            >
-              Pas le temps de configurer ?
-            </span>
-            <h2
-              className="text-h3 mt-1"
-              style={{ color: "var(--color-dark)" }}
-            >
-              Quick Launch en 1 clic
+            <div className="eyebrow-green">Quick Launch · 1 clic</div>
+            <h2 className="text-h3 mt-1" style={{ color: "var(--color-dark)" }}>
+              Démarre en 5 secondes.
             </h2>
           </div>
-          <span
-            className="text-meta"
-            style={{ color: "var(--color-gray)" }}
-          >
-            Scénario généré en 5-10 s
+          <span className="text-meta" style={{ color: "var(--color-gray)" }}>
+            Briefing généré en 5-10 s
           </span>
         </div>
         <QuickLaunch
@@ -195,6 +167,35 @@ export default async function NewSessionPage({
           }))}
           lastConfig={lastConfig}
           compact
+        />
+      </section>
+
+      {/* Configuration sur mesure : la plus puissante */}
+      <section className="space-y-5">
+        <div>
+          <div className="eyebrow" style={{ color: "var(--color-purple)" }}>
+            Configuration sur mesure
+          </div>
+          <h2 className="text-h3 mt-1" style={{ color: "var(--color-dark)" }}>
+            Choisis chaque paramètre.
+          </h2>
+          <p
+            className="text-small mt-1"
+            style={{ color: "var(--color-gray)" }}
+          >
+            Le meilleur outil pour cibler ta progression : client précis,
+            persona précis, niveau précis, voix précise.
+          </p>
+        </div>
+        <NewSessionForm
+          clients={formattedClients}
+          preselectedClientId={preselectedClientId}
+          preselectedPersonaLabel={preselectedPersonaLabel}
+          difficulties={Object.entries(DIFFICULTY_CONFIG).map(([key, cfg]) => ({
+            key,
+            label: cfg.label,
+            description: cfg.description,
+          }))}
         />
       </section>
     </div>
