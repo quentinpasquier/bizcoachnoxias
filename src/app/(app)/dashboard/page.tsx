@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
+import { CamilleMascot } from "@/components/CamilleMascot";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { formatRelativeFr } from "@/lib/format";
@@ -128,35 +129,43 @@ export default async function DashboardPage() {
     .slice(0, 6);
 
   return (
-    <div className="mission-page">
+    <div className="relative">
       <div className="mission-blob mission-blob-purple" aria-hidden="true" />
       <div className="mission-blob mission-blob-green" aria-hidden="true" />
-      <div className="mission-blob mission-blob-violet" aria-hidden="true" />
 
       <div className="container-noxias py-10 mission-content space-y-10">
         {/* HERO + QUICK CTA */}
         <header className="flex items-end justify-between gap-6 flex-wrap">
-          <div>
-            <span className="mission-classified">
-              <DotPulse />
-              MISSION CONTROL · NOXIAS
-            </span>
-            <h1 className="mission-h1 mt-3">
-              <span style={{ color: "rgba(255,255,255,0.85)" }}>
-                Salut{" "}
+          <div className="flex items-center gap-5">
+            <CamilleMascot
+              state={
+                minutesToday >= DAILY_TARGET_MINUTES ? "happy" : "idle"
+              }
+              size={86}
+              withHalo
+            />
+            <div>
+              <span className="mission-classified">
+                <DotPulse />
+                CAMILLE · TON COACH
               </span>
-              <span className="accent">{userName}</span>
-              <span style={{ color: "rgba(255,255,255,0.85)" }}>.</span>
-            </h1>
-            <p className="mission-subtitle">
-              {streakDays > 1
-                ? `${streakDays} jours d'affilée. On continue ?`
-                : minutesToday >= DAILY_TARGET_MINUTES
-                  ? "Quota du jour bouclé. Tu peux pousser plus."
-                  : minutesToday > 0
-                    ? `${minutesToday} min déjà aujourd'hui. ${DAILY_TARGET_MINUTES - minutesToday} min pour boucler ton quota.`
-                    : "30 minutes d'entraînement aujourd'hui = jamais surpris en RDV réel."}
-            </p>
+              <h1 className="mission-h1 mt-3">
+                <span style={{ color: "rgba(255,255,255,0.85)" }}>
+                  Salut{" "}
+                </span>
+                <span className="accent">{userName}</span>
+                <span style={{ color: "rgba(255,255,255,0.85)" }}>.</span>
+              </h1>
+              <p className="mission-subtitle">
+                {streakDays > 1
+                  ? `${streakDays} jours d'affilée. On continue ?`
+                  : minutesToday >= DAILY_TARGET_MINUTES
+                    ? "Quota du jour bouclé. Tu peux pousser plus."
+                    : minutesToday > 0
+                      ? `${minutesToday} min déjà aujourd'hui. ${DAILY_TARGET_MINUTES - minutesToday} min pour boucler ton quota.`
+                      : "30 minutes d'entraînement aujourd'hui = jamais surpris en RDV réel."}
+              </p>
+            </div>
           </div>
           <div className="flex gap-3 shrink-0 flex-wrap">
             <Link href="/clients" className="mission-cta mission-cta-ghost">

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Logo } from "@/components/Logo";
-import { CoachAvatar } from "@/components/CoachAvatar";
+import { CamilleMascot } from "@/components/CamilleMascot";
 import { LoginForm } from "./LoginForm";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
@@ -30,16 +30,18 @@ export default async function LoginPage({
 
       <main className="flex-1 container-noxias relative z-10 grid lg:grid-cols-[1.05fr_minmax(0,440px)] items-center gap-10 lg:gap-16 pt-2 pb-16 lg:py-0">
         <section className="login-hero">
-          <div className="login-avatar-stage">
-            <span className="login-avatar-disc" aria-hidden="true" />
+          <div
+            className="relative inline-block"
+            style={{ width: 120, height: 120 }}
+          >
             <span className="login-halo login-halo-1" aria-hidden="true" />
             <span className="login-halo login-halo-2" aria-hidden="true" />
             <span className="login-halo login-halo-3" aria-hidden="true" />
-            <CoachAvatar state="happy" size={96} />
+            <CamilleMascot state="happy" size={120} />
           </div>
 
           <div className="login-hero-text">
-            <span className="login-eyebrow">Coach commercial</span>
+            <span className="login-eyebrow">Camille · Coach commerciale</span>
             <h1 className="login-headline">
               <span className="login-headline-light">Salut.</span>
               <span className="login-headline-green">

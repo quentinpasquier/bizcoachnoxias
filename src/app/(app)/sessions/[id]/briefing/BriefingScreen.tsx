@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { CamilleMascot } from "@/components/CamilleMascot";
 import type {
   Client,
   PersonaProfile,
@@ -83,8 +84,7 @@ export function BriefingScreen({
   }
 
   return (
-    <div className="briefing-page">
-      <div className="briefing-bg-grid" aria-hidden="true" />
+    <div className="relative">
       <div className="briefing-blob briefing-blob-1" aria-hidden="true" />
       <div className="briefing-blob briefing-blob-2" aria-hidden="true" />
 
@@ -117,23 +117,30 @@ export function BriefingScreen({
           <div className="briefing-card">
             <span className="briefing-scan" aria-hidden="true" />
             <div className="briefing-card-inner space-y-6">
-              <div>
-                <span
-                  className="briefing-eyebrow"
-                  style={{ color: diffColor }}
-                >
-                  Dossier d&apos;agent · {difficultyConfig.label}{" "}
-                  <DifficultyStars stars={stars} color={diffColor} />
-                </span>
-                <h1 className="briefing-h1">
-                  Briefing<br />
-                  <span style={{ color: "var(--color-green)" }}>mission</span>
-                </h1>
-                <p className="briefing-pitch-line">
-                  Tu vas appeler <strong>{personaName}</strong>
-                  {personaRole ? `, ${personaRole}` : ""} chez{" "}
-                  <strong>{company}</strong>. Ton objectif : décrocher un RDV.
-                </p>
+              <div className="flex items-start gap-4">
+                <CamilleMascot
+                  state={countdown !== null ? "thinking" : "idle"}
+                  size={72}
+                  withHalo
+                />
+                <div className="flex-1 min-w-0">
+                  <span
+                    className="briefing-eyebrow"
+                    style={{ color: diffColor }}
+                  >
+                    Camille te briefe · {difficultyConfig.label}{" "}
+                    <DifficultyStars stars={stars} color={diffColor} />
+                  </span>
+                  <h1 className="briefing-h1">
+                    Briefing<br />
+                    <span style={{ color: "var(--color-green)" }}>mission</span>
+                  </h1>
+                  <p className="briefing-pitch-line">
+                    Tu vas appeler <strong>{personaName}</strong>
+                    {personaRole ? `, ${personaRole}` : ""} chez{" "}
+                    <strong>{company}</strong>. Ton objectif : décrocher un RDV.
+                  </p>
+                </div>
               </div>
 
               {/* Cible identifiée */}

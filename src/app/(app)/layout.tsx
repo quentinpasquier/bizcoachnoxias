@@ -13,7 +13,7 @@ export default async function AppLayout({
   // pour permettre la prévisualisation.
   if (!isSupabaseConfigured()) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="app-shell">
         <DemoBanner />
         <Header
           user={{
@@ -22,7 +22,7 @@ export default async function AppLayout({
             role: "commercial",
           }}
         />
-        <main className="flex-1">{children}</main>
+        <main className="app-main">{children}</main>
       </div>
     );
   }
@@ -49,7 +49,7 @@ export default async function AppLayout({
   } | null;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="app-shell">
       <Header
         user={{
           email: user.email,
@@ -58,7 +58,7 @@ export default async function AppLayout({
           role: p?.role ?? "commercial",
         }}
       />
-      <main className="flex-1">{children}</main>
+      <main className="app-main">{children}</main>
     </div>
   );
 }

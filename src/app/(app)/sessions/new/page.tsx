@@ -127,7 +127,6 @@ export default async function NewSessionPage({
           style={{
             fontSize: "clamp(2rem, 4vw, 3rem)",
             lineHeight: "1.05",
-            color: "var(--color-dark)",
           }}
         >
           <span>Lance </span>
@@ -136,7 +135,7 @@ export default async function NewSessionPage({
         </h1>
         <p
           className="text-body-l"
-          style={{ color: "var(--color-gray)", maxWidth: "56ch" }}
+          style={{ color: "rgba(255,255,255,0.7)", maxWidth: "56ch" }}
         >
           Un clic dans le Quick Launch, ou configure précisément ton scénario
           plus bas pour la progression.
@@ -148,11 +147,12 @@ export default async function NewSessionPage({
         <div className="flex items-end justify-between gap-3 flex-wrap">
           <div>
             <div className="eyebrow-green">Quick Launch · 1 clic</div>
-            <h2 className="text-h3 mt-1" style={{ color: "var(--color-dark)" }}>
-              Démarre en 5 secondes.
-            </h2>
+            <h2 className="text-h3 mt-1">Démarre en 5 secondes.</h2>
           </div>
-          <span className="text-meta" style={{ color: "var(--color-gray)" }}>
+          <span
+            className="text-meta"
+            style={{ color: "rgba(255,255,255,0.55)" }}
+          >
             Briefing généré en 5-10 s
           </span>
         </div>
@@ -173,15 +173,13 @@ export default async function NewSessionPage({
       {/* Configuration sur mesure : la plus puissante */}
       <section className="space-y-5">
         <div>
-          <div className="eyebrow" style={{ color: "var(--color-purple)" }}>
+          <div className="eyebrow" style={{ color: "#b495ff" }}>
             Configuration sur mesure
           </div>
-          <h2 className="text-h3 mt-1" style={{ color: "var(--color-dark)" }}>
-            Choisis chaque paramètre.
-          </h2>
+          <h2 className="text-h3 mt-1">Choisis chaque paramètre.</h2>
           <p
             className="text-small mt-1"
-            style={{ color: "var(--color-gray)" }}
+            style={{ color: "rgba(255,255,255,0.6)" }}
           >
             Le meilleur outil pour cibler ta progression : client précis,
             persona précis, niveau précis, voix précise.

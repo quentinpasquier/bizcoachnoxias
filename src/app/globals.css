@@ -1623,6 +1623,108 @@
   color: var(--color-dark);
 }
 
+/* ========== APP SHELL (dark partout) ========== */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(120% 80% at 0% 0%, #2d1d44 0%, transparent 55%),
+    radial-gradient(70% 60% at 100% 100%, #1a1226 0%, transparent 60%),
+    linear-gradient(165deg, #221932 0%, #14091f 100%);
+  background-attachment: fixed;
+  color: #FFFFFF;
+}
+.app-main {
+  flex: 1;
+  position: relative;
+}
+
+/* Sur l'app-shell, on remap les couleurs de texte pour la lisibilité */
+.app-shell .text-h1,
+.app-shell .text-h2,
+.app-shell .text-h3,
+.app-shell .text-h4 {
+  color: #FFFFFF;
+}
+.app-shell .text-body,
+.app-shell .text-body-l,
+.app-shell .text-small,
+.app-shell .text-meta {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* La .card classique (blanche) reste blanche : elle pop sur le dark */
+.app-shell .card {
+  color: var(--color-dark);
+}
+.app-shell .card .text-h1,
+.app-shell .card .text-h2,
+.app-shell .card .text-h3,
+.app-shell .card .text-h4,
+.app-shell .card h1,
+.app-shell .card h2,
+.app-shell .card h3,
+.app-shell .card h4 {
+  color: var(--color-dark);
+}
+.app-shell .card .text-body,
+.app-shell .card .text-body-l,
+.app-shell .card .text-small,
+.app-shell .card .text-meta {
+  color: var(--color-dark);
+}
+.app-shell .card .eyebrow,
+.app-shell .card .eyebrow-green {
+  /* eyebrow déjà colorisé inline, on ne touche pas */
+}
+
+/* PageHeader sur app-shell : couleurs claires */
+.app-shell header h1 {
+  color: #FFFFFF;
+}
+
+/* Liens dans le contenu hors-card */
+.app-shell main > .container-noxias > * a:not(.btn):not(.card a):not(.mission-cta):not(.nav-pill) {
+  color: var(--color-green);
+}
+
+/* ========== CAMILLE animations ========== */
+@keyframes camilleIdle {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-2px) rotate(-0.5deg); }
+}
+@keyframes camilleHappy {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+  30% { transform: translateY(-4px) rotate(-2deg) scale(1.03); }
+  70% { transform: translateY(-2px) rotate(2deg) scale(1.02); }
+}
+@keyframes camilleSpeak {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-1px) rotate(0.5deg); }
+}
+@keyframes camilleThink {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+@keyframes camilleBlink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95%, 97% { transform: scaleY(0.1); }
+}
+@keyframes camilleEyesThink {
+  0%, 100% { transform: translateX(-1px); }
+  50% { transform: translateX(1px); }
+}
+@keyframes camilleMouthSpeak {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.5); }
+}
+@keyframes camilleSparkle {
+  0% { opacity: 0; transform: scale(0); }
+  50% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mission-blob { animation: none !important; }
 }

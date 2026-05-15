@@ -42,14 +42,12 @@ export default async function LeaderboardPage() {
   const { data, error } = await supabase.rpc("get_leaderboard_stats");
   if (error) {
     return (
-      <div className="mission-page">
-        <div className="container-noxias py-12 mission-content">
-          <h1 className="mission-h1">Classement</h1>
-          <div className="mission-card mt-6">
-            <p style={{ color: "#FFB4B4" }}>
-              Impossible de charger le classement : {error.message}
-            </p>
-          </div>
+      <div className="container-noxias py-12">
+        <h1 className="mission-h1">Classement</h1>
+        <div className="mission-card mt-6">
+          <p style={{ color: "#FFB4B4" }}>
+            Impossible de charger le classement : {error.message}
+          </p>
         </div>
       </div>
     );
@@ -100,7 +98,7 @@ export default async function LeaderboardPage() {
   const myUnlocked = myBadges.filter((b) => b.unlocked).length;
 
   return (
-    <div className="mission-page">
+    <div className="relative">
       <div className="mission-blob mission-blob-purple" aria-hidden="true" />
       <div className="mission-blob mission-blob-green" aria-hidden="true" />
 
