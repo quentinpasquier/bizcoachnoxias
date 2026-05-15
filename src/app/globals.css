@@ -49,19 +49,16 @@
   body {
     font-family: var(--font-ubuntu), Lato, Calibri, system-ui, sans-serif;
     color: #FFFFFF;
-    background:
-      radial-gradient(120% 80% at 0% 0%, #2d1d44 0%, transparent 55%),
-      radial-gradient(70% 60% at 100% 100%, #1a1226 0%, transparent 60%),
-      linear-gradient(165deg, #221932 0%, #14091f 100%);
+    background: linear-gradient(180deg, #2a1d44 0%, #1a1226 100%);
     background-attachment: fixed;
-    background-color: #14091f;
+    background-color: #1a1226;
     font-size: 1.0625rem;
     line-height: 1.45;
     font-feature-settings: "ss01", "kern";
   }
 
   html {
-    background-color: #14091f;
+    background-color: #1a1226;
   }
 
   h1, h2, h3, h4 {
@@ -1637,11 +1634,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background:
-    radial-gradient(120% 80% at 0% 0%, #2d1d44 0%, transparent 55%),
-    radial-gradient(70% 60% at 100% 100%, #1a1226 0%, transparent 60%),
-    linear-gradient(165deg, #221932 0%, #14091f 100%);
-  background-attachment: fixed;
+  background: transparent;
   color: #FFFFFF;
 }
 .app-main {
@@ -2006,6 +1999,10 @@
   0% { opacity: 0; transform: scale(0); }
   50% { opacity: 1; transform: scale(1); }
   100% { opacity: 0; transform: scale(1.4); }
+}
+
+@keyframes launchSpin {
+  to { transform: rotate(360deg); }
 }
 
 /* =============================================================================

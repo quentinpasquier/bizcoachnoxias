@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -70,6 +70,20 @@ export function NewSessionForm({
   const [difficulty, setDifficulty] = useState<Difficulty>("debutant");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+
+  // Timer pendant la génération du scénario (5-10s typique)
+  useEffect(() => {
+    if (!loading) {
+      setElapsed(0);
+      return;
+    }
+    const start = performance.now();
+    const id = setInterval(() => {
+      setElapsed((performance.now() - start) / 1000);
+    }, 100);
+    return () => clearInterval(id);
+  }, [loading]);
 
   function handleClientChange(id: string) {
     setClientId(id);
@@ -296,6 +310,7 @@ export function NewSessionForm({
         }
         gender={gender}
         loading={loading}
+        elapsed={elapsed}
         error={error}
         onLaunch={handleSubmit}
       />
@@ -678,6 +693,7 @@ function LaunchBar({
   difficultyLabel,
   gender,
   loading,
+  elapsed,
   error,
   onLaunch,
 }: {
@@ -687,6 +703,7 @@ function LaunchBar({
   difficultyLabel: string;
   gender: Gender;
   loading: boolean;
+  elapsed: number;
   error: string | null;
   onLaunch: (e: React.FormEvent) => void;
 }) {
@@ -759,7 +776,9 @@ function LaunchBar({
             loading={loading}
             onClick={onLaunch}
           >
-            {loading ? "Je prépare ton scénario..." : "On décroche →"}
+            {loading
+              ? `Briefing en cours... ${elapsed.toFixed(1)} s`
+              : "On décroche →"}
           </Button>
         </div>
       </div>

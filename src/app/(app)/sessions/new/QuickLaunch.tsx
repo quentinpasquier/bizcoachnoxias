@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Difficulty, Gender, PersonaProfile } from "@/lib/supabase/types";
 
@@ -42,7 +42,21 @@ function pickRandom<T>(arr: T[]): T | null {
 export function QuickLaunch({ clients, lastConfig, compact = false }: Props) {
   const router = useRouter();
   const [launching, setLaunching] = useState<string | null>(null);
+  const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
+
+  // Timer qui s'incrémente toutes les 100ms pendant le chargement
+  useEffect(() => {
+    if (!launching) {
+      setElapsed(0);
+      return;
+    }
+    const start = performance.now();
+    const id = setInterval(() => {
+      setElapsed((performance.now() - start) / 1000);
+    }, 100);
+    return () => clearInterval(id);
+  }, [launching]);
 
   const usableClients = clients.filter(
     (c) => c.has_docs && (c.target_personas.length > 0 || c.persona_profiles.length > 0),
@@ -141,6 +155,7 @@ export function QuickLaunch({ clients, lastConfig, compact = false }: Props) {
             hint="Tirage au sort"
             accent="#3CC879"
             loading={launching === "random"}
+            elapsed={launching === "random" ? elapsed : 0}
             disabled={launching !== null || usableClients.length === 0}
             onClick={handleRandom}
           />
@@ -154,6 +169,7 @@ export function QuickLaunch({ clients, lastConfig, compact = false }: Props) {
             }
             accent="#9d6bff"
             loading={launching === "last"}
+            elapsed={launching === "last" ? elapsed : 0}
             disabled={launching !== null || !lastConfig}
             onClick={handleLast}
           />
@@ -163,6 +179,7 @@ export function QuickLaunch({ clients, lastConfig, compact = false }: Props) {
             hint="Affronte un Expert"
             accent="#E94B4B"
             loading={launching === "boss"}
+            elapsed={launching === "boss" ? elapsed : 0}
             disabled={launching !== null || usableClients.length === 0}
             onClick={handleBoss}
           />
@@ -208,6 +225,7 @@ export function QuickLaunch({ clients, lastConfig, compact = false }: Props) {
           subtitle="Client + persona + niveau tirés au sort."
           accent="#3CC879"
           loading={launching === "random"}
+          elapsed={launching === "random" ? elapsed : 0}
           disabled={launching !== null || usableClients.length === 0}
           onClick={handleRandom}
         />
@@ -230,6 +248,7 @@ export function QuickLaunch({ clients, lastConfig, compact = false }: Props) {
           }
           accent="#9d6bff"
           loading={launching === "last"}
+          elapsed={launching === "last" ? elapsed : 0}
           disabled={launching !== null || !lastConfig}
           onClick={handleLast}
         />
@@ -240,6 +259,7 @@ export function QuickLaunch({ clients, lastConfig, compact = false }: Props) {
           subtitle="Hostile, raccroche vite, accorde rarement un RDV."
           accent="#E94B4B"
           loading={launching === "boss"}
+          elapsed={launching === "boss" ? elapsed : 0}
           disabled={launching !== null || usableClients.length === 0}
           onClick={handleBoss}
         />
@@ -267,6 +287,7 @@ function CompactQuickCard({
   hint,
   accent,
   loading,
+  elapsed,
   disabled,
   onClick,
 }: {
@@ -275,6 +296,7 @@ function CompactQuickCard({
   hint: string;
   accent: string;
   loading: boolean;
+  elapsed: number;
   disabled: boolean;
   onClick: () => void;
 }) {
@@ -285,17 +307,19 @@ function CompactQuickCard({
       disabled={disabled}
       className="text-left rounded-xl px-4 py-3 transition-all flex items-center gap-3"
       style={{
-        background: "#FFFFFF",
+        background: loading ? `${accent}14` : "rgba(255, 255, 255, 0.05)",
         border: `1px solid ${
-          loading ? accent : "var(--color-gray-border)"
+          loading ? accent : "rgba(255, 255, 255, 0.10)"
         }`,
         opacity: disabled && !loading ? 0.55 : 1,
         cursor: disabled ? "default" : "pointer",
-        boxShadow: "var(--shadow-xs)",
+        backdropFilter: "blur(16px) saturate(160%)",
+        WebkitBackdropFilter: "blur(16px) saturate(160%)",
+        color: "#FFFFFF",
       }}
     >
       <span
-        className="rounded-full flex items-center justify-center shrink-0"
+        className="rounded-full flex items-center justify-center shrink-0 relative"
         style={{
           width: 36,
           height: 36,
@@ -303,27 +327,41 @@ function CompactQuickCard({
           color: accent,
         }}
       >
-        {icon}
+        {loading ? (
+          <span
+            style={{
+              width: 18,
+              height: 18,
+              borderRadius: "50%",
+              border: `2px solid ${accent}33`,
+              borderTopColor: accent,
+              animation: "launchSpin 0.8s linear infinite",
+            }}
+            aria-hidden="true"
+          />
+        ) : (
+          icon
+        )}
       </span>
       <div className="min-w-0 flex-1">
         <div
           className="text-small font-semibold truncate"
-          style={{ color: "var(--color-dark)" }}
+          style={{ color: "#FFFFFF" }}
         >
-          {loading ? "Briefing..." : label}
+          {loading ? `Briefing... ${elapsed.toFixed(1)} s` : label}
         </div>
         <div
           className="text-meta truncate"
-          style={{ color: "var(--color-gray)" }}
+          style={{ color: loading ? accent : "rgba(255, 255, 255, 0.5)" }}
         >
-          {hint}
+          {loading ? "Génération du scénario..." : hint}
         </div>
       </div>
       <span
         className="text-small font-semibold shrink-0"
         style={{ color: accent }}
       >
-        →
+        {loading ? "" : "→"}
       </span>
     </button>
   );
@@ -336,6 +374,7 @@ function QuickCard({
   subtitle,
   accent,
   loading,
+  elapsed,
   disabled,
   onClick,
 }: {
@@ -345,6 +384,7 @@ function QuickCard({
   subtitle: string;
   accent: string;
   loading: boolean;
+  elapsed: number;
   disabled: boolean;
   onClick: () => void;
 }) {
@@ -397,15 +437,31 @@ function QuickCard({
       >
         {subtitle}
       </p>
-      <div className="flex items-center justify-end mt-4">
+      <div className="flex items-center justify-end mt-4 gap-2">
+        {loading && (
+          <span
+            className="rounded-full flex items-center justify-center"
+            style={{
+              width: 14,
+              height: 14,
+              border: `2px solid ${accent}44`,
+              borderTopColor: accent,
+              animation: "launchSpin 0.8s linear infinite",
+            }}
+            aria-hidden="true"
+          />
+        )}
         <span
           className="text-small"
           style={{
             color: loading ? accent : "rgba(255,255,255,0.7)",
             fontWeight: 600,
+            fontVariantNumeric: "tabular-nums",
           }}
         >
-          {loading ? "Briefing..." : "Lance →"}
+          {loading
+            ? `Briefing... ${elapsed.toFixed(1)} s`
+            : "Lance →"}
         </span>
       </div>
     </button>
