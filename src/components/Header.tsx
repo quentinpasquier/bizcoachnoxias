@@ -3,6 +3,7 @@ import { Logo } from "./Logo";
 import { SignOutButton } from "./SignOutButton";
 import { HeaderNav } from "./HeaderNav";
 import { Avatar } from "./ui/Avatar";
+import { OnboardingTrigger } from "./OnboardingGuide";
 import type { UserRole } from "@/lib/supabase/types";
 
 interface HeaderProps {
@@ -33,6 +34,7 @@ export function Header({ user }: HeaderProps) {
           <>
             <HeaderNav isManager={isManager} />
             <div className="flex items-center gap-3 pl-4 border-l border-white/10 shrink-0">
+              <OnboardingTrigger />
               <Link
                 href="/profile"
                 className="flex items-center gap-3 hover:opacity-90 transition"

@@ -9,12 +9,7 @@ import {
   filterTodaysSessions,
   pickDailyMissions,
 } from "@/lib/daily-missions";
-import {
-  totalXp,
-  levelProgress,
-  rankForLevel,
-  nextRank,
-} from "@/lib/xp";
+import { totalRp, rankProgress, rpForSession } from "@/lib/ranks";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +28,7 @@ export default async function DashboardPage() {
   >();
   let userName = "Commercial";
   let myUserId: string | null = null;
+  let myAvatarUrl: string | null = null;
   let role: UserRole = "commercial";
 
   if (configured) {
@@ -44,14 +40,16 @@ export default async function DashboardPage() {
       myUserId = user.id;
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, first_name, role")
+        .select("full_name, first_name, role, avatar_url")
         .eq("id", user.id)
         .single();
       const p = profile as {
         full_name?: string | null;
         first_name?: string | null;
         role?: UserRole;
+        avatar_url?: string | null;
       } | null;
+      myAvatarUrl = p?.avatar_url ?? null;
       role = p?.role ?? "commercial";
       const firstName = p?.first_name?.trim();
       if (firstName) userName = firstName;
@@ -106,11 +104,16 @@ export default async function DashboardPage() {
   const rdvRate =
     completed.length > 0 ? Math.round((rdvSecured / completed.length) * 100) : 0;
 
-  // ---------- Gamification ----------
-  const xpTotal = totalXp(myAllSessions);
-  const lvl = levelProgress(xpTotal);
-  const currentRank = rankForLevel(lvl.level);
-  const upcomingRank = nextRank(lvl.level);
+  // ---------- Gamification (système de rangs RP) ----------
+  const rpTotal = totalRp(myAllSessions);
+  const rank = rankProgress(rpTotal);
+  // Dernière session pour afficher le delta RP éventuel
+  const lastCompletedSession = myAllSessions.find(
+    (s) => s.status === "completed",
+  );
+  const lastRpDelta = lastCompletedSession
+    ? rpForSession(lastCompletedSession).total
+    : 0;
 
   // ---------- Today / streak ----------
   const todaySessions = filterTodaysSessions(myAllSessions);
@@ -137,17 +140,33 @@ export default async function DashboardPage() {
         {/* HERO + QUICK CTA */}
         <header className="flex items-end justify-between gap-6 flex-wrap">
           <div className="flex items-center gap-5">
-            <CamilleMascot
-              state={
-                minutesToday >= DAILY_TARGET_MINUTES ? "happy" : "idle"
-              }
-              size={86}
-              withHalo
-            />
+            {myAvatarUrl ? (
+              <div
+                className="rounded-full"
+                style={{
+                  width: 86,
+                  height: 86,
+                  padding: 3,
+                  background:
+                    "linear-gradient(135deg, var(--color-green) 0%, rgba(60,200,121,0.2) 100%)",
+                  boxShadow: "0 0 0 4px rgba(60, 200, 121, 0.12), 0 12px 30px rgba(60, 200, 121, 0.32)",
+                }}
+              >
+                <Avatar src={myAvatarUrl} name={userName} size={80} />
+              </div>
+            ) : (
+              <CamilleMascot
+                state={
+                  minutesToday >= DAILY_TARGET_MINUTES ? "happy" : "idle"
+                }
+                size={86}
+                withHalo
+              />
+            )}
             <div>
               <span className="mission-classified">
                 <DotPulse />
-                CAMILLE · TON COACH
+                {myAvatarUrl ? "MISSION CONTROL" : "CAMILLE · TON COACH"}
               </span>
               <h1 className="mission-h1 mt-3">
                 <span style={{ color: "rgba(255,255,255,0.85)" }}>
@@ -177,21 +196,11 @@ export default async function DashboardPage() {
           </div>
         </header>
 
-        {/* MISSION CONTROL HQ : Player + Daily progress */}
+        {/* MISSION CONTROL HQ : Rank + Daily progress */}
         <section className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-5">
-          <PlayerCard
-            level={lvl.level}
-            xpTotal={lvl.xpTotal}
-            xpInLevel={lvl.xpInLevel}
-            xpForLevel={lvl.xpForNextLevel - lvl.xpForCurrentLevel}
-            xpToNext={lvl.xpToNext}
-            progressPct={lvl.progressPct}
-            rankLabel={currentRank.label}
-            rankPrimary={currentRank.primary}
-            rankSecondary={currentRank.secondary}
-            rankGlow={currentRank.glow}
-            nextRankLabel={upcomingRank?.label ?? null}
-            nextRankAtLevel={upcomingRank?.minLevel ?? null}
+          <RankCard
+            rank={rank}
+            lastRpDelta={lastRpDelta}
           />
           <DailyProgressCard
             minutesToday={minutesToday}
@@ -403,106 +412,99 @@ export default async function DashboardPage() {
 
 // =================== Composants internes ===================
 
-interface PlayerCardProps {
-  level: number;
-  xpTotal: number;
-  xpInLevel: number;
-  xpForLevel: number;
-  xpToNext: number;
-  progressPct: number;
-  rankLabel: string;
-  rankPrimary: string;
-  rankSecondary: string;
-  rankGlow: string;
-  nextRankLabel: string | null;
-  nextRankAtLevel: number | null;
-}
-
-function PlayerCard({
-  level,
-  xpTotal,
-  xpInLevel,
-  xpForLevel,
-  xpToNext,
-  progressPct,
-  rankLabel,
-  rankPrimary,
-  rankSecondary,
-  rankGlow,
-  nextRankLabel,
-  nextRankAtLevel,
-}: PlayerCardProps) {
+function RankCard({
+  rank,
+  lastRpDelta,
+}: {
+  rank: {
+    label: string;
+    rp: number;
+    rpInLevel: number;
+    rpToNext: number | null;
+    rpForCurrent: number;
+    rpForNext: number | null;
+    progressPct: number;
+    primary: string;
+    secondary: string;
+    glow: string;
+    globalIndex: number;
+  };
+  lastRpDelta: number;
+}) {
   return (
     <div className="mission-card">
       <div className="flex items-center gap-6 flex-wrap">
-        <div
-          className="rounded-full flex flex-col items-center justify-center shrink-0 relative"
-          style={{
-            width: 110,
-            height: 110,
-            background: `linear-gradient(135deg, ${rankPrimary} 0%, ${rankSecondary} 100%)`,
-            boxShadow: `0 0 0 4px ${rankGlow}, 0 0 0 8px rgba(255,255,255,0.04), 0 12px 30px ${rankGlow}`,
-            color: "#FFFFFF",
-          }}
-        >
-          <span
-            style={{
-              fontSize: "0.62rem",
-              letterSpacing: "0.22em",
-              fontWeight: 700,
-              opacity: 0.85,
-              textTransform: "uppercase",
-            }}
-          >
-            Niveau
-          </span>
-          <span
-            style={{
-              fontFamily: "var(--font-ubuntu), Lato, system-ui, sans-serif",
-              fontSize: "2.6rem",
-              fontWeight: 700,
-              lineHeight: "1",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            {level}
-          </span>
-        </div>
+        <RankShield
+          primary={rank.primary}
+          secondary={rank.secondary}
+          glow={rank.glow}
+          tierLabel={rank.label}
+          size={108}
+        />
         <div className="flex-1 min-w-[260px]">
-          <div className="flex items-center gap-3 flex-wrap mb-3">
+          <div className="flex items-center gap-3 flex-wrap mb-2">
             <span
               className="px-3 py-1 rounded-full"
               style={{
-                background: `linear-gradient(135deg, ${rankPrimary}33, ${rankSecondary}22)`,
-                border: `1px solid ${rankPrimary}66`,
-                color: rankPrimary,
+                background: `linear-gradient(135deg, ${rank.primary}33, ${rank.secondary}22)`,
+                border: `1px solid ${rank.primary}66`,
+                color: rank.primary,
                 fontWeight: 700,
                 fontSize: "0.68rem",
                 letterSpacing: "0.18em",
                 textTransform: "uppercase",
               }}
             >
-              Rang {rankLabel}
+              Rang {rank.globalIndex} / 24
             </span>
             <span
               className="text-small"
               style={{ color: "rgba(255,255,255,0.55)" }}
             >
-              {xpTotal.toLocaleString("fr-FR")} XP cumulés
+              {rank.rp.toLocaleString("fr-FR")} RP cumulés
             </span>
+            {lastRpDelta !== 0 && (
+              <span
+                className="text-small"
+                style={{
+                  fontWeight: 700,
+                  color: lastRpDelta > 0 ? "var(--color-green)" : "#FFB4B4",
+                }}
+              >
+                Dernier appel : {lastRpDelta > 0 ? "+" : ""}
+                {lastRpDelta} RP
+              </span>
+            )}
           </div>
+          <h3
+            className="text-h2 mb-2"
+            style={{
+              color: rank.primary,
+              fontSize: "2rem",
+              margin: 0,
+              letterSpacing: "-0.02em",
+            }}
+          >
+            {rank.label}
+          </h3>
           <div className="flex items-baseline justify-between mb-2">
             <span
               className="text-small"
               style={{ color: "rgba(255,255,255,0.85)", fontWeight: 600 }}
             >
-              {xpInLevel}/{xpForLevel} XP
+              {rank.rpInLevel}
+              {rank.rpForNext !== null
+                ? `/${rank.rpForNext - rank.rpForCurrent}`
+                : ""}{" "}
+              RP
             </span>
             <span
               className="text-small"
               style={{ color: "rgba(255,255,255,0.55)" }}
             >
-              Plus que {xpToNext} XP avant niveau {level + 1}
+              {rank.rpToNext !== null
+                ? `Plus que ${rank.rpToNext} RP avant le rang suivant`
+                : "Rang maximum atteint"}
             </span>
           </div>
           <div
@@ -512,23 +514,93 @@ function PlayerCard({
             <div
               className="h-full rounded-full"
               style={{
-                width: `${progressPct}%`,
-                background: `linear-gradient(90deg, ${rankPrimary}, ${rankSecondary})`,
-                boxShadow: `0 0 12px ${rankGlow}`,
+                width: `${rank.progressPct}%`,
+                background: `linear-gradient(90deg, ${rank.primary}, ${rank.secondary})`,
+                boxShadow: `0 0 12px ${rank.glow}`,
                 transition: "width 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
               }}
             />
           </div>
-          {nextRankLabel && nextRankAtLevel && (
-            <p
-              className="text-meta mt-2"
-              style={{ color: "rgba(255,255,255,0.5)" }}
-            >
-              Rang {nextRankLabel} débloqué au niveau {nextRankAtLevel}.
-            </p>
-          )}
+          <p
+            className="text-meta mt-2"
+            style={{ color: "rgba(255,255,255,0.5)" }}
+          >
+            Un RDV = +30 RP. Un score parfait = +20 RP. Un raccrochage = −10 RP.
+          </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+function RankShield({
+  primary,
+  secondary,
+  glow,
+  tierLabel,
+  size = 96,
+}: {
+  primary: string;
+  secondary: string;
+  glow: string;
+  tierLabel: string;
+  size?: number;
+}) {
+  // Petit shield SVG inline qui reflète la tier
+  return (
+    <div
+      className="shrink-0 relative"
+      style={{
+        width: size,
+        height: size,
+        filter: `drop-shadow(0 12px 28px ${glow})`,
+      }}
+    >
+      <svg viewBox="0 0 100 100" width={size} height={size}>
+        <defs>
+          <linearGradient id={`shield-${primary}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={primary} />
+            <stop offset="100%" stopColor={secondary} />
+          </linearGradient>
+        </defs>
+        <path
+          d="M 50 6 L 86 18 L 86 52 Q 86 78 50 94 Q 14 78 14 52 L 14 18 Z"
+          fill={`url(#shield-${primary})`}
+        />
+        <path
+          d="M 50 12 L 80 22 L 80 52 Q 80 74 50 88 Q 20 74 20 52 L 20 22 Z"
+          fill="none"
+          stroke="rgba(255,255,255,0.20)"
+          strokeWidth="1.5"
+        />
+        <ellipse cx="50" cy="32" rx="22" ry="8" fill="rgba(255,255,255,0.18)" />
+        <text
+          x="50"
+          y="62"
+          textAnchor="middle"
+          fill="rgba(255,255,255,0.95)"
+          fontSize="11"
+          fontWeight="800"
+          letterSpacing="2"
+          style={{
+            textTransform: "uppercase",
+            fontFamily: "var(--font-ubuntu), Lato, sans-serif",
+          }}
+        >
+          {tierLabel.split(" ")[0]}
+        </text>
+        <text
+          x="50"
+          y="78"
+          textAnchor="middle"
+          fill="rgba(255,255,255,0.95)"
+          fontSize="14"
+          fontWeight="800"
+          style={{ fontFamily: "var(--font-ubuntu), Lato, sans-serif" }}
+        >
+          {tierLabel.split(" ")[1] ?? ""}
+        </text>
+      </svg>
     </div>
   );
 }

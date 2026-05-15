@@ -408,20 +408,9 @@ function SelectableCard({
     <button
       type="button"
       onClick={onClick}
-      className="text-left transition-all duration-base relative"
+      className={`selectable-card ${selected ? "selectable-card-selected" : ""}`}
       style={{
-        background: selected ? "rgba(60, 200, 121, 0.08)" : "#FFFFFF",
-        border: selected
-          ? "2px solid var(--color-green)"
-          : "1px solid var(--color-gray-border)",
-        borderRadius: "var(--radius-lg)",
         padding: compact ? "16px 20px" : "20px",
-        boxShadow: selected
-          ? "0 8px 22px rgba(60, 200, 121, 0.18)"
-          : "var(--shadow-xs)",
-        transform: selected ? "translateY(-1px)" : "translateY(0)",
-        cursor: "pointer",
-        width: "100%",
       }}
     >
       {/* Checkmark when selected */}
@@ -445,8 +434,8 @@ function SelectableCard({
         <span
           className="absolute top-3 right-3 badge"
           style={{
-            background: "rgba(245, 165, 36, 0.18)",
-            color: "#8A5A0E",
+            background: "rgba(245, 165, 36, 0.22)",
+            color: "#F5A524",
           }}
         >
           {warningBadge}
@@ -510,18 +499,24 @@ function AvatarCard({
     <div
       className="rounded-xl p-6 transition-all"
       style={{
-        background: ready ? "var(--color-dark)" : "#FFFFFF",
-        color: ready ? "#FFFFFF" : "var(--color-dark)",
-        border: ready ? "none" : "1px solid var(--color-gray-border)",
+        background: ready
+          ? "linear-gradient(140deg, rgba(60, 200, 121, 0.16) 0%, rgba(34, 25, 50, 0.5) 100%)"
+          : "rgba(255, 255, 255, 0.05)",
+        color: "#FFFFFF",
+        border: ready
+          ? "1px solid rgba(60, 200, 121, 0.4)"
+          : "1px solid rgba(255, 255, 255, 0.10)",
+        backdropFilter: "blur(16px) saturate(160%)",
+        WebkitBackdropFilter: "blur(16px) saturate(160%)",
         boxShadow: ready
-          ? "0 18px 40px rgba(34, 25, 50, 0.18)"
-          : "var(--shadow-sm)",
+          ? "0 18px 40px rgba(60, 200, 121, 0.18)"
+          : "0 4px 14px rgba(11, 6, 22, 0.32)",
       }}
     >
       <div
         className="text-meta uppercase tracking-widest mb-4 text-center"
         style={{
-          color: ready ? "rgba(255,255,255,0.55)" : "var(--color-gray)",
+          color: "rgba(255,255,255,0.55)",
         }}
       >
         {ready ? "Ton prospect est prêt" : "Compose ton prospect"}
@@ -731,12 +726,18 @@ function LaunchBar({
       <div
         className="rounded-xl p-6 md:p-8"
         style={{
-          background: ready ? "var(--color-dark)" : "var(--bg-soft)",
-          color: ready ? "#FFFFFF" : "var(--color-dark)",
-          border: ready ? "none" : "1px solid var(--color-gray-border)",
+          background: ready
+            ? "linear-gradient(140deg, rgba(60, 200, 121, 0.16) 0%, rgba(34, 25, 50, 0.65) 100%)"
+            : "rgba(255, 255, 255, 0.05)",
+          color: "#FFFFFF",
+          border: ready
+            ? "1px solid rgba(60, 200, 121, 0.40)"
+            : "1px solid rgba(255, 255, 255, 0.10)",
+          backdropFilter: "blur(16px) saturate(160%)",
+          WebkitBackdropFilter: "blur(16px) saturate(160%)",
           boxShadow: ready
-            ? "0 18px 40px rgba(34, 25, 50, 0.2)"
-            : "none",
+            ? "0 18px 40px rgba(60, 200, 121, 0.20)"
+            : "0 4px 14px rgba(11, 6, 22, 0.30)",
           transition: "all 0.3s var(--ease-out)",
         }}
       >
@@ -744,11 +745,7 @@ function LaunchBar({
           <div className="flex-1 min-w-[260px]">
             <div
               className="text-meta uppercase tracking-widest mb-2"
-              style={{
-                color: ready
-                  ? "rgba(255,255,255,0.55)"
-                  : "var(--color-gray)",
-              }}
+              style={{ color: "rgba(255,255,255,0.55)" }}
             >
               {ready ? "Prêt à décrocher" : "Encore quelques choix..."}
             </div>
@@ -766,7 +763,7 @@ function LaunchBar({
             ) : (
               <p
                 className="text-body"
-                style={{ color: "var(--color-gray)" }}
+                style={{ color: "rgba(255, 255, 255, 0.65)" }}
               >
                 Termine les 4 étapes et on attaque.
               </p>

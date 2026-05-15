@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { Header } from "@/components/Header";
+import { OnboardingGuide } from "@/components/OnboardingGuide";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { UserRole } from "@/lib/supabase/types";
@@ -59,6 +60,7 @@ export default async function AppLayout({
         }}
       />
       <main className="app-main">{children}</main>
+      <OnboardingGuide />
     </div>
   );
 }

@@ -1638,9 +1638,14 @@
 .app-main {
   flex: 1;
   position: relative;
+  color: #FFFFFF;
 }
 
-/* Sur l'app-shell, on remap les couleurs de texte pour la lisibilité */
+/* Texte de base blanc sur app-shell */
+.app-shell h1,
+.app-shell h2,
+.app-shell h3,
+.app-shell h4,
 .app-shell .text-h1,
 .app-shell .text-h2,
 .app-shell .text-h3,
@@ -1648,45 +1653,307 @@
   color: #FFFFFF;
 }
 .app-shell .text-body,
-.app-shell .text-body-l,
-.app-shell .text-small,
+.app-shell .text-body-l {
+  color: rgba(255, 255, 255, 0.78);
+}
+.app-shell .text-small {
+  color: rgba(255, 255, 255, 0.65);
+}
 .app-shell .text-meta {
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.5);
 }
 
-/* La .card classique (blanche) reste blanche : elle pop sur le dark */
+/* =====================================================================
+   GLASS CARDS — style iOS 26 / Liquid Glass
+   .card classique devient transparente verre dépoli sur app-shell
+   ===================================================================== */
 .app-shell .card {
-  color: var(--color-dark);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.10);
+  color: #FFFFFF;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow:
+    0 8px 24px rgba(11, 6, 22, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
-.app-shell .card .text-h1,
-.app-shell .card .text-h2,
-.app-shell .card .text-h3,
-.app-shell .card .text-h4,
+.app-shell .card-hover:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(157, 107, 255, 0.35);
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 32px rgba(11, 6, 22, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+/* Card lavender devient glass plus marquée violet */
+.app-shell .card.bg-\[var\(--color-lavender\)\],
+.app-shell [class*="bg-\\[var\\(--color-lavender"] {
+  background: rgba(157, 107, 255, 0.10) !important;
+  border-color: rgba(157, 107, 255, 0.25) !important;
+}
+
+/* Card dark reste vraiment dark, juste plus glassy */
+.app-shell .card.bg-\[var\(--color-dark\)\] {
+  background: linear-gradient(140deg, rgba(40, 28, 60, 0.85), rgba(20, 9, 31, 0.85)) !important;
+}
+
+/* Textes par défaut DANS la card : blanc */
+.app-shell .card,
+.app-shell .card * {
+  color: inherit;
+}
 .app-shell .card h1,
 .app-shell .card h2,
 .app-shell .card h3,
-.app-shell .card h4 {
-  color: var(--color-dark);
-}
-.app-shell .card .text-body,
-.app-shell .card .text-body-l,
-.app-shell .card .text-small,
-.app-shell .card .text-meta {
-  color: var(--color-dark);
-}
-.app-shell .card .eyebrow,
-.app-shell .card .eyebrow-green {
-  /* eyebrow déjà colorisé inline, on ne touche pas */
-}
-
-/* PageHeader sur app-shell : couleurs claires */
-.app-shell header h1 {
+.app-shell .card h4,
+.app-shell .card .text-h1,
+.app-shell .card .text-h2,
+.app-shell .card .text-h3,
+.app-shell .card .text-h4 {
   color: #FFFFFF;
 }
+.app-shell .card .text-body,
+.app-shell .card .text-body-l {
+  color: rgba(255, 255, 255, 0.82);
+}
+.app-shell .card .text-small {
+  color: rgba(255, 255, 255, 0.7);
+}
+.app-shell .card .text-meta {
+  color: rgba(255, 255, 255, 0.5);
+}
+.app-shell .card .eyebrow {
+  color: rgba(255, 255, 255, 0.5);
+}
 
-/* Liens dans le contenu hors-card */
-.app-shell main > .container-noxias > * a:not(.btn):not(.card a):not(.mission-cta):not(.nav-pill) {
-  color: var(--color-green);
+/* Inputs sur glass : transparents */
+.app-shell .input,
+.app-shell input.input {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+}
+.app-shell .input::placeholder,
+.app-shell input.input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+.app-shell .input:focus {
+  border-color: var(--color-green);
+  background: rgba(255, 255, 255, 0.10);
+}
+
+/* Search input */
+.app-shell .input-search {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  color: #FFFFFF;
+}
+.app-shell .input-search input {
+  color: #FFFFFF !important;
+}
+.app-shell .input-search input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* SelectableCard glass — pour le formulaire NewSession */
+.selectable-card {
+  position: relative;
+  width: 100%;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: var(--radius-lg);
+  color: #FFFFFF;
+  cursor: pointer;
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  transition: background var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 4px 14px rgba(11, 6, 22, 0.30);
+}
+.selectable-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(157, 107, 255, 0.40);
+  transform: translateY(-2px);
+}
+.selectable-card-selected {
+  background: rgba(60, 200, 121, 0.14) !important;
+  border: 2px solid var(--color-green) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 12px 28px rgba(60, 200, 121, 0.22) !important;
+  transform: translateY(-1px);
+}
+.selectable-card .text-h4 { color: #FFFFFF; }
+.selectable-card .text-small,
+.selectable-card .text-body { color: rgba(255, 255, 255, 0.78); }
+.selectable-card .text-meta { color: rgba(255, 255, 255, 0.55); }
+.selectable-card .eyebrow { color: rgba(255, 255, 255, 0.55); }
+
+/* FilterChip */
+.app-shell .filter-chip {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.10) !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+.app-shell .filter-chip.active,
+.app-shell .filter-chip[aria-pressed="true"] {
+  background: rgba(60, 200, 121, 0.20) !important;
+  border-color: rgba(60, 200, 121, 0.5) !important;
+  color: #FFFFFF !important;
+}
+
+/* Liens hors-card en vert accent */
+.app-shell main a:not(.btn):not(.mission-cta):not(.nav-pill):not(.card a) {
+  color: inherit;
+}
+
+/* ========== ONBOARDING GUIDE ========== */
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(11, 6, 22, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: onboardingFadeIn 220ms ease-out both;
+}
+@keyframes onboardingFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.onboarding-card {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  padding: 36px 32px 28px;
+  border-radius: 24px;
+  background: linear-gradient(160deg, rgba(60, 40, 90, 0.65), rgba(20, 9, 31, 0.85));
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  box-shadow:
+    0 30px 80px rgba(11, 6, 22, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  color: #FFFFFF;
+  text-align: center;
+  animation: onboardingPop 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes onboardingPop {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.onboarding-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  border: 0;
+  font-size: 1.4rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding-bottom: 2px;
+}
+.onboarding-close:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #FFFFFF;
+}
+.onboarding-progress {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 24px;
+}
+.onboarding-dot {
+  display: inline-block;
+  width: 22px;
+  height: 4px;
+  border-radius: 999px;
+  transition: background 0.2s ease, width 0.2s ease;
+}
+.onboarding-dot-active { width: 32px; }
+.onboarding-emoji {
+  font-size: 3.6rem;
+  line-height: 1;
+  margin-bottom: 18px;
+}
+.onboarding-eyebrow {
+  display: inline-block;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+.onboarding-title {
+  font-family: var(--font-ubuntu), Lato, sans-serif;
+  font-size: clamp(1.4rem, 3vw, 1.7rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #FFFFFF;
+  margin: 0 0 12px;
+  line-height: 1.2;
+}
+.onboarding-body {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  margin: 0 0 28px;
+}
+.onboarding-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.onboarding-counter {
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 700;
+}
+.onboarding-btn-ghost,
+.onboarding-btn-primary {
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: 0;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.onboarding-btn-ghost {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+.onboarding-btn-ghost:hover {
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.32);
+}
+.onboarding-btn-primary {
+  color: #FFFFFF;
+  box-shadow: 0 10px 22px rgba(60, 200, 121, 0.20);
+}
+.onboarding-btn-primary:hover {
+  transform: translateY(-1px);
 }
 
 /* ========== CAMILLE animations ========== */
