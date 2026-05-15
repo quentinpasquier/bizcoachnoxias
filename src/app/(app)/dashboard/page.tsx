@@ -9,7 +9,7 @@ import {
   filterTodaysSessions,
   pickDailyMissions,
 } from "@/lib/daily-missions";
-import { totalRp, rankProgress, rpForSession } from "@/lib/ranks";
+import { totalPpn, rankProgress, ppnForSession } from "@/lib/ranks";
 
 export const dynamic = "force-dynamic";
 
@@ -104,15 +104,15 @@ export default async function DashboardPage() {
   const rdvRate =
     completed.length > 0 ? Math.round((rdvSecured / completed.length) * 100) : 0;
 
-  // ---------- Gamification (système de rangs RP) ----------
-  const rpTotal = totalRp(myAllSessions);
-  const rank = rankProgress(rpTotal);
-  // Dernière session pour afficher le delta RP éventuel
+  // ---------- Gamification (système de rangs PPN) ----------
+  const ppnTotal = totalPpn(myAllSessions);
+  const rank = rankProgress(ppnTotal);
+  // Dernière session pour afficher le delta PPN éventuel
   const lastCompletedSession = myAllSessions.find(
     (s) => s.status === "completed",
   );
-  const lastRpDelta = lastCompletedSession
-    ? rpForSession(lastCompletedSession).total
+  const lastPpnDelta = lastCompletedSession
+    ? ppnForSession(lastCompletedSession).total
     : 0;
 
   // ---------- Today / streak ----------
@@ -200,7 +200,7 @@ export default async function DashboardPage() {
         <section className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-5">
           <RankCard
             rank={rank}
-            lastRpDelta={lastRpDelta}
+            lastPpnDelta={lastPpnDelta}
           />
           <DailyProgressCard
             minutesToday={minutesToday}
@@ -414,22 +414,23 @@ export default async function DashboardPage() {
 
 function RankCard({
   rank,
-  lastRpDelta,
+  lastPpnDelta,
 }: {
   rank: {
     label: string;
-    rp: number;
-    rpInLevel: number;
-    rpToNext: number | null;
-    rpForCurrent: number;
-    rpForNext: number | null;
+    ppn: number;
+    ppnInLevel: number;
+    ppnToNext: number | null;
+    ppnForCurrent: number;
+    ppnForNext: number | null;
     progressPct: number;
     primary: string;
     secondary: string;
     glow: string;
     globalIndex: number;
+    monthlyRewardEur: number;
   };
-  lastRpDelta: number;
+  lastPpnDelta: number;
 }) {
   return (
     <div className="mission-card">
@@ -461,49 +462,64 @@ function RankCard({
               className="text-small"
               style={{ color: "rgba(255,255,255,0.55)" }}
             >
-              {rank.rp.toLocaleString("fr-FR")} RP cumulés
+              {rank.ppn.toLocaleString("fr-FR")} PPN cumulés
             </span>
-            {lastRpDelta !== 0 && (
+            {lastPpnDelta !== 0 && (
               <span
                 className="text-small"
                 style={{
                   fontWeight: 700,
-                  color: lastRpDelta > 0 ? "var(--color-green)" : "#FFB4B4",
+                  color: lastPpnDelta > 0 ? "var(--color-green)" : "#FFB4B4",
                 }}
               >
-                Dernier appel : {lastRpDelta > 0 ? "+" : ""}
-                {lastRpDelta} RP
+                Dernier appel : {lastPpnDelta > 0 ? "+" : ""}
+                {lastPpnDelta} PPN
               </span>
             )}
           </div>
-          <h3
-            className="text-h2 mb-2"
-            style={{
-              color: rank.primary,
-              fontSize: "2rem",
-              margin: 0,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            {rank.label}
-          </h3>
+          <div className="flex items-baseline gap-3 flex-wrap mb-2">
+            <h3
+              className="text-h2"
+              style={{
+                color: rank.primary,
+                fontSize: "2rem",
+                margin: 0,
+                letterSpacing: "-0.02em",
+              }}
+            >
+              {rank.label}
+            </h3>
+            <span
+              className="rounded-full px-2.5 py-1"
+              style={{
+                background: "rgba(60, 200, 121, 0.16)",
+                border: "1px solid rgba(60, 200, 121, 0.40)",
+                color: "var(--color-green)",
+                fontWeight: 700,
+                fontSize: "0.85rem",
+              }}
+              title="Récompense versée à la fin du mois si tu termines à ce rang"
+            >
+              🎁 {rank.monthlyRewardEur}€ / mois
+            </span>
+          </div>
           <div className="flex items-baseline justify-between mb-2">
             <span
               className="text-small"
               style={{ color: "rgba(255,255,255,0.85)", fontWeight: 600 }}
             >
-              {rank.rpInLevel}
-              {rank.rpForNext !== null
-                ? `/${rank.rpForNext - rank.rpForCurrent}`
+              {rank.ppnInLevel}
+              {rank.ppnForNext !== null
+                ? `/${rank.ppnForNext - rank.ppnForCurrent}`
                 : ""}{" "}
-              RP
+              PPN
             </span>
             <span
               className="text-small"
               style={{ color: "rgba(255,255,255,0.55)" }}
             >
-              {rank.rpToNext !== null
-                ? `Plus que ${rank.rpToNext} RP avant le rang suivant`
+              {rank.ppnToNext !== null
+                ? `Plus que ${rank.ppnToNext} PPN avant le rang suivant`
                 : "Rang maximum atteint"}
             </span>
           </div>
@@ -525,7 +541,8 @@ function RankCard({
             className="text-meta mt-2"
             style={{ color: "rgba(255,255,255,0.5)" }}
           >
-            Un RDV = +30 RP. Un score parfait = +20 RP. Un raccrochage = −10 RP.
+            Un RDV = +30 PPN · Score parfait = +20 PPN · Raccrochage = −10 PPN.
+            Cadeau de fin de mois selon ton rang final (1 € → 30 €).
           </p>
         </div>
       </div>

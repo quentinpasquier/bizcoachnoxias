@@ -2,10 +2,11 @@ import type { SessionRow } from "./supabase/types";
 
 // =============================================================================
 // Système de RANGS Bizcoach : 6 tiers × 4 niveaux = 24 rangs.
-// Basé sur des Rank Points (RP) qui peuvent MONTER ou DESCENDRE.
+// Basé sur des Practis Points (PPN) qui peuvent MONTER ou DESCENDRE.
 //
-// Une bonne perf augmente les RP. Une mauvaise les fait descendre.
-// Le rang affiché correspond aux RP cumulés (clampés à 0 minimum).
+// Une bonne perf augmente les PPN. Une mauvaise les fait descendre.
+// Le rang affiché correspond aux PPN cumulés (clampés à 0 minimum).
+// Chaque rang donne droit à une récompense mensuelle (1€ à 30€).
 // =============================================================================
 
 export type RankTier =
@@ -19,7 +20,6 @@ export type RankTier =
 export interface RankTierConfig {
   tier: RankTier;
   label: string;
-  // 4 niveaux par tier, RP cumulés requis pour atteindre chaque niveau
   thresholds: [number, number, number, number];
   primary: string;
   secondary: string;
@@ -84,26 +84,38 @@ export const RANK_TIERS: RankTierConfig[] = [
   },
 ];
 
+// Récompense mensuelle par rang global (1 → 24) : 1€ à 30€.
+// Progression : Bronze 1-4€, Argent 5-11€, Gold 12-18€,
+// Platine 19-23€, Diamant 24-28€, Master 29-30€.
+export const MONTHLY_REWARDS_EUR: number[] = [
+  1, 2, 3, 4, // Bronze I-IV
+  5, 7, 9, 11, // Argent I-IV
+  12, 14, 16, 18, // Gold I-IV
+  19, 20, 22, 23, // Platine I-IV
+  24, 25, 26, 28, // Diamant I-IV
+  29, 30, 30, 30, // Master I-IV (cap à 30€)
+];
+
 export interface RankInfo {
   tier: RankTier;
   tierLabel: string;
-  subLevel: 1 | 2 | 3 | 4; // niveau dans le tier (I, II, III, IV)
-  label: string; // ex: "Gold III"
-  rp: number;
-  rpForCurrent: number; // RP requis pour atteindre ce sous-niveau
-  rpForNext: number | null; // RP requis pour le prochain (null si Master IV)
-  progressPct: number; // 0-100 dans le sous-niveau
+  subLevel: 1 | 2 | 3 | 4;
+  label: string;
+  ppn: number;
+  ppnForCurrent: number;
+  ppnForNext: number | null;
+  progressPct: number;
   primary: string;
   secondary: string;
   glow: string;
   badgeShape: "shield" | "star" | "crown";
-  globalIndex: number; // 1-24
+  globalIndex: number;
+  monthlyRewardEur: number;
 }
 
-// Tous les seuils dans l'ordre, avec leur (tier, subLevel, globalIndex)
 const FLAT_THRESHOLDS = RANK_TIERS.flatMap((t, ti) =>
-  t.thresholds.map((rp, li) => ({
-    rp,
+  t.thresholds.map((ppn, li) => ({
+    ppn,
     tier: t.tier,
     tierLabel: t.label,
     subLevel: (li + 1) as 1 | 2 | 3 | 4,
@@ -117,23 +129,23 @@ const FLAT_THRESHOLDS = RANK_TIERS.flatMap((t, ti) =>
 
 const ROMAN = ["", "I", "II", "III", "IV"];
 
-export function rankFromRp(rp: number): RankInfo {
-  const clamped = Math.max(0, rp);
+export function rankFromPpn(ppn: number): RankInfo {
+  const clamped = Math.max(0, ppn);
   let current = FLAT_THRESHOLDS[0]!;
   for (const t of FLAT_THRESHOLDS) {
-    if (clamped >= t.rp) current = t;
+    if (clamped >= t.ppn) current = t;
     else break;
   }
   const idx = FLAT_THRESHOLDS.indexOf(current);
   const next =
     idx < FLAT_THRESHOLDS.length - 1 ? FLAT_THRESHOLDS[idx + 1]! : null;
 
-  const rpForCurrent = current.rp;
-  const rpForNext = next?.rp ?? null;
-  const span = rpForNext !== null ? rpForNext - rpForCurrent : 1;
+  const ppnForCurrent = current.ppn;
+  const ppnForNext = next?.ppn ?? null;
+  const span = ppnForNext !== null ? ppnForNext - ppnForCurrent : 1;
   const progressPct =
-    rpForNext !== null
-      ? Math.min(100, Math.round(((clamped - rpForCurrent) / span) * 100))
+    ppnForNext !== null
+      ? Math.min(100, Math.round(((clamped - ppnForCurrent) / span) * 100))
       : 100;
 
   return {
@@ -141,43 +153,41 @@ export function rankFromRp(rp: number): RankInfo {
     tierLabel: current.tierLabel,
     subLevel: current.subLevel,
     label: `${current.tierLabel} ${ROMAN[current.subLevel]}`,
-    rp: clamped,
-    rpForCurrent,
-    rpForNext,
+    ppn: clamped,
+    ppnForCurrent,
+    ppnForNext,
     progressPct,
     primary: current.primary,
     secondary: current.secondary,
     glow: current.glow,
     badgeShape: current.badgeShape,
     globalIndex: current.globalIndex,
+    monthlyRewardEur: MONTHLY_REWARDS_EUR[current.globalIndex - 1] ?? 1,
   };
 }
 
 // =============================================================================
-// Calcul des Rank Points par session.
-// Une session peut RAPPORTER des RP ou en FAIRE PERDRE.
+// Calcul des PPN par session.
 // =============================================================================
 
-export interface RpBreakdown {
-  outcome: number; // points de l'issue (RDV / raccrochage)
-  score: number; // points du score 20 critères
-  difficultyMult: number; // multiplicateur de difficulté
-  total: number; // total final pour cette session
+export interface PpnBreakdown {
+  outcome: number;
+  score: number;
+  difficultyMult: number;
+  total: number;
 }
 
-export function rpForSession(s: SessionRow): RpBreakdown {
+export function ppnForSession(s: SessionRow): PpnBreakdown {
   if (s.status !== "completed") {
     return { outcome: 0, score: 0, difficultyMult: 1, total: 0 };
   }
 
-  // Outcome
   let outcome = 0;
   if (s.appointment_secured) outcome += 30;
   else if (s.ended_by === "prospect") outcome -= 10;
   else if (s.ended_by === "user") outcome += 0;
   else outcome -= 5;
 
-  // Score sur 20 critères
   const score = s.score ?? 0;
   let scorePts = 0;
   if (score >= 90) scorePts = 20;
@@ -186,7 +196,6 @@ export function rpForSession(s: SessionRow): RpBreakdown {
   else if (score >= 30) scorePts = -5;
   else scorePts = -15;
 
-  // Multiplicateur de difficulté
   const mult =
     s.difficulty === "expert"
       ? 1.7
@@ -205,18 +214,19 @@ export function rpForSession(s: SessionRow): RpBreakdown {
   };
 }
 
-export function totalRp(sessions: SessionRow[]): number {
-  return sessions.reduce((acc, s) => acc + rpForSession(s).total, 0);
+export function totalPpn(sessions: SessionRow[]): number {
+  return sessions.reduce((acc, s) => acc + ppnForSession(s).total, 0);
 }
 
 export interface RankProgress extends RankInfo {
-  rpInLevel: number; // RP au-dessus du seuil actuel
-  rpToNext: number | null; // RP restants avant prochain niveau
+  ppnInLevel: number;
+  ppnToNext: number | null;
 }
 
-export function rankProgress(rp: number): RankProgress {
-  const info = rankFromRp(rp);
-  const rpInLevel = info.rp - info.rpForCurrent;
-  const rpToNext = info.rpForNext !== null ? info.rpForNext - info.rp : null;
-  return { ...info, rpInLevel, rpToNext };
+export function rankProgress(ppn: number): RankProgress {
+  const info = rankFromPpn(ppn);
+  const ppnInLevel = info.ppn - info.ppnForCurrent;
+  const ppnToNext =
+    info.ppnForNext !== null ? info.ppnForNext - info.ppn : null;
+  return { ...info, ppnInLevel, ppnToNext };
 }

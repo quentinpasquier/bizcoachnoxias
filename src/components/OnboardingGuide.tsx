@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const STORAGE_KEY = "bizcoach_onboarding_seen_v1";
+const STORAGE_KEY = "bizcoach_onboarding_seen_v2";
 
 interface Step {
   eyebrow: string;
@@ -30,19 +30,26 @@ const STEPS: Step[] = [
   {
     eyebrow: "Étape 3",
     title: "Ton rang monte et descend selon tes perfs",
-    body: "Tu commences à Bronze I. Chaque session te rapporte ou te coûte des Rank Points (RP). Un RDV = +30 RP, un sans-faute = +20 RP, un raccrochage = −10 RP. Le rang Master IV se mérite.",
+    body: "Tu commences à Bronze I. Chaque session te rapporte ou te coûte des Practis Points (PPN). Un RDV = +30 PPN, un sans-faute = +20 PPN, un raccrochage = −10 PPN. 6 tiers, 24 rangs, jusqu'à Master IV.",
     accent: "#F7C041",
     emoji: "🏆",
   },
   {
     eyebrow: "Étape 4",
+    title: "Une récompense chaque fin de mois",
+    body: "Selon le rang sur lequel tu termines le mois, tu reçois une récompense : 1 € à Bronze I, jusqu'à 30 € à Master IV. Plus tu progresses, plus la récompense grossit. À toi de te maintenir au sommet.",
+    accent: "#3CC879",
+    emoji: "🎁",
+  },
+  {
+    eyebrow: "Étape 5",
     title: "30 minutes par jour suffisent",
     body: "Ton quota quotidien est de 30 min. Tu vois ton avancement en temps réel sur le dashboard. Tu maintiens une série en pratiquant chaque jour. Les missions du jour te donnent des objectifs précis.",
     accent: "#4A8FE7",
     emoji: "⏱️",
   },
   {
-    eyebrow: "Étape 5",
+    eyebrow: "Étape 6",
     title: "Tu reçois un briefing avant chaque appel",
     body: "Avant de décrocher, tu reçois un dossier complet : cible, douleurs cachées, KPI surveillés, objections probables. Le but : arriver préparé, pas découvrir le prospect en direct.",
     accent: "#E94B4B",

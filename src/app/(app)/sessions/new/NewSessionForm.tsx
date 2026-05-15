@@ -212,24 +212,6 @@ export function NewSessionForm({
                 </div>
               )}
 
-              {/* Brief étendu si persona sélectionné */}
-              {selectedProfile?.prep_briefing && (
-                <Card
-                  className="mt-4"
-                  style={{
-                    background: "var(--color-lavender)",
-                    border: "1px solid rgba(52, 36, 75, 0.06)",
-                  }}
-                >
-                  <div className="eyebrow-green mb-2">Brief de préparation</div>
-                  <p
-                    className="text-small whitespace-pre-line"
-                    style={{ color: "var(--color-dark)", lineHeight: "1.55" }}
-                  >
-                    {selectedProfile.prep_briefing}
-                  </p>
-                </Card>
-              )}
             </StepSection>
           )}
 
