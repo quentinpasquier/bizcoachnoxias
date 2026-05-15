@@ -24,6 +24,7 @@ interface LastConfig {
 interface Props {
   clients: QuickLaunchClient[];
   lastConfig: LastConfig | null;
+  compact?: boolean;
 }
 
 const RANDOM_DIFFICULTIES: Difficulty[] = [
@@ -38,7 +39,7 @@ function pickRandom<T>(arr: T[]): T | null {
   return arr[Math.floor(Math.random() * arr.length)] ?? null;
 }
 
-export function QuickLaunch({ clients, lastConfig }: Props) {
+export function QuickLaunch({ clients, lastConfig, compact = false }: Props) {
   const router = useRouter();
   const [launching, setLaunching] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -130,6 +131,58 @@ export function QuickLaunch({ clients, lastConfig }: Props) {
     });
   }
 
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <CompactQuickCard
+            icon={<DiceIcon />}
+            label="Lance random"
+            hint="Tirage au sort"
+            accent="#3CC879"
+            loading={launching === "random"}
+            disabled={launching !== null || usableClients.length === 0}
+            onClick={handleRandom}
+          />
+          <CompactQuickCard
+            icon={<RewindIcon />}
+            label={lastConfig ? "Reprends ta dernière config" : "Pas de session récente"}
+            hint={
+              lastConfig
+                ? `${lastConfig.clientName} · ${lastConfig.personaLabel}`
+                : "Lance d'abord une session"
+            }
+            accent="#9d6bff"
+            loading={launching === "last"}
+            disabled={launching !== null || !lastConfig}
+            onClick={handleLast}
+          />
+          <CompactQuickCard
+            icon={<SkullIcon />}
+            label="Mode boss"
+            hint="Affronte un Expert"
+            accent="#E94B4B"
+            loading={launching === "boss"}
+            disabled={launching !== null || usableClients.length === 0}
+            onClick={handleBoss}
+          />
+        </div>
+        {error && (
+          <div
+            className="text-small rounded-md px-3 py-2"
+            style={{
+              color: "#A61F1F",
+              background: "rgba(233, 75, 75, 0.08)",
+              border: "1px solid rgba(233, 75, 75, 0.24)",
+            }}
+          >
+            {error}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <section className="space-y-4">
       <div className="flex items-end justify-between gap-3 flex-wrap">
@@ -205,6 +258,74 @@ export function QuickLaunch({ clients, lastConfig }: Props) {
         </div>
       )}
     </section>
+  );
+}
+
+function CompactQuickCard({
+  icon,
+  label,
+  hint,
+  accent,
+  loading,
+  disabled,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  hint: string;
+  accent: string;
+  loading: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="text-left rounded-xl px-4 py-3 transition-all flex items-center gap-3"
+      style={{
+        background: "#FFFFFF",
+        border: `1px solid ${
+          loading ? accent : "var(--color-gray-border)"
+        }`,
+        opacity: disabled && !loading ? 0.55 : 1,
+        cursor: disabled ? "default" : "pointer",
+        boxShadow: "var(--shadow-xs)",
+      }}
+    >
+      <span
+        className="rounded-full flex items-center justify-center shrink-0"
+        style={{
+          width: 36,
+          height: 36,
+          background: `${accent}1f`,
+          color: accent,
+        }}
+      >
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div
+          className="text-small font-semibold truncate"
+          style={{ color: "var(--color-dark)" }}
+        >
+          {loading ? "Briefing..." : label}
+        </div>
+        <div
+          className="text-meta truncate"
+          style={{ color: "var(--color-gray)" }}
+        >
+          {hint}
+        </div>
+      </div>
+      <span
+        className="text-small font-semibold shrink-0"
+        style={{ color: accent }}
+      >
+        →
+      </span>
+    </button>
   );
 }
 

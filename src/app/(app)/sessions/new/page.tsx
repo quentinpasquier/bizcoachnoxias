@@ -67,10 +67,7 @@ export default async function NewSessionPage({
         }
       | null;
 
-    if (
-      last?.client_id &&
-      clients.some((c) => c.id === last.client_id)
-    ) {
+    if (last?.client_id && clients.some((c) => c.id === last.client_id)) {
       lastConfig = {
         clientId: last.client_id,
         clientName: last.client_name_snapshot ?? "",
@@ -122,24 +119,71 @@ export default async function NewSessionPage({
   }));
 
   return (
-    <div className="mission-page">
-      <div className="mission-blob mission-blob-purple" aria-hidden="true" />
-      <div className="mission-blob mission-blob-green" aria-hidden="true" />
+    <div className="container-noxias py-10 max-w-6xl space-y-10">
+      <header className="space-y-3">
+        <div className="eyebrow-green">Briefing room</div>
+        <h1
+          className="text-h1"
+          style={{
+            fontSize: "clamp(2rem, 4vw, 3rem)",
+            lineHeight: "1.05",
+            color: "var(--color-dark)",
+          }}
+        >
+          <span>Configure </span>
+          <span style={{ color: "var(--color-green)" }}>ta mission</span>
+          <span>.</span>
+        </h1>
+        <p
+          className="text-body-l"
+          style={{ color: "var(--color-gray)", maxWidth: "56ch" }}
+        >
+          Choisis client, persona, niveau et voix. C&apos;est ici que tu
+          fabriques le prospect le plus utile à ta progression.
+        </p>
+      </header>
 
-      <div className="container-noxias py-10 max-w-6xl mission-content space-y-10">
-        <header className="space-y-3">
-          <span className="mission-classified">
-            <DotPulse />
-            BRIEFING ROOM
+      <NewSessionForm
+        clients={formattedClients}
+        preselectedClientId={preselectedClientId}
+        preselectedPersonaLabel={preselectedPersonaLabel}
+        difficulties={Object.entries(DIFFICULTY_CONFIG).map(([key, cfg]) => ({
+          key,
+          label: cfg.label,
+          description: cfg.description,
+        }))}
+      />
+
+      {/* Quick Launch : raccourci secondaire en bas de page */}
+      <section
+        className="rounded-xl p-6"
+        style={{
+          background: "var(--color-lavender)",
+          border: "1px solid var(--color-gray-border)",
+        }}
+      >
+        <div className="flex items-end justify-between gap-3 flex-wrap mb-4">
+          <div>
+            <span
+              className="eyebrow"
+              style={{ color: "var(--color-gray)" }}
+            >
+              Pas le temps de configurer ?
+            </span>
+            <h2
+              className="text-h3 mt-1"
+              style={{ color: "var(--color-dark)" }}
+            >
+              Quick Launch en 1 clic
+            </h2>
+          </div>
+          <span
+            className="text-meta"
+            style={{ color: "var(--color-gray)" }}
+          >
+            Scénario généré en 5-10 s
           </span>
-          <h1 className="mission-h1">
-            Choisis ta <span className="accent">prochaine cible</span>.
-          </h1>
-          <p className="mission-subtitle">
-            Quick Launch en 1 clic, ou configure manuellement plus bas.
-          </p>
-        </header>
-
+        </div>
         <QuickLaunch
           clients={formattedClients.map((c) => ({
             id: c.id,
@@ -150,46 +194,9 @@ export default async function NewSessionPage({
             persona_profiles: c.persona_profiles,
           }))}
           lastConfig={lastConfig}
+          compact
         />
-
-        <details className="mission-custom-details">
-          <summary className="mission-custom-summary">
-            <span>Configurer manuellement</span>
-            <span className="mission-custom-summary-hint">
-              Choix précis du client, persona, niveau et voix
-            </span>
-          </summary>
-          <div className="mission-custom-body">
-            <NewSessionForm
-              clients={formattedClients}
-              preselectedClientId={preselectedClientId}
-              preselectedPersonaLabel={preselectedPersonaLabel}
-              difficulties={Object.entries(DIFFICULTY_CONFIG).map(([key, cfg]) => ({
-                key,
-                label: cfg.label,
-                description: cfg.description,
-              }))}
-            />
-          </div>
-        </details>
-      </div>
+      </section>
     </div>
-  );
-}
-
-function DotPulse() {
-  return (
-    <span
-      style={{
-        display: "inline-block",
-        width: 7,
-        height: 7,
-        borderRadius: "50%",
-        background: "var(--color-green)",
-        boxShadow: "0 0 0 0 rgba(60, 200, 121, 0.5)",
-        animation: "login-dot-pulse 1.6s ease-out infinite",
-      }}
-      aria-hidden="true"
-    />
   );
 }
