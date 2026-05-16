@@ -184,7 +184,7 @@ export default async function DashboardPage() {
                     ? "Quota du jour bouclé. Tu peux pousser plus."
                     : minutesToday > 0
                       ? `${minutesToday} min déjà aujourd'hui. ${DAILY_TARGET_MINUTES - minutesToday} min pour boucler ton quota.`
-                      : "30 minutes d'entraînement aujourd'hui = jamais surpris en RDV réel."}
+                      : "Prêt pour exploser les compteurs."}
               </p>
             </div>
           </div>

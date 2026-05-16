@@ -1417,9 +1417,8 @@
   cursor: pointer;
 }
 .mission-card-hover:hover {
-  transform: translateY(-2px);
-  border-color: rgba(60, 200, 121, 0.40);
-  background: rgba(34, 25, 50, 0.7);
+  border-color: var(--color-green);
+  box-shadow: 0 0 0 1px rgba(60, 200, 121, 0.55), 0 8px 24px rgba(11, 6, 22, 0.32);
 }
 .mission-card-accent {
   background: linear-gradient(140deg, rgba(60, 200, 121, 0.16) 0%, rgba(34, 25, 50, 0.7) 100%);
@@ -1679,13 +1678,84 @@
     0 8px 24px rgba(11, 6, 22, 0.32),
     inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
 }
-.app-shell .card-hover:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(157, 107, 255, 0.35);
-  transform: translateY(-2px);
+
+/* Composant <Card> (toutes variantes) : glass violet systématique.
+   Plus jamais de fond blanc sur l'app dark. */
+.ui-card {
+  position: relative;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.05);
+  color: #FFFFFF;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   box-shadow:
-    0 12px 32px rgba(11, 6, 22, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+    0 8px 24px rgba(11, 6, 22, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  transition:
+    border-color var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out);
+}
+.ui-card-padded { padding: 24px; }
+.ui-card-default {}
+.ui-card-lavender {
+  background: rgba(157, 107, 255, 0.10);
+  border-color: rgba(157, 107, 255, 0.25);
+}
+.ui-card-tint {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.ui-card-outline {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: none;
+}
+.ui-card-dark {
+  background: linear-gradient(140deg, rgba(40, 28, 60, 0.85), rgba(20, 9, 31, 0.85));
+  border-color: rgba(255, 255, 255, 0.06);
+}
+/* Hover : seul contour vert, pas de transform/agrandissement.
+   L'apparence "verre" est active dès le repos pour la lisibilité. */
+.ui-card-hover { cursor: pointer; }
+.ui-card-hover:hover {
+  border-color: var(--color-green);
+  box-shadow:
+    0 8px 24px rgba(11, 6, 22, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 0 0 1px rgba(60, 200, 121, 0.55);
+}
+
+/* Textes par défaut dans une ui-card : blanc / blanc atténué */
+.ui-card h1,
+.ui-card h2,
+.ui-card h3,
+.ui-card h4,
+.ui-card .text-h1,
+.ui-card .text-h2,
+.ui-card .text-h3,
+.ui-card .text-h4 {
+  color: #FFFFFF;
+}
+.ui-card .text-body,
+.ui-card .text-body-l {
+  color: rgba(255, 255, 255, 0.82);
+}
+.ui-card .text-small {
+  color: rgba(255, 255, 255, 0.7);
+}
+.ui-card .text-meta {
+  color: rgba(255, 255, 255, 0.55);
+}
+.ui-card .eyebrow {
+  color: rgba(255, 255, 255, 0.55);
+}
+.app-shell .card-hover:hover {
+  border-color: var(--color-green);
+  box-shadow:
+    0 8px 24px rgba(11, 6, 22, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 0 0 1px rgba(60, 200, 121, 0.55);
 }
 
 /* Card lavender devient glass plus marquée violet */
@@ -1785,9 +1855,11 @@
     0 4px 14px rgba(11, 6, 22, 0.30);
 }
 .selectable-card:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(157, 107, 255, 0.40);
-  transform: translateY(-2px);
+  border-color: var(--color-green);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 4px 14px rgba(11, 6, 22, 0.30),
+    0 0 0 1px rgba(60, 200, 121, 0.55);
 }
 .selectable-card-selected {
   background: rgba(60, 200, 121, 0.14) !important;

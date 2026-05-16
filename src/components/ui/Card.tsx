@@ -7,6 +7,8 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
   hoverable?: boolean;
 }
 
+// Composant Card unifié : utilise les classes .ui-card / .ui-card-* qui sont
+// stylées en mode glass dark dans globals.css (palette violet uniforme partout).
 export function Card({
   children,
   variant = "default",
@@ -17,21 +19,20 @@ export function Card({
 }: CardProps) {
   const variantClass =
     variant === "lavender"
-      ? "bg-[var(--color-lavender)] border-[rgba(52,36,75,0.04)]"
+      ? "ui-card-lavender"
       : variant === "dark"
-        ? "bg-[var(--color-dark)] text-white border-[rgba(255,255,255,0.06)]"
+        ? "ui-card-dark"
         : variant === "outline"
-          ? "bg-transparent border-[rgba(52,36,75,0.10)]"
+          ? "ui-card-outline"
           : variant === "tint"
-            ? "bg-[var(--bg-soft)] border-[rgba(52,36,75,0.04)]"
-            : "bg-white border-[var(--color-gray-border)]";
+            ? "ui-card-tint"
+            : "ui-card-default";
 
   return (
     <div
-      className={`rounded-lg border ${variantClass} ${
-        padded ? "p-6" : ""
-      } ${hoverable ? "card-hover" : ""} ${className}`}
-      style={{ boxShadow: "var(--shadow-xs)" }}
+      className={`ui-card ${variantClass} ${
+        padded ? "ui-card-padded" : ""
+      } ${hoverable ? "ui-card-hover" : ""} ${className}`}
       {...rest}
     >
       {children}
