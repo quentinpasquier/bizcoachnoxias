@@ -4,6 +4,7 @@ import { evaluateSession } from "@/lib/evaluator";
 import type { Client, Difficulty, Scenario, SessionRow } from "@/lib/supabase/types";
 
 export const maxDuration = 60;
+export const runtime = "nodejs";
 
 export async function POST(
   _request: Request,

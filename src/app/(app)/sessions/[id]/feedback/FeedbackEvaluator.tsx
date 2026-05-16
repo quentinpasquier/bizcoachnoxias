@@ -29,25 +29,44 @@ export function FeedbackEvaluator({ sessionId }: { sessionId: string }) {
   const [stepIdx, setStepIdx] = useState(0);
   const [factIdx, setFactIdx] = useState(0);
   const [elapsed, setElapsed] = useState(0);
+  const [attempt, setAttempt] = useState(1);
   const triggered = useRef(false);
 
   useEffect(() => {
     if (triggered.current) return;
     triggered.current = true;
-    void run();
-    async function run() {
+    void run(1);
+    async function run(currentAttempt: number) {
       try {
         const res = await fetch(`/api/sessions/${sessionId}/evaluate`, {
           method: "POST",
         });
         if (!res.ok) {
+          // Si timeout (504) ou erreur 5xx, on retry jusqu'à 3 fois
+          const isRetryable =
+            res.status === 504 ||
+            res.status === 502 ||
+            res.status === 503 ||
+            res.status >= 500;
+          if (isRetryable && currentAttempt < 3) {
+            setAttempt(currentAttempt + 1);
+            // petite pause avant retry, le serveur a peut-être besoin de souffler
+            await new Promise((r) => setTimeout(r, 1500));
+            return run(currentAttempt + 1);
+          }
           const data = await res.json().catch(() => ({}));
           throw new Error(
-            data.error ?? "Le débrief n'a pas pu être généré.",
+            data.error ?? `Le débrief n'a pas pu être généré (HTTP ${res.status}).`,
           );
         }
         router.refresh();
       } catch (err) {
+        // Erreur réseau / fetch failed : on retry aussi
+        if (currentAttempt < 3) {
+          setAttempt(currentAttempt + 1);
+          await new Promise((r) => setTimeout(r, 1500));
+          return run(currentAttempt + 1);
+        }
         setError((err as Error).message);
       }
     }
@@ -140,7 +159,18 @@ export function FeedbackEvaluator({ sessionId }: { sessionId: string }) {
               className="text-small"
               style={{ color: "rgba(255, 255, 255, 0.6)" }}
             >
-              Habituellement 8 à 15 secondes.
+              Habituellement 5 à 12 secondes.
+              {attempt > 1 && (
+                <span
+                  style={{
+                    color: "#F7C041",
+                    marginLeft: 8,
+                    fontWeight: 700,
+                  }}
+                >
+                  · Nouvelle tentative ({attempt}/3)
+                </span>
+              )}
             </p>
 
             <ul className="evaluator-steps">
