@@ -1819,6 +1819,50 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
+/* =====================================================================
+   BOUTONS : couleurs forcées dans .app-shell pour contrer la réassignation
+   des CSS vars (--color-dark = #FFFFFF dans le shell) qui rendrait les
+   textes blancs sur fond blanc invisibles.
+   ===================================================================== */
+.app-shell .btn-primary {
+  background: var(--color-green);
+  color: #0A1F12; /* texte sombre lisible sur vert */
+}
+.app-shell .btn-primary:hover {
+  filter: brightness(1.04);
+  color: #0A1F12;
+}
+
+.app-shell .btn-dark {
+  background: #221932;
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+.app-shell .btn-dark:hover {
+  background: #34244B;
+  color: #FFFFFF;
+}
+
+.app-shell .btn-secondary {
+  background: #5b2bb6;
+  color: #FFFFFF;
+}
+.app-shell .btn-secondary:hover {
+  background: #6b3fb6;
+  color: #FFFFFF;
+}
+
+.app-shell .btn-ghost {
+  background: rgba(255, 255, 255, 0.06);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+.app-shell .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(60, 200, 121, 0.5);
+  color: #FFFFFF;
+}
+
 /* Stat tiles dans les cards glass */
 .app-shell .stat-tile {
   background: rgba(255, 255, 255, 0.04) !important;
