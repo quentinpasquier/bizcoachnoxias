@@ -14,7 +14,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <label
             htmlFor={id}
             className="text-small font-medium"
-            style={{ color: "var(--color-purple)" }}
+            style={{ color: "#b495ff" }}
           >
             {label}
           </label>
@@ -26,7 +26,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           {...rest}
         />
         {hint && !error && (
-          <span className="text-meta" style={{ color: "var(--color-gray)" }}>
+          <span className="text-meta" style={{ color: "rgba(255, 255, 255, 0.65)" }}>
             {hint}
           </span>
         )}
@@ -55,7 +55,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           <label
             htmlFor={id}
             className="text-small font-medium"
-            style={{ color: "var(--color-purple)" }}
+            style={{ color: "#b495ff" }}
           >
             {label}
           </label>
@@ -70,7 +70,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           {...rest}
         />
         {hint && !error && (
-          <span className="text-meta" style={{ color: "var(--color-gray)" }}>
+          <span className="text-meta" style={{ color: "rgba(255, 255, 255, 0.65)" }}>
             {hint}
           </span>
         )}

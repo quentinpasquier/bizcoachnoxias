@@ -137,7 +137,7 @@ export function ProfileForm({
               </button>
             )}
           </div>
-          <p className="text-meta" style={{ color: "var(--color-gray)" }}>
+          <p className="text-meta" style={{ color: "rgba(255, 255, 255, 0.65)" }}>
             JPG, PNG ou WEBP, 4 Mo max.
           </p>
         </div>
@@ -222,7 +222,7 @@ function Field({
     <label className="block">
       <span
         className="text-meta uppercase tracking-widest mb-1.5 block"
-        style={{ color: "var(--color-gray)" }}
+        style={{ color: "rgba(255, 255, 255, 0.65)" }}
       >
         {label}
         {required && <span style={{ color: "var(--color-error)" }}> *</span>}

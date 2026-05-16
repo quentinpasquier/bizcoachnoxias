@@ -30,7 +30,7 @@ export function PageHeader({
           {title}
         </h1>
         {subtitle && (
-          <p className="text-body-l mt-3" style={{ color: "var(--color-gray)" }}>
+          <p className="text-body-l mt-3" style={{ color: "rgba(255, 255, 255, 0.65)" }}>
             {subtitle}
           </p>
         )}

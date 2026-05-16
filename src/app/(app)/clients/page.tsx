@@ -93,7 +93,7 @@ export default async function ClientsPage() {
           <h3 className="text-h3 mb-2">Aucun client pour l&apos;instant.</h3>
           <p
             className="text-body mb-6"
-            style={{ color: "var(--color-gray)" }}
+            style={{ color: "rgba(255, 255, 255, 0.65)" }}
           >
             {configured
               ? "Crée ton premier client en uploadant ses docs."

@@ -132,7 +132,7 @@ export function QuizRunner({ clientId, initialQuiz }: Props) {
         <h3 className="text-h3 mb-2">Génère le quiz</h3>
         <p
           className="text-body mb-6"
-          style={{ color: "var(--color-gray)" }}
+          style={{ color: "rgba(255, 255, 255, 0.65)" }}
         >
           Claude va lire les docs du client et préparer 12 questions.
         </p>
@@ -175,7 +175,7 @@ export function QuizRunner({ clientId, initialQuiz }: Props) {
           <h3 className="text-h2 mb-3">Prêt à valider tes acquis ?</h3>
           <p
             className="text-body mb-6"
-            style={{ color: "var(--color-gray)" }}
+            style={{ color: "rgba(255, 255, 255, 0.65)" }}
           >
             Tu auras un retour immédiat à chaque réponse. Score final à la fin.
             Tu peux refaire le quiz autant de fois que tu veux.
@@ -201,7 +201,7 @@ export function QuizRunner({ clientId, initialQuiz }: Props) {
       score >= 80
         ? { color: "var(--color-green)", label: "Excellent. Tu maîtrises." }
         : score >= 60
-          ? { color: "var(--color-purple)", label: "Bonne base. Quelques angles à creuser." }
+          ? { color: "#b495ff", label: "Bonne base. Quelques angles à creuser." }
           : { color: "var(--color-warning)", label: "Repasse les docs avant ton premier appel." };
 
     const byCategory = aggregateByCategory(questions, answers);
@@ -261,7 +261,7 @@ export function QuizRunner({ clientId, initialQuiz }: Props) {
                   </span>
                   <span
                     className="text-small"
-                    style={{ color: "var(--color-gray)" }}
+                    style={{ color: "rgba(255, 255, 255, 0.65)" }}
                   >
                     {c.correct}/{c.total}
                   </span>
@@ -317,7 +317,7 @@ export function QuizRunner({ clientId, initialQuiz }: Props) {
                 {q.explanation && (
                   <p
                     className="text-small mt-2"
-                    style={{ color: "var(--color-gray)" }}
+                    style={{ color: "rgba(255, 255, 255, 0.65)" }}
                   >
                     {q.explanation}
                   </p>
@@ -362,7 +362,7 @@ export function QuizRunner({ clientId, initialQuiz }: Props) {
             </div>
             <p
               className="text-h4 mb-4"
-              style={{ color: "var(--color-dark)" }}
+              style={{ color: "#FFFFFF" }}
             >
               {q.question}
             </p>
@@ -436,10 +436,10 @@ export function QuizRunner({ clientId, initialQuiz }: Props) {
                 className="mt-3 px-4 py-3 rounded-md text-small"
                 style={{
                   background: "var(--color-lavender)",
-                  color: "var(--color-dark)",
+                  color: "#FFFFFF",
                 }}
               >
-                <strong style={{ color: "var(--color-purple)" }}>
+                <strong style={{ color: "#b495ff" }}>
                   Pourquoi ?
                 </strong>{" "}
                 {q.explanation}
@@ -502,7 +502,7 @@ function ProgressBar({ value, max }: { value: number; max: number }) {
         </div>
         <span
           className="text-meta uppercase tracking-widest"
-          style={{ color: "var(--color-gray)" }}
+          style={{ color: "rgba(255, 255, 255, 0.65)" }}
         >
           {value}/{max}
         </span>

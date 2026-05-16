@@ -99,13 +99,13 @@ export function NewClientUploader() {
 
           {!loading && (
             <>
-              <p className="text-body-l mb-2" style={{ color: "var(--color-purple)" }}>
+              <p className="text-body-l mb-2" style={{ color: "#b495ff" }}>
                 <b>Glisse-dépose</b> tes documents ici
               </p>
-              <p className="text-small" style={{ color: "var(--color-gray)" }}>
+              <p className="text-small" style={{ color: "rgba(255, 255, 255, 0.65)" }}>
                 ou clique pour les sélectionner. PDF, DOCX, CSV, TXT, MD · 15 MB max par fichier
               </p>
-              <p className="text-meta mt-4" style={{ color: "var(--color-gray)" }}>
+              <p className="text-meta mt-4" style={{ color: "rgba(255, 255, 255, 0.65)" }}>
                 Idéal : matrice de prospection + boîte à outils du client
               </p>
             </>
@@ -132,7 +132,7 @@ export function NewClientUploader() {
           <div className="mt-5 space-y-2">
             <div
               className="text-meta uppercase tracking-widest"
-              style={{ color: "var(--color-gray)" }}
+              style={{ color: "rgba(255, 255, 255, 0.65)" }}
             >
               {files.length} fichier{files.length > 1 ? "s" : ""} prêt
               {files.length > 1 ? "s" : ""} ({Math.round(totalSize / 1024)} kB)
@@ -149,13 +149,13 @@ export function NewClientUploader() {
                 <div className="flex-1 min-w-0">
                   <div
                     className="text-small font-medium truncate"
-                    style={{ color: "var(--color-purple)" }}
+                    style={{ color: "#b495ff" }}
                   >
                     {f.name}
                   </div>
                   <div
                     className="text-meta"
-                    style={{ color: "var(--color-gray)" }}
+                    style={{ color: "rgba(255, 255, 255, 0.65)" }}
                   >
                     {Math.round(f.size / 1024)} kB
                   </div>

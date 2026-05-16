@@ -22,7 +22,7 @@ export default async function EditClientPage({
         <Link
           href={`/clients/${id}`}
           className="text-small hover:underline"
-          style={{ color: "var(--color-gray)" }}
+          style={{ color: "rgba(255, 255, 255, 0.65)" }}
         >
           ← Retour à la fiche
         </Link>

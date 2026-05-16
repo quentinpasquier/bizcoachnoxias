@@ -183,7 +183,7 @@ export function ClientForm({ initial }: Props) {
             </span>
           )}
         </div>
-        <p className="text-small mb-4" style={{ color: "var(--color-gray)" }}>
+        <p className="text-small mb-4" style={{ color: "rgba(255, 255, 255, 0.65)" }}>
           Upload la matrice de prospection et la boîte à outils du client (PDF, DOCX, CSV, TXT, MD).
           Claude extrait automatiquement personas, objections, pitch et value prop. Le contenu sert
           de référence pour générer les scénarios à chaque session.
@@ -237,12 +237,12 @@ export function ClientForm({ initial }: Props) {
                 </p>
               ) : (
                 <>
-                  <p className="text-body" style={{ color: "var(--color-purple)" }}>
+                  <p className="text-body" style={{ color: "#b495ff" }}>
                     <b>Glisse-dépose</b> ou clique pour sélectionner des fichiers
                   </p>
                   <p
                     className="text-meta mt-2"
-                    style={{ color: "var(--color-gray)" }}
+                    style={{ color: "rgba(255, 255, 255, 0.65)" }}
                   >
                     PDF, DOCX, CSV, TXT, MD · max 15 MB par fichier
                   </p>
@@ -254,7 +254,7 @@ export function ClientForm({ initial }: Props) {
               <div className="mt-4 space-y-2">
                 <div
                   className="text-meta uppercase tracking-widest"
-                  style={{ color: "var(--color-gray)" }}
+                  style={{ color: "rgba(255, 255, 255, 0.65)" }}
                 >
                   Fichiers actuels
                 </div>
@@ -270,13 +270,13 @@ export function ClientForm({ initial }: Props) {
                     <div className="flex-1 min-w-0">
                       <div
                         className="text-small font-medium truncate"
-                        style={{ color: "var(--color-purple)" }}
+                        style={{ color: "#b495ff" }}
                       >
                         {f.filename}
                       </div>
                       <div
                         className="text-meta"
-                        style={{ color: "var(--color-gray)" }}
+                        style={{ color: "rgba(255, 255, 255, 0.65)" }}
                       >
                         {f.kind.toUpperCase()} · {Math.round(f.size / 1024)} kB ·{" "}
                         {f.char_count.toLocaleString("fr-FR")} caractères ·{" "}
@@ -337,7 +337,7 @@ export function ClientForm({ initial }: Props) {
           {initial?.synced_at && (
             <span
               className="text-meta"
-              style={{ color: "var(--color-gray)" }}
+              style={{ color: "rgba(255, 255, 255, 0.65)" }}
             >
               Auto-extraits depuis les docs · modifiables ici
             </span>

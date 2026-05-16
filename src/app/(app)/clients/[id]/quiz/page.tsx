@@ -71,7 +71,7 @@ export default async function ClientQuizPage({
       <Link
         href={`/clients/${id}`}
         className="text-small inline-flex items-center gap-1.5"
-        style={{ color: "var(--color-gray)" }}
+        style={{ color: "rgba(255, 255, 255, 0.65)" }}
       >
         ← Retour au client
       </Link>
@@ -82,11 +82,11 @@ export default async function ClientQuizPage({
           className="text-h1"
           style={{ fontSize: "clamp(2rem, 4vw, 3rem)", lineHeight: "1.05" }}
         >
-          <span style={{ color: "var(--color-dark)" }}>Tu connais </span>
+          <span style={{ color: "#FFFFFF" }}>Tu connais </span>
           <span style={{ color: "var(--color-green)" }}>{client.name}</span>{" "}
-          <span style={{ color: "var(--color-dark)" }}>?</span>
+          <span style={{ color: "#FFFFFF" }}>?</span>
         </h1>
-        <p className="text-body-l" style={{ color: "var(--color-gray)" }}>
+        <p className="text-body-l" style={{ color: "rgba(255, 255, 255, 0.65)" }}>
           12 questions pour valider ta maîtrise : qui prospecter, pourquoi,
           quoi vendre, leurs douleurs, comment répondre aux objections.
         </p>
@@ -98,7 +98,7 @@ export default async function ClientQuizPage({
             <div>
               <div
                 className="eyebrow"
-                style={{ color: "var(--color-gray)" }}
+                style={{ color: "rgba(255, 255, 255, 0.65)" }}
               >
                 Ton meilleur score
               </div>
@@ -118,13 +118,13 @@ export default async function ClientQuizPage({
                   {myBest.score}
                 </span>
                 <span
-                  style={{ color: "var(--color-gray)", fontSize: "0.95rem" }}
+                  style={{ color: "rgba(255, 255, 255, 0.65)", fontSize: "0.95rem" }}
                 >
                   /100
                 </span>
                 <span
                   className="text-small ml-2"
-                  style={{ color: "var(--color-gray)" }}
+                  style={{ color: "rgba(255, 255, 255, 0.65)" }}
                 >
                   · {myBest.correct_answers}/{myBest.total_questions} bonnes
                   réponses · {myAttempts.length} tentative
@@ -139,7 +139,7 @@ export default async function ClientQuizPage({
       {!hasDocs ? (
         <Card variant="lavender" className="text-center py-12">
           <h3 className="text-h3 mb-2">Pas encore de docs</h3>
-          <p style={{ color: "var(--color-gray)" }}>
+          <p style={{ color: "rgba(255, 255, 255, 0.65)" }}>
             Ajoute la matrice de prospection et la boîte à outils du client
             pour générer le quiz.
           </p>
@@ -161,7 +161,7 @@ export default async function ClientQuizPage({
                   <div>
                     <span
                       className="text-small"
-                      style={{ color: "var(--color-gray)" }}
+                      style={{ color: "rgba(255, 255, 255, 0.65)" }}
                     >
                       {new Date(a.completed_at).toLocaleString("fr-FR", {
                         day: "2-digit",
@@ -198,7 +198,7 @@ export default async function ClientQuizPage({
                     </span>
                     <span
                       className="text-small"
-                      style={{ color: "var(--color-gray)" }}
+                      style={{ color: "rgba(255, 255, 255, 0.65)" }}
                     >
                       ({a.correct_answers}/{a.total_questions})
                     </span>

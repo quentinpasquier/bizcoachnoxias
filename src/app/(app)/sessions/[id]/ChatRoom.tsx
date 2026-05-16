@@ -440,9 +440,9 @@ export function ChatRoom({ session, initialMessages }: Props) {
               <div className="text-h4 truncate">
                 {personaName || session.persona_label}
               </div>
-              <div className="text-meta truncate" style={{ color: "var(--color-gray)" }}>
+              <div className="text-meta truncate" style={{ color: "rgba(255, 255, 255, 0.65)" }}>
                 {personaRole || session.persona_label} · pour{" "}
-                <span style={{ color: "var(--color-purple)", fontWeight: 600 }}>
+                <span style={{ color: "#b495ff", fontWeight: 600 }}>
                   {session.client_name_snapshot ?? "Client"}
                 </span>
               </div>
@@ -477,7 +477,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
                 type="button"
                 onClick={toggleVoiceMode}
                 className="text-meta hover:underline"
-                style={{ color: "var(--color-gray)" }}
+                style={{ color: "rgba(255, 255, 255, 0.65)" }}
               >
                 {useVoice ? "Mode texte" : "Mode voix"}
               </button>
@@ -572,12 +572,12 @@ export function ChatRoom({ session, initialMessages }: Props) {
                   >
                     Tu dis
                   </div>
-                  <div className="text-body" style={{ color: "var(--color-dark)" }}>
+                  <div className="text-body" style={{ color: "#FFFFFF" }}>
                     {interimTranscript || "Vas-y, je t'écoute..."}
                   </div>
                 </div>
               ) : (
-                <div className="text-meta" style={{ color: "var(--color-gray)" }}>
+                <div className="text-meta" style={{ color: "rgba(255, 255, 255, 0.65)" }}>
                   {ended
                     ? "L'appel est terminé."
                     : sending
@@ -603,7 +603,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
                     background: isListening
                       ? "var(--color-red)"
                       : "var(--color-green)",
-                    color: "var(--color-dark)",
+                    color: "#FFFFFF",
                   }}
                   aria-label={isListening ? "Cliquer pour envoyer" : "Cliquer pour parler"}
                 >
@@ -621,7 +621,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
                     onClick={replayProspect}
                     disabled={isSpeaking || sending}
                     className="text-meta hover:underline disabled:opacity-40"
-                    style={{ color: "var(--color-gray)" }}
+                    style={{ color: "rgba(255, 255, 255, 0.65)" }}
                   >
                     Réécouter
                   </button>
@@ -647,10 +647,10 @@ export function ChatRoom({ session, initialMessages }: Props) {
             <details className="container-noxias py-3">
               <summary
                 className="text-meta uppercase tracking-widest cursor-pointer flex items-center gap-2 select-none"
-                style={{ color: "var(--color-gray)" }}
+                style={{ color: "rgba(255, 255, 255, 0.65)" }}
               >
                 <span>Transcript</span>
-                <span className="badge" style={{ background: "var(--color-lavender)", color: "var(--color-purple)" }}>
+                <span className="badge" style={{ background: "var(--color-lavender)", color: "#b495ff" }}>
                   {messages.filter((m) => m.role !== "system").length}
                 </span>
               </summary>
@@ -699,7 +699,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
               <div className="space-y-4">
                 {messages.length === 0 && !sending && (
                   <div className="text-center py-12">
-                    <p className="text-body" style={{ color: "var(--color-gray)" }}>
+                    <p className="text-body" style={{ color: "rgba(255, 255, 255, 0.65)" }}>
                       Le téléphone sonne...
                     </p>
                   </div>
@@ -714,7 +714,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
                     <span className="typing-dot" />
                     <span
                       className="text-meta ml-2"
-                      style={{ color: "var(--color-gray)" }}
+                      style={{ color: "rgba(255, 255, 255, 0.65)" }}
                     >
                       Il prend son temps...
                     </span>
@@ -740,7 +740,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
               )}
               {ended ? (
                 <div className="text-center py-3">
-                  <p className="text-body" style={{ color: "var(--color-gray)" }}>
+                  <p className="text-body" style={{ color: "rgba(255, 255, 255, 0.65)" }}>
                     L&apos;appel est terminé. Redirection vers la restitution.
                   </p>
                 </div>
@@ -854,7 +854,7 @@ function TranscriptLine({ message }: { message: DisplayMessage }) {
     return (
       <div
         className="text-meta italic text-center py-1"
-        style={{ color: "var(--color-gray)" }}
+        style={{ color: "rgba(255, 255, 255, 0.65)" }}
       >
         {message.content}
       </div>
