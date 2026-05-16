@@ -10,6 +10,7 @@ export interface ConversationTurn {
 export interface ProspectReply {
   text: string;
   signal: ProspectSignal;
+  progress: ProgressTags;
 }
 
 export type ProspectSignal =
@@ -17,17 +18,55 @@ export type ProspectSignal =
   | { type: "hangup"; reason: string }
   | { type: "appointment"; date: string };
 
-const SIGNAL_REGEX =
-  /\[(HANGUP|APPOINTMENT|CONTINUE)(?::([^\]]+))?\]\s*$/i;
+export type CallStage =
+  | "brise_glace"
+  | "presentation"
+  | "ouverture"
+  | "objections"
+  | "action";
 
-function parseSignal(raw: string): { text: string; signal: ProspectSignal } {
-  const match = raw.match(SIGNAL_REGEX);
+export interface ProgressTags {
+  stage?: CallStage;
+  delta?: "+" | "-";
+}
+
+const SIGNAL_REGEX =
+  /\[(HANGUP|APPOINTMENT|CONTINUE)(?::([^\]]+))?\]/i;
+const STAGE_REGEX =
+  /\[STAGE:\s*(brise_glace|presentation|ouverture|objections|action)\s*\]/i;
+const DELTA_REGEX = /\[DELTA:\s*([+-])\s*\]/i;
+
+function parseSignal(raw: string): {
+  text: string;
+  signal: ProspectSignal;
+  progress: ProgressTags;
+} {
+  let working = raw;
+  const progress: ProgressTags = {};
+
+  const stageMatch = working.match(STAGE_REGEX);
+  if (stageMatch) {
+    progress.stage = stageMatch[1]!.toLowerCase() as CallStage;
+    working = working.replace(stageMatch[0], "");
+  }
+
+  const deltaMatch = working.match(DELTA_REGEX);
+  if (deltaMatch) {
+    progress.delta = deltaMatch[1] as "+" | "-";
+    working = working.replace(deltaMatch[0], "");
+  }
+
+  const match = working.match(SIGNAL_REGEX);
   if (!match) {
-    return { text: raw.trim(), signal: { type: "continue" } };
+    return {
+      text: working.trim(),
+      signal: { type: "continue" },
+      progress,
+    };
   }
 
   const [full, type, payload] = match;
-  const text = raw.replace(full, "").trim();
+  const text = working.replace(full, "").trim();
   const upper = type.toUpperCase();
 
   if (upper === "HANGUP") {
@@ -35,6 +74,7 @@ function parseSignal(raw: string): { text: string; signal: ProspectSignal } {
     return {
       text,
       signal: { type: "hangup", reason: reasonMatch?.[1] ?? "Pas intéressé" },
+      progress,
     };
   }
 
@@ -43,10 +83,11 @@ function parseSignal(raw: string): { text: string; signal: ProspectSignal } {
     return {
       text,
       signal: { type: "appointment", date: dateMatch?.[1] ?? "À convenir" },
+      progress,
     };
   }
 
-  return { text, signal: { type: "continue" } };
+  return { text, signal: { type: "continue" }, progress };
 }
 
 export async function generateProspectReply(args: {

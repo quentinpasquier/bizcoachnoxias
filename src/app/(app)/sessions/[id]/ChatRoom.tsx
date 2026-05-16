@@ -16,6 +16,23 @@ import {
   type SpeechRecognitionEvent,
 } from "@/lib/voice";
 import type { Difficulty, Gender, MessageRow, SessionRow } from "@/lib/supabase/types";
+import type { CallStage } from "@/lib/prospect-engine";
+
+const STAGE_LABELS: { key: CallStage; label: string; short: string }[] = [
+  { key: "brise_glace", label: "Brise-glace", short: "Décrochage" },
+  { key: "presentation", label: "Présentation", short: "Cadre" },
+  { key: "ouverture", label: "Ouverture", short: "Intérêt" },
+  { key: "objections", label: "Objections", short: "Levée" },
+  { key: "action", label: "Passage à l'action", short: "Closing" },
+];
+const STAGE_ORDER: CallStage[] = STAGE_LABELS.map((s) => s.key);
+
+interface DeltaPop {
+  id: string;
+  type: "+" | "-";
+  stage: CallStage;
+}
+type StageScore = { plus: number; minus: number };
 
 const DIFFICULTY_INTENSITY: Record<Difficulty, 1 | 2 | 3 | 4> = {
   debutant: 1,
@@ -61,6 +78,16 @@ export function ChatRoom({ session, initialMessages }: Props) {
   const [interimTranscript, setInterimTranscript] = useState("");
   const [draft, setDraft] = useState("");
   const [voiceSupported, setVoiceSupported] = useState({ tts: false, stt: false });
+  // Pipeline progression de l'appel (5 étapes)
+  const [currentStage, setCurrentStage] = useState<CallStage>("brise_glace");
+  const [deltas, setDeltas] = useState<DeltaPop[]>([]);
+  const [stageScores, setStageScores] = useState<Record<CallStage, StageScore>>({
+    brise_glace: { plus: 0, minus: 0 },
+    presentation: { plus: 0, minus: 0 },
+    ouverture: { plus: 0, minus: 0 },
+    objections: { plus: 0, minus: 0 },
+    action: { plus: 0, minus: 0 },
+  });
   const [ttsEngine, setTtsEngine] = useState<"openai" | "webspeech" | null>(null);
 
   const transcriptRef = useRef<HTMLDivElement>(null);
@@ -161,8 +188,36 @@ export function ChatRoom({ session, initialMessages }: Props) {
   function handleProspectReply(data: {
     prospectMessage?: { id: string; content: string };
     signal: { type: "continue" | "hangup" | "appointment"; reason?: string; date?: string };
+    progress?: { stage?: CallStage; delta?: "+" | "-" };
     sessionEnded?: boolean;
   }) {
+    if (data.progress?.stage) {
+      setCurrentStage(data.progress.stage);
+    }
+    if (data.progress?.delta) {
+      const id = `delta-${Date.now()}-${Math.random()}`;
+      const stageForDelta = data.progress.stage ?? currentStage;
+      const newDelta = {
+        id,
+        type: data.progress.delta,
+        stage: stageForDelta,
+      };
+      setDeltas((d) => [...d, newDelta]);
+      setStageScores((s) => {
+        const cur = s[stageForDelta] ?? { plus: 0, minus: 0 };
+        return {
+          ...s,
+          [stageForDelta]:
+            data.progress!.delta === "+"
+              ? { ...cur, plus: cur.plus + 1 }
+              : { ...cur, minus: cur.minus + 1 },
+        };
+      });
+      // Le delta "pop" disparaît après 4s mais le compteur reste
+      setTimeout(() => {
+        setDeltas((d) => d.filter((x) => x.id !== id));
+      }, 4000);
+    }
     if (data.prospectMessage) {
       setMessages((prev) => [
         ...prev,
@@ -509,6 +564,12 @@ export function ChatRoom({ session, initialMessages }: Props) {
       {/* MODE VOIX, prend tout l'espace */}
       {useVoice && (
         <>
+          <div className="flex-1 flex relative">
+            <CallPipeline
+              currentStage={currentStage}
+              stageScores={stageScores}
+              deltas={deltas}
+            />
           <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 gap-8">
             {/* État textuel */}
             <div className="flex items-center gap-3">
@@ -692,6 +753,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
                 )}
               </div>
             </details>
+          </div>
           </div>
         </>
       )}
@@ -951,5 +1013,80 @@ function Bubble({ message }: { message: DisplayMessage }) {
         <div className="text-body whitespace-pre-wrap">{message.content}</div>
       </div>
     </div>
+  );
+}
+
+function CallPipeline({
+  currentStage,
+  stageScores,
+  deltas,
+}: {
+  currentStage: CallStage;
+  stageScores: Record<CallStage, StageScore>;
+  deltas: DeltaPop[];
+}) {
+  const currentIdx = STAGE_ORDER.indexOf(currentStage);
+  return (
+    <aside className="call-pipeline">
+      <div className="call-pipeline-header">
+        <span className="call-pipeline-eyebrow">Progression de l&apos;appel</span>
+        <h3 className="call-pipeline-title">5 étapes du cold call</h3>
+      </div>
+      <ol className="call-pipeline-list">
+        {STAGE_LABELS.map((s, idx) => {
+          const score = stageScores[s.key];
+          const status =
+            idx < currentIdx
+              ? "done"
+              : idx === currentIdx
+                ? "current"
+                : "pending";
+          const popsForThisStage = deltas.filter((d) => d.stage === s.key);
+          return (
+            <li
+              key={s.key}
+              className={`call-pipeline-step call-pipeline-step-${status}`}
+            >
+              <span className="call-pipeline-step-num">
+                {status === "done" ? "✓" : idx + 1}
+              </span>
+              <div className="call-pipeline-step-body">
+                <div className="call-pipeline-step-label">{s.label}</div>
+                <div className="call-pipeline-step-short">{s.short}</div>
+                {(score.plus > 0 || score.minus > 0) && (
+                  <div className="call-pipeline-step-counts">
+                    {score.plus > 0 && (
+                      <span className="call-pipeline-count call-pipeline-count-plus">
+                        +{score.plus}
+                      </span>
+                    )}
+                    {score.minus > 0 && (
+                      <span className="call-pipeline-count call-pipeline-count-minus">
+                        −{score.minus}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+              {/* Pops éphémères */}
+              <div className="call-pipeline-pops">
+                {popsForThisStage.map((d) => (
+                  <span
+                    key={d.id}
+                    className={`call-pipeline-pop ${
+                      d.type === "+"
+                        ? "call-pipeline-pop-plus"
+                        : "call-pipeline-pop-minus"
+                    }`}
+                  >
+                    {d.type === "+" ? "+1" : "−1"}
+                  </span>
+                ))}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </aside>
   );
 }

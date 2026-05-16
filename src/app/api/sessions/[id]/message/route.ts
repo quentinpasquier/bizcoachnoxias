@@ -120,12 +120,15 @@ export async function POST(
         session_id: sessionId,
         role: "prospect",
         content: reply.text,
-        metadata:
-          reply.signal.type === "hangup"
+        metadata: {
+          ...(reply.signal.type === "hangup"
             ? { signal: "hangup", reason: reply.signal.reason }
             : reply.signal.type === "appointment"
               ? { signal: "appointment", date: reply.signal.date }
-              : { signal: "continue" },
+              : { signal: "continue" }),
+          ...(reply.progress.stage ? { stage: reply.progress.stage } : {}),
+          ...(reply.progress.delta ? { delta: reply.progress.delta } : {}),
+        },
       })
       .select("id, content")
       .single();
@@ -166,6 +169,7 @@ export async function POST(
   return NextResponse.json({
     prospectMessage,
     signal: reply.signal,
+    progress: reply.progress,
     sessionEnded,
   });
 }
