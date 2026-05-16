@@ -776,9 +776,25 @@ function LaunchBar({
             loading={loading}
             onClick={onLaunch}
           >
-            {loading
-              ? `Briefing en cours... ${elapsed.toFixed(1)} s`
-              : "On décroche →"}
+            {loading ? (
+              <span className="inline-flex items-center gap-2">
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: 14,
+                    height: 14,
+                    borderRadius: "50%",
+                    border: "2px solid rgba(10, 31, 18, 0.25)",
+                    borderTopColor: "#0A1F12",
+                    animation: "launchSpin 0.8s linear infinite",
+                  }}
+                  aria-hidden="true"
+                />
+                Génération du scénario... {elapsed.toFixed(1)} s
+              </span>
+            ) : (
+              "Lancer la mission →"
+            )}
           </Button>
         </div>
       </div>
