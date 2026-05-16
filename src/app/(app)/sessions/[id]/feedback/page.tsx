@@ -97,7 +97,7 @@ export default async function FeedbackPage({
         <Link
           href="/history"
           className="text-small hover:underline inline-flex items-center gap-1 mb-6"
-          style={{ color: "var(--color-gray)" }}
+          style={{ color: "rgba(255, 255, 255, 0.65)" }}
         >
           ← Retour à l&apos;historique
         </Link>
@@ -107,16 +107,16 @@ export default async function FeedbackPage({
           {s.client_name_snapshot && (
             <Badge tone="purple">{s.client_name_snapshot}</Badge>
           )}
-          <span className="text-body" style={{ color: "var(--color-dark)" }}>
+          <span className="text-body" style={{ color: "#FFFFFF" }}>
             {s.persona_label}
             {personaName && (
-              <span style={{ color: "var(--color-gray)" }}> · {personaName}</span>
+              <span style={{ color: "rgba(255, 255, 255, 0.65)" }}> · {personaName}</span>
             )}
           </span>
           <DifficultyBadge difficulty={s.difficulty} />
         </div>
-        <div className="mt-2 flex items-center gap-3 flex-wrap text-small" style={{ color: "var(--color-gray)" }}>
-          <span style={{ color: "var(--color-dark)", fontWeight: 500 }}>{author}</span>
+        <div className="mt-2 flex items-center gap-3 flex-wrap text-small" style={{ color: "rgba(255, 255, 255, 0.65)" }}>
+          <span style={{ color: "#FFFFFF", fontWeight: 500 }}>{author}</span>
           <span>·</span>
           <span>{formatDateTimeFr(s.started_at)}</span>
           <span>·</span>
@@ -180,7 +180,7 @@ export default async function FeedbackPage({
           </div>
           <p
             className="text-body-l"
-            style={{ color: "var(--color-dark)", lineHeight: "1.5" }}
+            style={{ color: "#FFFFFF", lineHeight: "1.5" }}
           >
             {evaluation.outcome_summary}
           </p>
@@ -253,7 +253,7 @@ export default async function FeedbackPage({
                         </div>
                         <div
                           className="text-meta mt-0.5"
-                          style={{ color: "var(--color-gray)", lineHeight: "1.4" }}
+                          style={{ color: "rgba(255, 255, 255, 0.65)", lineHeight: "1.4" }}
                         >
                           {c.comment}
                         </div>
@@ -388,7 +388,7 @@ function FeedbackList({
           <li
             key={i}
             className="text-small flex gap-2"
-            style={{ color: "var(--color-dark)" }}
+            style={{ color: "#FFFFFF" }}
           >
             <span
               className="mt-1.5 w-1.5 h-1.5 rounded-pill flex-shrink-0"

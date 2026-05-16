@@ -84,11 +84,12 @@
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: rgba(139, 127, 163, 0.20);
+    background: rgba(255, 255, 255, 0.10);
     border-radius: 999px;
-    border: 2px solid var(--bg-app);
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(139, 127, 163, 0.4); }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.20); background-clip: padding-box; }
 }
 
 @layer components {
@@ -440,12 +441,17 @@
   /* ========== EYEBROW ========== */
   .eyebrow {
     @apply text-meta uppercase font-bold tracking-widest;
-    color: var(--color-gray);
+    color: rgba(255, 255, 255, 0.55);
     letter-spacing: 0.14em;
   }
   .eyebrow-green {
     @apply text-meta uppercase font-bold tracking-widest;
     color: var(--color-green);
+    letter-spacing: 0.14em;
+  }
+  .eyebrow-violet {
+    @apply text-meta uppercase font-bold tracking-widest;
+    color: #b495ff;
     letter-spacing: 0.14em;
   }
 }
@@ -1630,6 +1636,20 @@
 
 /* ========== APP SHELL (dark partout) ========== */
 .app-shell {
+  /* Réassigne les variables de couleur pour qu'aucun var(--color-purple)
+     (dark) ou var(--color-dark) (dark) hérité d'anciens inline styles ne
+     produise du violet-sur-violet illisible.
+     N'affecte que les usages CSS de ces vars dans .app-shell. */
+  --color-purple: #b495ff;
+  --color-dark: #FFFFFF;
+  --color-gray: rgba(255, 255, 255, 0.65);
+  --color-gray-soft: rgba(255, 255, 255, 0.08);
+  --color-gray-border: rgba(255, 255, 255, 0.10);
+  --color-lavender: rgba(157, 107, 255, 0.10);
+  --color-lavender-soft: rgba(157, 107, 255, 0.06);
+  --bg-app: #1a1226;
+  --bg-soft: rgba(255, 255, 255, 0.04);
+
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -2082,6 +2102,174 @@
 @keyframes launchSpin {
   to { transform: rotate(360deg); }
 }
+
+/* ========== EVALUATOR — débrief en cours ========== */
+.evaluator-card {
+  position: relative;
+  overflow: hidden;
+  padding: 32px;
+  border-radius: 24px;
+  background: linear-gradient(160deg, rgba(60, 40, 90, 0.45) 0%, rgba(20, 9, 31, 0.55) 100%);
+  border: 1px solid rgba(157, 107, 255, 0.25);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 30px 80px rgba(11, 6, 22, 0.45);
+}
+.evaluator-grid {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 24px;
+  align-items: center;
+}
+@media (max-width: 640px) {
+  .evaluator-grid { grid-template-columns: 1fr; text-align: center; }
+}
+
+.evaluator-avatar {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  margin: 0 auto;
+}
+.evaluator-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(157, 107, 255, 0.5);
+  animation: evaluatorRing 2.4s ease-out infinite;
+}
+.evaluator-ring-2 { animation-delay: 0.8s; }
+.evaluator-ring-3 { animation-delay: 1.6s; }
+@keyframes evaluatorRing {
+  0% { transform: scale(0.6); opacity: 0.9; border-color: rgba(157, 107, 255, 0.6); }
+  100% { transform: scale(1.4); opacity: 0; border-color: rgba(60, 200, 121, 0.0); }
+}
+.evaluator-pulse {
+  position: absolute;
+  inset: 20%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(180, 149, 255, 0.95) 0%, rgba(107, 63, 182, 0.85) 60%, rgba(20, 9, 31, 0.85) 100%);
+  font-size: 2.2rem;
+  box-shadow: 0 0 30px rgba(157, 107, 255, 0.4), inset 0 -8px 24px rgba(20, 9, 31, 0.4);
+  animation: evaluatorPulse 1.8s ease-in-out infinite;
+}
+@keyframes evaluatorPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.evaluator-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.evaluator-stars span {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+  animation: evaluatorTwinkle 3s ease-in-out infinite;
+}
+.evaluator-stars span:nth-child(1) { top: 18%; left: 8%; animation-delay: 0s; }
+.evaluator-stars span:nth-child(2) { top: 70%; left: 12%; animation-delay: 0.6s; }
+.evaluator-stars span:nth-child(3) { top: 30%; right: 14%; animation-delay: 1.2s; }
+.evaluator-stars span:nth-child(4) { top: 78%; right: 10%; animation-delay: 1.8s; }
+.evaluator-stars span:nth-child(5) { top: 50%; left: 48%; animation-delay: 2.4s; }
+@keyframes evaluatorTwinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.4); }
+}
+
+.evaluator-content { min-width: 0; }
+.evaluator-steps {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.evaluator-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.4);
+  transition: color 0.3s ease;
+}
+.evaluator-step-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.45);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+.evaluator-step-done { color: rgba(255, 255, 255, 0.72); }
+.evaluator-step-done .evaluator-step-icon {
+  background: var(--color-green);
+  color: var(--color-dark);
+}
+.evaluator-step-active {
+  color: #FFFFFF;
+  font-weight: 600;
+}
+.evaluator-step-active .evaluator-step-icon {
+  background: rgba(60, 200, 121, 0.18);
+  border: 1.5px solid var(--color-green);
+  animation: evaluatorStepSpin 1.2s linear infinite;
+}
+.evaluator-step-active .evaluator-step-icon::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-green);
+}
+@keyframes evaluatorStepSpin {
+  to { transform: rotate(360deg); }
+}
+
+.evaluator-progress {
+  margin-top: 16px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+.evaluator-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #9d6bff, var(--color-green));
+  box-shadow: 0 0 12px rgba(60, 200, 121, 0.4);
+  transition: width 0.3s ease-out;
+}
+
+.evaluator-fact {
+  margin-top: 24px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(247, 192, 65, 0.08);
+  border: 1px solid rgba(247, 192, 65, 0.24);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+@keyframes evaluatorFactFade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========== EVALUATOR ========== */
 
 /* =============================================================================
    JARVIS-STYLE VOICE ORB
