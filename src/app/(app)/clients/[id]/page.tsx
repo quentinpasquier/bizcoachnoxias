@@ -60,7 +60,7 @@ export default async function ClientDetailPage({
       <Link
         href="/clients"
         className="text-small inline-flex items-center gap-1.5"
-        style={{ color: "var(--color-gray)" }}
+        style={{ color: "rgba(255, 255, 255, 0.65)" }}
       >
         ← Tous les clients
       </Link>
@@ -76,21 +76,21 @@ export default async function ClientDetailPage({
               lineHeight: "1.05",
             }}
           >
-            <span style={{ color: "var(--color-dark)" }}>Coach pour</span>
+            <span style={{ color: "#FFFFFF" }}>Coach pour</span>
             <br />
             <span style={{ color: "var(--color-green)" }}>{client.name}</span>
           </h1>
           {client.value_proposition ? (
             <p
               className="text-body-l mt-5 max-w-2xl"
-              style={{ color: "var(--color-gray)" }}
+              style={{ color: "rgba(255, 255, 255, 0.65)" }}
             >
               {client.value_proposition}
             </p>
           ) : (
             <p
               className="text-body-l mt-5 max-w-2xl"
-              style={{ color: "var(--color-gray)" }}
+              style={{ color: "rgba(255, 255, 255, 0.65)" }}
             >
               {client.product_pitch}
             </p>
@@ -99,14 +99,14 @@ export default async function ClientDetailPage({
             {client.sector && (
               <span
                 className="text-small font-medium"
-                style={{ color: "var(--color-purple)" }}
+                style={{ color: "#b495ff" }}
               >
                 {client.sector}
               </span>
             )}
             {!client.active && <Badge tone="neutral">Inactif</Badge>}
             {client.synced_files && client.synced_files.length > 0 && (
-              <span className="text-small" style={{ color: "var(--color-gray)" }}>
+              <span className="text-small" style={{ color: "rgba(255, 255, 255, 0.65)" }}>
                 · {client.synced_files.length} document
                 {client.synced_files.length > 1 ? "s" : ""} source
                 {client.synced_files.length > 1 ? "s" : ""}
@@ -134,7 +134,7 @@ export default async function ClientDetailPage({
             </h2>
             <p
               className="text-small mt-1"
-              style={{ color: "var(--color-gray)" }}
+              style={{ color: "rgba(255, 255, 255, 0.65)" }}
             >
               {personas.length}{" "}
               {personas.length > 1 ? "profils" : "profil"} prêts à appeler
@@ -146,7 +146,7 @@ export default async function ClientDetailPage({
           <Card variant="lavender" className="text-center py-12">
             <p
               className="text-body mb-4"
-              style={{ color: "var(--color-gray)" }}
+              style={{ color: "rgba(255, 255, 255, 0.65)" }}
             >
               Aucun persona n&apos;a été extrait. Réuploade des docs ou ajoute-les
               manuellement.
@@ -187,14 +187,14 @@ export default async function ClientDetailPage({
         {client.description && (
           <Card>
             <div className="eyebrow mb-2">Description</div>
-            <p className="text-body" style={{ color: "var(--color-dark)" }}>
+            <p className="text-body" style={{ color: "#FFFFFF" }}>
               {client.description}
             </p>
           </Card>
         )}
         <Card className={!client.description ? "md:col-span-2" : ""}>
           <div className="eyebrow mb-2">Pitch à porter</div>
-          <p className="text-body" style={{ color: "var(--color-dark)" }}>
+          <p className="text-body" style={{ color: "#FFFFFF" }}>
             {client.product_pitch}
           </p>
         </Card>
@@ -210,16 +210,16 @@ export default async function ClientDetailPage({
                   <span
                     className="badge"
                     style={{
-                      background: "var(--color-lavender)",
-                      color: "var(--color-purple)",
+                      background: "rgba(157, 107, 255, 0.10)",
+                      color: "#b495ff",
                     }}
                   >
                     {f.kind.toUpperCase()}
                   </span>
-                  <span style={{ color: "var(--color-dark)" }}>{f.filename}</span>
+                  <span style={{ color: "#FFFFFF" }}>{f.filename}</span>
                   <span
                     className="text-meta"
-                    style={{ color: "var(--color-gray)" }}
+                    style={{ color: "rgba(255, 255, 255, 0.65)" }}
                   >
                     {Math.round(f.size / 1024)} kB
                   </span>
@@ -235,7 +235,7 @@ export default async function ClientDetailPage({
         <h2 className="text-h3">Sessions récentes</h2>
         {sessions.length === 0 ? (
           <Card variant="lavender" className="text-center py-10">
-            <p style={{ color: "var(--color-gray)" }}>
+            <p style={{ color: "rgba(255, 255, 255, 0.65)" }}>
               Aucune session pour ce client.
             </p>
           </Card>
@@ -279,9 +279,9 @@ export default async function ClientDetailPage({
                         </div>
                         <p
                           className="text-small mt-1"
-                          style={{ color: "var(--color-gray)" }}
+                          style={{ color: "rgba(255, 255, 255, 0.65)" }}
                         >
-                          <span style={{ color: "var(--color-dark)", fontWeight: 500 }}>
+                          <span style={{ color: "#FFFFFF", fontWeight: 500 }}>
                             {author}
                           </span>
                           {" · "}
@@ -326,7 +326,7 @@ function PersonaCard({
           {persona.typical_company && (
             <p
               className="text-small mt-1.5"
-              style={{ color: "var(--color-gray)" }}
+              style={{ color: "rgba(255, 255, 255, 0.65)" }}
             >
               {persona.typical_company}
             </p>
@@ -339,14 +339,14 @@ function PersonaCard({
         <div
           className="rounded-md p-4 mb-4"
           style={{
-            background: "var(--color-lavender)",
+            background: "rgba(157, 107, 255, 0.10)",
             border: "1px solid rgba(52, 36, 75, 0.04)",
           }}
         >
           <div className="eyebrow-green mb-2">Brief</div>
           <p
             className="text-small"
-            style={{ color: "var(--color-dark)", lineHeight: "1.5" }}
+            style={{ color: "#FFFFFF", lineHeight: "1.5" }}
           >
             {briefingPreview}
           </p>
@@ -358,7 +358,7 @@ function PersonaCard({
         <div className="stat-tile">
           <div
             className="text-meta uppercase tracking-widest font-semibold"
-            style={{ color: "var(--color-gray)", fontSize: "0.6875rem" }}
+            style={{ color: "rgba(255, 255, 255, 0.65)", fontSize: "0.6875rem" }}
           >
             Douleurs clés
           </div>
@@ -376,7 +376,7 @@ function PersonaCard({
         <div className="stat-tile">
           <div
             className="text-meta uppercase tracking-widest font-semibold"
-            style={{ color: "var(--color-gray)", fontSize: "0.6875rem" }}
+            style={{ color: "rgba(255, 255, 255, 0.65)", fontSize: "0.6875rem" }}
           >
             Objections
           </div>
@@ -397,7 +397,7 @@ function PersonaCard({
       <details className="mb-4 group">
         <summary
           className="text-small font-semibold cursor-pointer flex items-center gap-2 select-none"
-          style={{ color: "var(--color-purple)" }}
+          style={{ color: "#b495ff" }}
         >
           <span
             className="transition-transform group-open:rotate-90 inline-block"
@@ -416,7 +416,7 @@ function PersonaCard({
                   <li
                     key={i}
                     className="flex gap-2"
-                    style={{ color: "var(--color-dark)" }}
+                    style={{ color: "#FFFFFF" }}
                   >
                     <span
                       className="mt-1.5 w-1.5 h-1.5 rounded-pill flex-shrink-0"
@@ -456,7 +456,7 @@ function PersonaCard({
                   <li
                     key={i}
                     className="flex gap-2"
-                    style={{ color: "var(--color-dark)" }}
+                    style={{ color: "#FFFFFF" }}
                   >
                     <span
                       className="mt-1.5 w-1.5 h-1.5 rounded-pill flex-shrink-0"
@@ -474,7 +474,7 @@ function PersonaCard({
               <div className="eyebrow mb-2">Ce qui le fait dire OUI</div>
               <p
                 className="text-small"
-                style={{ color: "var(--color-dark)" }}
+                style={{ color: "#FFFFFF" }}
               >
                 {persona.decision_signals}
               </p>
@@ -516,14 +516,14 @@ function MicroStat({
         style={{
           fontSize: "2.25rem",
           lineHeight: "1",
-          color: "var(--color-dark)",
+          color: "#FFFFFF",
         }}
       >
         {value}
         {suffix && (
           <span
             className="text-small ml-1"
-            style={{ color: "var(--color-gray)", fontWeight: "normal" }}
+            style={{ color: "rgba(255, 255, 255, 0.65)", fontWeight: "normal" }}
           >
             {suffix}
           </span>
