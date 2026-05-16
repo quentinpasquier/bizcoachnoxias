@@ -34,12 +34,21 @@ interface RawCriterionResult {
   comment: string;
 }
 
+interface RawQuoteRewrite {
+  category?: string;
+  context?: string;
+  your_words?: string;
+  issue?: string;
+  better?: string;
+}
+
 interface RawEvaluatorResponse {
   criteria: RawCriterionResult[];
   strengths: string[];
   improvements: string[];
   next_steps: string[];
   outcome_summary: string;
+  quote_rewrites?: RawQuoteRewrite[];
 }
 
 const RESPONSE_SCHEMA = `{
@@ -50,7 +59,17 @@ const RESPONSE_SCHEMA = `{
   "strengths": ["<3 forces concrètes>", "...", "..."],
   "improvements": ["<3 axes d'amélioration concrets>", "...", "..."],
   "next_steps": ["<3 actions concrètes pour la prochaine session>", "...", "..."],
-  "outcome_summary": "<2 à 3 phrases : ce qui s'est passé, pourquoi, ce que ça dit du commercial>"
+  "outcome_summary": "<2 à 3 phrases : ce qui s'est passé, pourquoi, ce que ça dit du commercial>",
+  "quote_rewrites": [
+    {
+      "category": "<'accroche' | 'decouverte' | 'valeur' | 'objections' | 'closing'>",
+      "context": "<1 phrase qui décrit ce qui se passait juste avant. Ex: 'Le prospect vient de dire qu'il a déjà un prestataire'>",
+      "your_words": "<citation EXACTE de ce que le commercial a dit, mot pour mot depuis le transcript. Pas de paraphrase>",
+      "issue": "<1 phrase qui explique pourquoi cette formulation n'a pas marché>",
+      "better": "<reformulation concrète, prête à l'emploi, que le commercial peut copier-coller la prochaine fois. C'est le LEVIER d'amélioration. Doit être une vraie phrase orale, pas un conseil abstrait.>"
+    }
+    // ... 4 à 6 entrées au total
+  ]
 }`;
 
 function buildCriteriaListForPrompt(): string {
@@ -121,7 +140,20 @@ ${RESPONSE_SCHEMA}
 - Tutoie le commercial dans tes commentaires.
 - Pas de langue de bois.
 - Si le référentiel client mentionne un script ou une réponse type, vérifie si le commercial s'en est rapproché.
-- IMPORTANT : Si un RDV a été obtenu, c'est qu'au moins le minimum a été fait. Les critères de closing sont quasi-systématiquement validés dans ce cas.`;
+- IMPORTANT : Si un RDV a été obtenu, c'est qu'au moins le minimum a été fait. Les critères de closing sont quasi-systématiquement validés dans ce cas.
+
+# QUOTE_REWRITES — le plus important pour le commercial
+
+Ton meilleur livrable, c'est l'aide concrète pour s'améliorer.
+Génère 4 à 6 quote_rewrites qui :
+- Citent EXACTEMENT, mot pour mot, ce que le commercial a dit dans le transcript (your_words). Pas de paraphrase, pas d'invention.
+- Identifient un moment précis (context) où une meilleure formulation aurait fait la différence.
+- Expliquent en 1 phrase pourquoi (issue) : trop fermé, trop générique, capitulation, manque d'acquittement, jargon, etc.
+- Donnent une RÉPLIQUE PRÊTE À L'EMPLOI (better) : une phrase orale concrète que le commercial pourra réutiliser tel quel la prochaine fois. Pas un conseil abstrait ('sois plus à l'écoute'), une PHRASE ('Quand tu dis "pas le budget", c'est lié au timing ou à la priorité ?').
+- Couvrent plusieurs catégories (mélange accroche / découverte / valeur / objections / closing).
+- Priorité : les objections mal gérées et les questions fermées qui auraient dû être ouvertes.
+
+Si la session est très courte ou très réussie, génère au moins 3 quote_rewrites avec ce qui peut quand même être affiné.`;
 
   const userMessage = `# CONTEXTE DE LA SESSION
 
@@ -154,7 +186,7 @@ ${transcript}
 
   const response = await getAnthropic().messages.create({
     model: EVALUATOR_MODEL,
-    max_tokens: 3500,
+    max_tokens: 5500,
     system,
     messages: [{ role: "user", content: userMessage }],
   });
@@ -232,6 +264,31 @@ ${transcript}
       : [],
     outcome_summary:
       typeof raw.outcome_summary === "string" ? raw.outcome_summary : "",
+    quote_rewrites: Array.isArray(raw.quote_rewrites)
+      ? raw.quote_rewrites
+          .filter(
+            (q) =>
+              q &&
+              typeof q.your_words === "string" &&
+              q.your_words.length > 0 &&
+              typeof q.better === "string" &&
+              q.better.length > 0,
+          )
+          .map((q) => {
+            const validCats = ["accroche", "decouverte", "valeur", "objections", "closing"];
+            const category = validCats.includes(q.category ?? "")
+              ? (q.category as CategoryKey)
+              : ("objections" as CategoryKey);
+            return {
+              category,
+              context: typeof q.context === "string" ? q.context.trim() : "",
+              your_words: q.your_words!.trim(),
+              issue: typeof q.issue === "string" ? q.issue.trim() : "",
+              better: q.better!.trim(),
+            };
+          })
+          .slice(0, 8)
+      : [],
   };
 }
 

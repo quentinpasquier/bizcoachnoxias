@@ -4,7 +4,13 @@ import { Card } from "@/components/ui/Card";
 import { Badge, DifficultyBadge } from "@/components/ui/Badge";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTimeFr, formatDuration } from "@/lib/format";
-import type { Evaluation, MessageRow, SessionRow } from "@/lib/supabase/types";
+import type {
+  CategoryKey,
+  Evaluation,
+  MessageRow,
+  QuoteRewrite,
+  SessionRow,
+} from "@/lib/supabase/types";
 import { FeedbackEvaluator } from "./FeedbackEvaluator";
 import { Celebration } from "./Celebration";
 import { computeBadges, computeStats } from "@/lib/badges";
@@ -186,6 +192,33 @@ export default async function FeedbackPage({
           </p>
         </Card>
       </section>
+
+      {/* LEVIERS D'AMÉLIORATION (priorité maximale) */}
+      {Array.isArray(evaluation.quote_rewrites) &&
+        evaluation.quote_rewrites.length > 0 && (
+          <section className="space-y-5">
+            <div>
+              <div className="eyebrow-green mb-2">
+                Tes leviers d&apos;amélioration
+              </div>
+              <h2 className="text-h2" style={{ fontSize: "1.8rem" }}>
+                À retravailler concrètement.
+              </h2>
+              <p
+                className="text-small mt-2"
+                style={{ color: "rgba(255, 255, 255, 0.6)" }}
+              >
+                Chaque carte cite ce que tu as dit pendant l&apos;appel et
+                propose une formulation prête à utiliser la prochaine fois.
+              </p>
+            </div>
+            <div className="space-y-4">
+              {evaluation.quote_rewrites.map((q, idx) => (
+                <QuoteRewriteCard key={idx} rewrite={q} />
+              ))}
+            </div>
+          </section>
+        )}
 
       {/* CATÉGORIES, format 20 critères */}
       {!isLegacyFormat && Array.isArray(evaluation.categories) && (
@@ -400,5 +433,144 @@ function FeedbackList({
         ))}
       </ul>
     </Card>
+  );
+}
+
+const CATEGORY_META: Record<
+  CategoryKey,
+  { label: string; color: string; icon: string }
+> = {
+  accroche: { label: "Accroche", color: "#3CC879", icon: "🎯" },
+  decouverte: { label: "Découverte", color: "#4A8FE7", icon: "🔍" },
+  valeur: { label: "Pitch & valeur", color: "#9d6bff", icon: "💡" },
+  objections: { label: "Objection", color: "#F5A524", icon: "🛡️" },
+  closing: { label: "Closing", color: "#E94B4B", icon: "🤝" },
+};
+
+function QuoteRewriteCard({ rewrite }: { rewrite: QuoteRewrite }) {
+  const meta = CATEGORY_META[rewrite.category] ?? CATEGORY_META.objections;
+  return (
+    <div
+      className="rounded-xl p-5"
+      style={{
+        background: `linear-gradient(140deg, ${meta.color}1a 0%, rgba(34, 25, 50, 0.55) 100%)`,
+        border: `1px solid ${meta.color}55`,
+        backdropFilter: "blur(20px) saturate(180%)",
+        WebkitBackdropFilter: "blur(20px) saturate(180%)",
+      }}
+    >
+      <div className="flex items-center gap-2 flex-wrap mb-3">
+        <span
+          className="rounded-lg flex items-center justify-center"
+          style={{
+            width: 32,
+            height: 32,
+            background: `${meta.color}22`,
+            fontSize: "1rem",
+          }}
+          aria-hidden="true"
+        >
+          {meta.icon}
+        </span>
+        <span
+          style={{
+            color: meta.color,
+            fontSize: "0.62rem",
+            letterSpacing: "0.18em",
+            fontWeight: 700,
+            textTransform: "uppercase",
+          }}
+        >
+          {meta.label}
+        </span>
+        {rewrite.context && (
+          <span
+            className="text-meta"
+            style={{
+              color: "rgba(255, 255, 255, 0.55)",
+              fontStyle: "italic",
+            }}
+          >
+            · {rewrite.context}
+          </span>
+        )}
+      </div>
+
+      {/* Ce que tu as dit */}
+      <div
+        className="rounded-lg p-4 mb-3"
+        style={{
+          background: "rgba(233, 75, 75, 0.08)",
+          border: "1px solid rgba(233, 75, 75, 0.22)",
+        }}
+      >
+        <div
+          style={{
+            color: "#FFB4B4",
+            fontSize: "0.62rem",
+            fontWeight: 700,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            marginBottom: 6,
+          }}
+        >
+          Ce que tu as dit
+        </div>
+        <p
+          style={{
+            color: "#FFFFFF",
+            fontSize: "0.95rem",
+            lineHeight: 1.5,
+            fontStyle: "italic",
+          }}
+        >
+          «&nbsp;{rewrite.your_words}&nbsp;»
+        </p>
+        {rewrite.issue && (
+          <p
+            className="mt-2 text-small"
+            style={{
+              color: "rgba(255, 180, 180, 0.85)",
+              lineHeight: 1.45,
+            }}
+          >
+            <strong style={{ color: "#FFB4B4" }}>Pourquoi ça coince : </strong>
+            {rewrite.issue}
+          </p>
+        )}
+      </div>
+
+      {/* Ce qu'il faudrait dire */}
+      <div
+        className="rounded-lg p-4"
+        style={{
+          background: "rgba(60, 200, 121, 0.10)",
+          border: "1px solid rgba(60, 200, 121, 0.32)",
+        }}
+      >
+        <div
+          style={{
+            color: "var(--color-green)",
+            fontSize: "0.62rem",
+            fontWeight: 700,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            marginBottom: 6,
+          }}
+        >
+          ✓ Essaie plutôt
+        </div>
+        <p
+          style={{
+            color: "#FFFFFF",
+            fontSize: "0.98rem",
+            lineHeight: 1.5,
+            fontWeight: 500,
+          }}
+        >
+          «&nbsp;{rewrite.better}&nbsp;»
+        </p>
+      </div>
+    </div>
   );
 }

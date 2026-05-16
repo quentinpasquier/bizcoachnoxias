@@ -171,6 +171,14 @@ export interface CategoryResult {
   criteria: CriterionResult[];
 }
 
+export interface QuoteRewrite {
+  category: CategoryKey;
+  context: string; // ce qui se passait juste avant
+  your_words: string; // citation exacte du commercial dans le transcript
+  issue: string; // pourquoi ce n'est pas optimal
+  better: string; // reformulation suggérée à utiliser la prochaine fois
+}
+
 export interface Evaluation {
   overall_score: number;
   criteria_total: number;
@@ -180,4 +188,5 @@ export interface Evaluation {
   improvements: string[];
   next_steps: string[];
   outcome_summary: string;
+  quote_rewrites?: QuoteRewrite[]; // leviers d'amélioration concrets avec citations
 }
