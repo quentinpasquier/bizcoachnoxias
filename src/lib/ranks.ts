@@ -84,17 +84,51 @@ export const RANK_TIERS: RankTierConfig[] = [
   },
 ];
 
-// Récompense mensuelle par rang global (1 → 24) : 1€ à 30€.
-// Progression : Bronze 1-4€, Argent 5-11€, Gold 12-18€,
-// Platine 19-23€, Diamant 24-28€, Master 29-30€.
-export const MONTHLY_REWARDS_EUR: number[] = [
-  1, 2, 3, 4, // Bronze I-IV
-  5, 7, 9, 11, // Argent I-IV
-  12, 14, 16, 18, // Gold I-IV
-  19, 20, 22, 23, // Platine I-IV
-  24, 25, 26, 28, // Diamant I-IV
-  29, 30, 30, 30, // Master I-IV (cap à 30€)
+// Récompense mensuelle par rang global (1 → 24) sous forme de CADEAU PHYSIQUE
+// (équivalent ~1€ à ~30€ de valeur). Plus parlant qu'un montant abstrait.
+export interface MonthlyReward {
+  label: string; // ce qui sera reçu
+  icon: string;
+  approxValueEur: number;
+}
+
+export const MONTHLY_REWARDS: MonthlyReward[] = [
+  // Bronze I-IV (1-4€)
+  { label: "1 café au bistrot", icon: "☕", approxValueEur: 1 },
+  { label: "1 viennoiserie", icon: "🥐", approxValueEur: 2 },
+  { label: "1 boisson + viennoiserie", icon: "🥐", approxValueEur: 3 },
+  { label: "1 menu fast-food", icon: "🍔", approxValueEur: 4 },
+  // Argent I-IV (5-11€)
+  { label: "1 sandwich + boisson", icon: "🥪", approxValueEur: 5 },
+  { label: "1 plat à emporter", icon: "🍱", approxValueEur: 7 },
+  { label: "2 places au cinéma de quartier", icon: "🎬", approxValueEur: 9 },
+  { label: "1 ticket resto à 11 €", icon: "🍽️", approxValueEur: 11 },
+  // Gold I-IV (12-18€)
+  { label: "1 livre de poche", icon: "📚", approxValueEur: 12 },
+  { label: "1 abonnement Spotify 1 mois", icon: "🎧", approxValueEur: 14 },
+  { label: "1 séance ciné + popcorn", icon: "🎬", approxValueEur: 16 },
+  { label: "1 plat dans un bistrot", icon: "🍝", approxValueEur: 18 },
+  // Platine I-IV (19-23€)
+  { label: "1 dîner pizzeria pour 1", icon: "🍕", approxValueEur: 19 },
+  { label: "1 carte cadeau Fnac", icon: "🎁", approxValueEur: 20 },
+  { label: "1 ticket cadeau parfumerie", icon: "💐", approxValueEur: 22 },
+  { label: "1 séance massage express", icon: "💆", approxValueEur: 23 },
+  // Diamant I-IV (24-28€)
+  { label: "1 bouteille de bon vin", icon: "🍷", approxValueEur: 24 },
+  { label: "1 brunch pour 1", icon: "🥑", approxValueEur: 25 },
+  { label: "1 sortie escape game", icon: "🗝️", approxValueEur: 26 },
+  { label: "1 carte cadeau Amazon 28 €", icon: "📦", approxValueEur: 28 },
+  // Master I-IV (29-30€)
+  { label: "1 dîner gastro pour 1", icon: "🍷", approxValueEur: 29 },
+  { label: "1 carte cadeau resto 30 €", icon: "🍽️", approxValueEur: 30 },
+  { label: "1 expérience à 30 € (atelier, dégustation)", icon: "🥂", approxValueEur: 30 },
+  { label: "1 carte cadeau prestige 30 €", icon: "👑", approxValueEur: 30 },
 ];
+
+// Helper rétro-compatible
+export const MONTHLY_REWARDS_EUR: number[] = MONTHLY_REWARDS.map(
+  (r) => r.approxValueEur,
+);
 
 export interface RankInfo {
   tier: RankTier;
@@ -111,6 +145,8 @@ export interface RankInfo {
   badgeShape: "shield" | "star" | "crown";
   globalIndex: number;
   monthlyRewardEur: number;
+  monthlyRewardLabel: string;
+  monthlyRewardIcon: string;
 }
 
 const FLAT_THRESHOLDS = RANK_TIERS.flatMap((t, ti) =>
@@ -163,6 +199,9 @@ export function rankFromPpn(ppn: number): RankInfo {
     badgeShape: current.badgeShape,
     globalIndex: current.globalIndex,
     monthlyRewardEur: MONTHLY_REWARDS_EUR[current.globalIndex - 1] ?? 1,
+    monthlyRewardLabel:
+      MONTHLY_REWARDS[current.globalIndex - 1]?.label ?? "Récompense",
+    monthlyRewardIcon: MONTHLY_REWARDS[current.globalIndex - 1]?.icon ?? "🎁",
   };
 }
 

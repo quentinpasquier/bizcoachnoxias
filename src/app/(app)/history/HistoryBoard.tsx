@@ -81,7 +81,7 @@ export function HistoryBoard({
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher un commercial, un client, un persona..."
               className="bg-transparent outline-none flex-1 text-body"
-              style={{ color: "var(--color-dark)" }}
+              style={{ color: "#FFFFFF" }}
             />
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -128,7 +128,7 @@ export function HistoryBoard({
 
       {filtered.length === 0 ? (
         <Card variant="lavender" className="text-center py-12">
-          <p style={{ color: "var(--color-gray)" }}>
+          <p style={{ color: "rgba(255, 255, 255, 0.6)" }}>
             Aucune session ne correspond.
           </p>
         </Card>
@@ -167,7 +167,7 @@ export function HistoryBoard({
                           </span>
                           <span
                             className="text-meta"
-                            style={{ color: "var(--color-gray)" }}
+                            style={{ color: "rgba(255, 255, 255, 0.6)" }}
                           >
                             ·
                           </span>
@@ -196,9 +196,9 @@ export function HistoryBoard({
                         </div>
                         <p
                           className="text-small"
-                          style={{ color: "var(--color-gray)" }}
+                          style={{ color: "rgba(255, 255, 255, 0.6)" }}
                         >
-                          <span style={{ color: "var(--color-dark)", fontWeight: 500 }}>
+                          <span style={{ color: "#FFFFFF", fontWeight: 500 }}>
                             {author}
                           </span>
                           {" · "}
@@ -231,7 +231,7 @@ function SearchIcon() {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{ color: "var(--color-gray)" }}
+      style={{ color: "rgba(255, 255, 255, 0.6)" }}
       aria-hidden="true"
     >
       <circle cx="11" cy="11" r="8" />

@@ -8,10 +8,53 @@ interface VoiceOrbProps {
   intensity?: 1 | 2 | 3 | 4;
 }
 
-// VoiceOrb façon Jarvis : sphère violette/verte avec anneaux orbitaux,
+// Palette par intensité de difficulté.
+// La couleur principale = anneau extérieur + glow. L'accent (vert) reste vert
+// (le commercial est toujours en vert, c'est la marque).
+const PALETTES: Record<
+  1 | 2 | 3 | 4,
+  {
+    primary: string; // ring + core gradient
+    primarySoft: string; // halo / inset
+    coreLight: string; // highlight haut de la sphère
+    coreDark: string; // bas de la sphère
+    name: string;
+  }
+> = {
+  1: {
+    primary: "#3CC879",
+    primarySoft: "rgba(60, 200, 121, 0.40)",
+    coreLight: "rgba(150, 230, 180, 0.95)",
+    coreDark: "rgba(20, 60, 40, 0.95)",
+    name: "Débutant",
+  },
+  2: {
+    primary: "#9d6bff",
+    primarySoft: "rgba(157, 107, 255, 0.40)",
+    coreLight: "rgba(180, 149, 255, 0.95)",
+    coreDark: "rgba(34, 25, 50, 0.95)",
+    name: "Intermédiaire",
+  },
+  3: {
+    primary: "#F5A524",
+    primarySoft: "rgba(245, 165, 36, 0.40)",
+    coreLight: "rgba(255, 200, 110, 0.95)",
+    coreDark: "rgba(80, 40, 0, 0.95)",
+    name: "Avancé",
+  },
+  4: {
+    primary: "#E94B4B",
+    primarySoft: "rgba(233, 75, 75, 0.45)",
+    coreLight: "rgba(255, 150, 150, 0.95)",
+    coreDark: "rgba(70, 10, 10, 0.95)",
+    name: "Expert",
+  },
+};
+
+// VoiceOrb façon Jarvis : sphère colorée selon le niveau avec anneaux orbitaux,
 // barres audio centrales qui bondissent quand l'IA parle, et halo réactif.
-// Adapte ses animations à l'état (idle / speaking / listening / thinking).
-export function VoiceOrb({ state, size = 240 }: VoiceOrbProps) {
+export function VoiceOrb({ state, size = 240, intensity = 2 }: VoiceOrbProps) {
+  const p = PALETTES[intensity];
   const isActive = state === "speaking" || state === "listening";
   const isSpeaking = state === "speaking";
   const isThinking = state === "thinking";
@@ -34,35 +77,30 @@ export function VoiceOrb({ state, size = 240 }: VoiceOrbProps) {
         transition: "opacity 0.4s ease",
       }}
     >
-      {/* Halo extérieur pulsant */}
+      {/* Halo extérieur pulsant, couleur par niveau */}
       <span
         className="jarvis-halo"
         style={{
+          background: `radial-gradient(circle at center, ${p.primarySoft} 0%, rgba(60, 200, 121, 0.10) 35%, transparent 70%)`,
           animationDuration: `${isActive ? 1.4 : 2.6}s`,
         }}
         aria-hidden="true"
       />
 
-      {/* Anneau extérieur en rotation */}
+      {/* Anneau extérieur en rotation, couleur par niveau */}
       <svg
         className="jarvis-ring jarvis-ring-outer"
         viewBox="0 0 200 200"
         style={{ animationDuration: `${ringSpeed * 2.2}s` }}
         aria-hidden="true"
       >
-        <defs>
-          <linearGradient id="jarvis-ring-outer-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="rgba(157, 107, 255, 0.85)" />
-            <stop offset="40%" stopColor="rgba(157, 107, 255, 0.15)" />
-            <stop offset="100%" stopColor="rgba(157, 107, 255, 0)" />
-          </linearGradient>
-        </defs>
         <circle
           cx="100"
           cy="100"
           r="92"
           fill="none"
-          stroke="url(#jarvis-ring-outer-grad)"
+          stroke={p.primary}
+          strokeOpacity="0.6"
           strokeWidth="1.5"
           strokeDasharray="4 8"
         />
@@ -113,16 +151,15 @@ export function VoiceOrb({ state, size = 240 }: VoiceOrbProps) {
         />
       </svg>
 
-      {/* Cœur de l'orb : sphère gradient */}
+      {/* Cœur de l'orb : sphère gradient, couleur par niveau */}
       <span
         className="jarvis-core"
         style={{
-          background: isActive
-            ? "radial-gradient(circle at 35% 35%, rgba(180, 149, 255, 0.95) 0%, rgba(107, 63, 182, 0.85) 50%, rgba(34, 25, 50, 0.95) 100%)"
-            : "radial-gradient(circle at 35% 35%, rgba(150, 124, 220, 0.6) 0%, rgba(90, 60, 150, 0.5) 50%, rgba(34, 25, 50, 0.85) 100%)",
+          background: `radial-gradient(circle at 35% 35%, ${p.coreLight} 0%, ${p.primary} 50%, ${p.coreDark} 100%)`,
+          opacity: isActive ? 1 : 0.7,
           boxShadow: isActive
-            ? "0 0 50px rgba(157, 107, 255, 0.6), inset 0 0 30px rgba(180, 149, 255, 0.35), inset 0 -12px 30px rgba(20, 9, 31, 0.6)"
-            : "0 0 35px rgba(157, 107, 255, 0.3), inset 0 0 25px rgba(157, 107, 255, 0.15), inset 0 -10px 25px rgba(20, 9, 31, 0.6)",
+            ? `0 0 50px ${p.primarySoft}, inset 0 0 30px ${p.primarySoft}, inset 0 -12px 30px rgba(20, 9, 31, 0.6)`
+            : `0 0 30px ${p.primarySoft}, inset 0 0 22px ${p.primarySoft}, inset 0 -10px 25px rgba(20, 9, 31, 0.6)`,
         }}
         aria-hidden="true"
       />

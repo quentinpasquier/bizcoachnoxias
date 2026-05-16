@@ -36,8 +36,8 @@ const STEPS: Step[] = [
   },
   {
     eyebrow: "Étape 4",
-    title: "Une récompense chaque fin de mois",
-    body: "Selon le rang sur lequel tu termines le mois, tu reçois une récompense : 1 € à Bronze I, jusqu'à 30 € à Master IV. Plus tu progresses, plus la récompense grossit. À toi de te maintenir au sommet.",
+    title: "Un cadeau physique chaque fin de mois",
+    body: "Selon ton rang en fin de mois, tu reçois un cadeau : 1 café à Bronze I, viennoiserie, ciné, restos, vins, jusqu'à 1 carte cadeau prestige 30 € à Master IV. Plus tu grimpes, plus le cadeau est gros.",
     accent: "#3CC879",
     emoji: "🎁",
   },

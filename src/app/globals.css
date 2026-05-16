@@ -1670,14 +1670,14 @@
    .card classique devient transparente verre dépoli sur app-shell
    ===================================================================== */
 .app-shell .card {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.10);
-  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.10) !important;
+  color: #FFFFFF !important;
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   box-shadow:
     0 8px 24px rgba(11, 6, 22, 0.32),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
 }
 .app-shell .card-hover:hover {
   background: rgba(255, 255, 255, 0.08);
@@ -1727,6 +1727,12 @@
 }
 .app-shell .card .eyebrow {
   color: rgba(255, 255, 255, 0.5);
+}
+
+/* Stat tiles dans les cards glass */
+.app-shell .stat-tile {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 /* Inputs sur glass : transparents */

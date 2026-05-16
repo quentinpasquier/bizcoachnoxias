@@ -163,7 +163,7 @@ export function NewSessionForm({
                   {c.value_proposition && (
                     <p
                       className="text-small mt-2 line-clamp-2"
-                      style={{ color: "var(--color-dark)" }}
+                      style={{ color: "#FFFFFF" }}
                     >
                       {c.value_proposition}
                     </p>
@@ -186,7 +186,7 @@ export function NewSessionForm({
             >
               {personaOptions.length === 0 ? (
                 <Card variant="lavender">
-                  <p style={{ color: "var(--color-gray)" }}>
+                  <p style={{ color: "rgba(255, 255, 255, 0.65)" }}>
                     Aucun persona n&apos;a été extrait pour ce client. Uploade
                     des docs ou ajoute-les manuellement dans la fiche client.
                   </p>
@@ -207,7 +207,7 @@ export function NewSessionForm({
                         {profile?.role && (
                           <p
                             className="text-small mt-1"
-                            style={{ color: "var(--color-gray)" }}
+                            style={{ color: "rgba(255, 255, 255, 0.65)" }}
                           >
                             {profile.role}
                           </p>
@@ -215,7 +215,7 @@ export function NewSessionForm({
                         {profile?.typical_company && (
                           <p
                             className="text-meta mt-1"
-                            style={{ color: "var(--color-gray)" }}
+                            style={{ color: "rgba(255, 255, 255, 0.65)" }}
                           >
                             {profile.typical_company}
                           </p>
@@ -250,7 +250,7 @@ export function NewSessionForm({
                     </div>
                     <p
                       className="text-small"
-                      style={{ color: "var(--color-gray)" }}
+                      style={{ color: "rgba(255, 255, 255, 0.65)" }}
                     >
                       {d.description}
                     </p>
@@ -339,7 +339,7 @@ function Stepper({ completed, total }: { completed: number; total: number }) {
       </div>
       <span
         className="text-small font-semibold"
-        style={{ color: "var(--color-gray)" }}
+        style={{ color: "rgba(255, 255, 255, 0.65)" }}
       >
         {completed}/{total} étapes
       </span>
@@ -376,7 +376,7 @@ function StepSection({
           {subtitle && (
             <p
               className="text-small mt-0.5"
-              style={{ color: "var(--color-gray)" }}
+              style={{ color: "rgba(255, 255, 255, 0.65)" }}
             >
               {subtitle}
             </p>
@@ -418,7 +418,7 @@ function SelectableCard({
             width: "24px",
             height: "24px",
             background: "var(--color-green)",
-            color: "var(--color-dark)",
+            color: "#FFFFFF",
           }}
           aria-hidden="true"
         >
@@ -615,7 +615,7 @@ function AvatarCard({
                     width: "18px",
                     height: "18px",
                     background: "var(--color-green)",
-                    color: "var(--color-dark)",
+                    color: "#FFFFFF",
                     fontSize: "0.6875rem",
                   }}
                   aria-hidden="true"
@@ -884,7 +884,7 @@ function _UnusedRecapCard({
       {!ready && (
         <p
           className="text-meta mt-3 text-center"
-          style={{ color: "var(--color-gray)" }}
+          style={{ color: "rgba(255, 255, 255, 0.65)" }}
         >
           Complète les 4 étapes pour démarrer
         </p>

@@ -130,11 +130,13 @@ function ClientCard({ client }: { client: ClientWithStats }) {
         {/* Header : nom + statut */}
         <div className="flex items-start justify-between gap-3 mb-2">
           <div className="min-w-0">
-            <h3 className="text-h4">{client.name}</h3>
+            <h3 className="text-h4" style={{ color: "#FFFFFF" }}>
+              {client.name}
+            </h3>
             {client.sector && (
               <p
                 className="text-meta uppercase tracking-widest mt-1"
-                style={{ color: "var(--color-gray)" }}
+                style={{ color: "var(--color-green)", fontWeight: 700 }}
               >
                 {client.sector}
               </p>
@@ -147,7 +149,7 @@ function ClientCard({ client }: { client: ClientWithStats }) {
         {(client.value_proposition || client.product_pitch) && (
           <p
             className="text-small mt-2 mb-4 line-clamp-2"
-            style={{ color: "var(--color-dark)" }}
+            style={{ color: "rgba(255, 255, 255, 0.78)" }}
           >
             {client.value_proposition ?? client.product_pitch}
           </p>
@@ -156,8 +158,10 @@ function ClientCard({ client }: { client: ClientWithStats }) {
         {/* Personas count + barre */}
         <div className="mt-auto pt-4 space-y-3">
           <div className="flex items-center justify-between text-small">
-            <span style={{ color: "var(--color-gray)" }}>Personas extraits</span>
-            <span style={{ color: "var(--color-dark)", fontWeight: 600 }}>
+            <span style={{ color: "rgba(255, 255, 255, 0.6)" }}>
+              Personas extraits
+            </span>
+            <span style={{ color: "#FFFFFF", fontWeight: 600 }}>
               {client.persona_count}
             </span>
           </div>
@@ -193,13 +197,17 @@ function StatTile({ label, value }: { label: string; value: string }) {
     <div className="stat-tile">
       <div
         className="text-meta uppercase tracking-widest"
-        style={{ color: "var(--color-gray)", fontSize: "0.6875rem" }}
+        style={{
+          color: "rgba(255, 255, 255, 0.55)",
+          fontSize: "0.6875rem",
+          fontWeight: 700,
+        }}
       >
         {label}
       </div>
       <div
         className="text-body font-semibold mt-1"
-        style={{ color: "var(--color-dark)" }}
+        style={{ color: "#FFFFFF" }}
       >
         {value}
       </div>
