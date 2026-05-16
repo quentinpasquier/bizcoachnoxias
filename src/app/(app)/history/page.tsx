@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { HistoryBoard } from "./HistoryBoard";
+import { TeamLeaderboard } from "./TeamLeaderboard";
 import type { Client, SessionRow, UserRole } from "@/lib/supabase/types";
 
 export default async function HistoryPage() {
@@ -80,10 +81,17 @@ export default async function HistoryPage() {
 
       {sessions.length === 0 ? (
         <Card variant="lavender" className="text-center py-14">
-          <p style={{ color: "var(--color-gray)" }}>
+          <p style={{ color: "rgba(255, 255, 255, 0.65)" }}>
             Aucune session pour l&apos;instant.
           </p>
         </Card>
+      ) : isManager ? (
+        <TeamLeaderboard
+          sessions={sessions}
+          clientById={clientByIdObj}
+          profileById={profileById}
+          myUserId={myUserId}
+        />
       ) : (
         <HistoryBoard
           sessions={sessions}
