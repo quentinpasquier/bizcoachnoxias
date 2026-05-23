@@ -61,6 +61,15 @@ export async function POST(request: Request) {
 
   const voice = pickVoice(gender, seed);
 
+  // gpt-4o-mini-tts (mars 2025) : modèle de voix steerable qui accepte un
+  // champ `instructions`. Plus naturel que tts-1-hd pour le français et
+  // surtout : on peut imposer un accent spécifique (français de France) et
+  // un ton (dynamique, professionnel pressé) au lieu de subir la prononciation
+  // anglo-saxonne par défaut. Cout : ~$0.015 / minute audio, vs $0.030/1K
+  // characters pour tts-1-hd — similaire en pratique pour des replies courtes.
+  const instructions =
+    "Parle en français de France métropolitain, accent neutre parisien (jamais québécois, jamais belge, jamais suisse). Ton : professionnel mais dynamique, légèrement pressé comme un dirigeant qui vient de prendre un appel imprévu de prospection commerciale. Articule naturellement, sans exagérer. Les hésitations courtes (\"euh\", \"hum\") sont permises si elles sont dans le texte, mais ne les ajoute pas. Rythme : conversationnel, pas posé comme une lecture.";
+
   const response = await fetch(OPENAI_TTS_URL, {
     method: "POST",
     headers: {
@@ -68,11 +77,12 @@ export async function POST(request: Request) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "tts-1-hd",
+      model: "gpt-4o-mini-tts",
       input: text,
       voice,
+      instructions,
       response_format: "mp3",
-      speed: 1.05,
+      speed: 1.08,
     }),
   });
 
