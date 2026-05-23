@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   suggestPersonas,
   suggestObjections,
+  suggestHook,
   type OfferContext,
 } from "@/lib/guided-suggester";
 
@@ -10,7 +11,7 @@ export const maxDuration = 60;
 export const runtime = "nodejs";
 
 interface RequestBody {
-  type: "personas" | "objections";
+  type: "personas" | "objections" | "hook";
   context: OfferContext;
   count?: number;
 }
@@ -63,8 +64,12 @@ export async function POST(request: Request) {
       const objections = await suggestObjections(body.context, body.count ?? 15);
       return NextResponse.json({ objections });
     }
+    if (body.type === "hook") {
+      const result = await suggestHook(body.context);
+      return NextResponse.json(result);
+    }
     return NextResponse.json(
-      { error: "Type de suggestion inconnu (personas | objections)." },
+      { error: "Type de suggestion inconnu (personas | objections | hook)." },
       { status: 400 },
     );
   } catch (err) {

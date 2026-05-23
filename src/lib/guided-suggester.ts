@@ -92,6 +92,57 @@ Génère ${count} personas adaptés.`;
   return parsed.personas.slice(0, count);
 }
 
+export interface HookSuggestion {
+  hook: string;
+  killer_arguments: string[];
+}
+
+export async function suggestHook(ctx: OfferContext): Promise<HookSuggestion> {
+  const system = `Tu es coach commercial expert du cold call B2B en France. À partir d'une offre, tu génères :
+1. Une accroche d'ouverture (brise-glace) de 2 à 3 phrases que le commercial peut placer dans les 15 premières secondes d'un appel à froid. Ton direct, sans jargon, qui interpelle la douleur du prospect plutôt que de pitcher l'offre.
+2. 5 à 7 arguments massue (killer arguments) : des phrases courtes (max 20 mots) qui retournent une objection ou ferment un closing. Style oral, marquant, avec une image forte si possible.
+
+Règles :
+- Réponds UNIQUEMENT en JSON valide.
+- En français.
+- Pas de "Bonjour je m'appelle X de la société Y" — ça c'est du pitch creux. Va sur la douleur ou un constat marquant.
+- Les arguments massue doivent pouvoir se dire à l'oral sans transition.
+
+Format JSON EXACT :
+{
+  "hook": "<2-3 phrases, l'accroche complète>",
+  "killer_arguments": ["<argument 1>", "<argument 2>", ...]
+}`;
+
+  const user = `Contexte de l'offre :
+- Nom : ${ctx.name || "(non renseigné)"}
+- Secteur : ${ctx.sector || "(non renseigné)"}
+- Promesse : ${ctx.value_prop_one_liner || "(non renseignée)"}
+- Pitch : ${ctx.product_pitch || "(non renseigné)"}
+- Cibles : ${ctx.ideal_targets || "(non renseigné)"}
+
+Génère l'accroche d'ouverture et les arguments massue.`;
+
+  const response = await getAnthropic().messages.create({
+    model: SUGGEST_MODEL,
+    max_tokens: 2000,
+    system,
+    messages: [{ role: "user", content: user }],
+  });
+
+  const block = response.content.find((b) => b.type === "text");
+  if (!block || block.type !== "text") {
+    throw new Error("Claude n'a rien renvoyé");
+  }
+  const parsed = parseJson<HookSuggestion>(block.text);
+  return {
+    hook: typeof parsed.hook === "string" ? parsed.hook : "",
+    killer_arguments: Array.isArray(parsed.killer_arguments)
+      ? parsed.killer_arguments.map(String).filter(Boolean).slice(0, 8)
+      : [],
+  };
+}
+
 export async function suggestObjections(
   ctx: OfferContext,
   count = 15,

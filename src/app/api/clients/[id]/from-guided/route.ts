@@ -9,13 +9,16 @@ import {
 export const maxDuration = 90;
 export const runtime = "nodejs";
 
-// Crée un client à partir du wizard "configuration guidée" (orgs clientes).
-// Le payload du wizard est sérialisé en un blob structuré qui mime une matrice
-// de prospection + boîte à outils, puis passé au pipeline extractClientFields()
-// existant. Aucun changement de schéma DB.
-export async function POST(request: Request) {
+// Met à jour un client existant à partir du wizard guidé. Le payload remplace
+// l'ancien guided_payload, est sérialisé en blob structuré, puis re-passé à
+// extractClientFields() pour régénérer persona_profiles, typical_objections,
+// etc. La RLS Supabase gère qui peut modifier quel client.
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
   const supabase = await createClient();
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -73,7 +76,7 @@ export async function POST(request: Request) {
 
   const { data, error } = await supabase
     .from("clients")
-    .insert({
+    .update({
       name: clientName,
       sector: extracted.sector ?? payload.sector?.trim() ?? null,
       description: extracted.description,
@@ -86,17 +89,15 @@ export async function POST(request: Request) {
       persona_profiles: extracted.persona_profiles,
       synced_content: synthetic,
       synced_at: new Date().toISOString(),
-      synced_files: [],
       guided_payload: payload,
-      active: true,
-      created_by: user.id,
     })
+    .eq("id", id)
     .select("id, name")
     .single();
 
   if (error || !data) {
     return NextResponse.json(
-      { error: error?.message ?? "Création de l'offre impossible" },
+      { error: error?.message ?? "Mise à jour impossible" },
       { status: 500 },
     );
   }

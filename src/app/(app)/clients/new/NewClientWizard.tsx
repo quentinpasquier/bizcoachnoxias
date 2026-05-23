@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
@@ -11,6 +11,8 @@ import type {
   GuidedWizardPayload,
 } from "@/lib/guided-serializer";
 import type { SuggestedPersona } from "@/lib/guided-suggester";
+
+const DRAFT_STORAGE_KEY = "bizcoach_wizard_draft_v1";
 
 const COMMON_OBJECTIONS: string[] = [
   "On a déjà un prestataire",
@@ -69,16 +71,78 @@ function emptyPayload(): GuidedWizardPayload {
   };
 }
 
-export function NewClientWizard() {
+interface NewClientWizardProps {
+  initial?: {
+    id: string;
+    payload: GuidedWizardPayload;
+  };
+}
+
+export function NewClientWizard({ initial }: NewClientWizardProps = {}) {
   const router = useRouter();
+  const isEdit = Boolean(initial);
   const [step, setStep] = useState(0);
-  const [payload, setPayload] = useState<GuidedWizardPayload>(emptyPayload());
+  const [payload, setPayload] = useState<GuidedWizardPayload>(
+    initial?.payload ?? emptyPayload(),
+  );
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [suggesting, setSuggesting] = useState<null | "personas" | "objections">(
-    null,
-  );
+  const [suggesting, setSuggesting] = useState<
+    null | "personas" | "objections" | "hook"
+  >(null);
   const [expandedPersona, setExpandedPersona] = useState<number | null>(0);
+  const [draftRestored, setDraftRestored] = useState(false);
+  const hydrated = useRef(false);
+
+  // Hydratation localStorage : si on est en mode création et qu'un brouillon
+  // existe, on le restaure au montage. Pas de localStorage en mode édition
+  // (l'état initial vient du DB).
+  useEffect(() => {
+    if (isEdit) return;
+    if (typeof window === "undefined") return;
+    if (hydrated.current) return;
+    hydrated.current = true;
+    try {
+      const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { payload: GuidedWizardPayload };
+      if (parsed && typeof parsed.payload === "object") {
+        setPayload(parsed.payload);
+        setDraftRestored(true);
+      }
+    } catch {
+      // ignore — brouillon corrompu
+    }
+  }, [isEdit]);
+
+  // Sauvegarde localStorage à chaque changement du payload en mode création.
+  useEffect(() => {
+    if (isEdit) return;
+    if (typeof window === "undefined") return;
+    if (!hydrated.current) return;
+    try {
+      window.localStorage.setItem(
+        DRAFT_STORAGE_KEY,
+        JSON.stringify({ payload, savedAt: Date.now() }),
+      );
+    } catch {
+      // ignore — quota dépassé / mode privé
+    }
+  }, [payload, isEdit]);
+
+  function clearDraft() {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+    }
+  }
+
+  function resetWizard() {
+    if (!confirm("Repartir de zéro ? Le brouillon en cours sera effacé.")) return;
+    setPayload(emptyPayload());
+    setStep(0);
+    setDraftRestored(false);
+    clearDraft();
+  }
 
   function patch(p: Partial<GuidedWizardPayload>) {
     setPayload((prev) => ({ ...prev, ...p }));
@@ -206,6 +270,50 @@ export function NewClientWizard() {
     }
   }
 
+  async function handleSuggestHook() {
+    if (!payload.value_prop_one_liner.trim() && !payload.product_pitch.trim()) {
+      setError(
+        "Remplis d'abord la promesse ou le pitch produit pour que Claude puisse suggérer.",
+      );
+      return;
+    }
+    setError(null);
+    setSuggesting("hook");
+    try {
+      const res = await fetch("/api/clients/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "hook",
+          context: {
+            name: payload.name,
+            sector: payload.sector,
+            value_prop_one_liner: payload.value_prop_one_liner,
+            product_pitch: payload.product_pitch,
+            ideal_targets: payload.ideal_targets,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Échec de la suggestion");
+      const newHook = (data.hook ?? "").trim();
+      const newArgs: string[] = data.killer_arguments ?? [];
+      const existingArgs = payload.killer_arguments
+        .split(/\r?\n/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const merged = Array.from(new Set([...existingArgs, ...newArgs]));
+      patch({
+        hook: payload.hook.trim() ? payload.hook : newHook,
+        killer_arguments: merged.join("\n"),
+      });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSuggesting(null);
+    }
+  }
+
   async function handleSuggestObjections() {
     if (!payload.value_prop_one_liner.trim() && !payload.product_pitch.trim()) {
       setError(
@@ -259,14 +367,19 @@ export function NewClientWizard() {
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch("/api/clients/from-guided", {
-        method: "POST",
+      const url = isEdit
+        ? `/api/clients/${initial!.id}/from-guided`
+        : "/api/clients/from-guided";
+      const method = isEdit ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Création échouée");
-      router.push(`/clients/${data.id}`);
+      if (!res.ok) throw new Error(data.error ?? "Enregistrement échoué");
+      if (!isEdit) clearDraft();
+      router.push(`/clients/${data.id ?? initial!.id}`);
       router.refresh();
     } catch (e) {
       setError((e as Error).message);
@@ -297,6 +410,40 @@ export function NewClientWizard() {
 
   return (
     <div className="space-y-6">
+      {/* Banner brouillon restauré */}
+      {draftRestored && !isEdit && (
+        <div
+          className="rounded-xl p-4 flex items-center justify-between gap-3 flex-wrap"
+          style={{
+            background: "rgba(157, 107, 255, 0.10)",
+            border: "1px solid rgba(157, 107, 255, 0.30)",
+          }}
+        >
+          <p className="text-small" style={{ color: "#FFFFFF" }}>
+            <strong>Brouillon restauré.</strong>{" "}
+            <span style={{ color: "rgba(255, 255, 255, 0.7)" }}>
+              On reprend là où tu t'es arrêté.
+            </span>
+          </p>
+          <button
+            type="button"
+            onClick={resetWizard}
+            className="text-meta"
+            style={{
+              color: "#FFB4B4",
+              background: "rgba(233, 75, 75, 0.10)",
+              border: "1px solid rgba(233, 75, 75, 0.25)",
+              padding: "6px 14px",
+              borderRadius: 999,
+              fontWeight: 700,
+              letterSpacing: "0.05em",
+            }}
+          >
+            Repartir de zéro
+          </button>
+        </div>
+      )}
+
       {/* Stepper */}
       <ol
         className="flex flex-wrap items-center gap-2"
@@ -390,7 +537,12 @@ export function NewClientWizard() {
           />
         )}
         {step === 4 && (
-          <StepHook payload={payload} patch={patch} />
+          <StepHook
+            payload={payload}
+            patch={patch}
+            onSuggest={handleSuggestHook}
+            suggesting={suggesting === "hook"}
+          />
         )}
       </div>
 
@@ -427,7 +579,7 @@ export function NewClientWizard() {
           </Button>
         ) : (
           <Button type="button" variant="primary" onClick={handleSubmit}>
-            Créer l'offre →
+            {isEdit ? "Enregistrer les modifications →" : "Créer l'offre →"}
           </Button>
         )}
       </div>
@@ -958,9 +1110,13 @@ function StepObjections({
 function StepHook({
   payload,
   patch,
+  onSuggest,
+  suggesting,
 }: {
   payload: GuidedWizardPayload;
   patch: (p: Partial<GuidedWizardPayload>) => void;
+  onSuggest: () => void;
+  suggesting: boolean;
 }) {
   return (
     <div className="space-y-5">
@@ -968,6 +1124,37 @@ function StepHook({
         title="L'accroche et les arguments massue"
         subtitle="La porte d'entrée d'un appel et les phrases qui font mouche. Optionnel mais ça enrichit l'entraînement."
       />
+
+      <div
+        className="flex items-center justify-between gap-3 flex-wrap rounded-xl p-4"
+        style={{
+          background: "rgba(157, 107, 255, 0.08)",
+          border: "1px solid rgba(157, 107, 255, 0.25)",
+        }}
+      >
+        <div className="min-w-0 flex-1">
+          <p style={{ color: "#FFFFFF", fontWeight: 700, fontSize: "0.9rem" }}>
+            Pas inspiré ?
+          </p>
+          <p
+            className="text-meta mt-1"
+            style={{ color: "rgba(255, 255, 255, 0.7)" }}
+          >
+            Claude peut te générer un brise-glace + 5-7 arguments massue à
+            partir de ta promesse. Tu édites ensuite.
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onSuggest}
+          loading={suggesting}
+          disabled={suggesting}
+        >
+          {suggesting ? "Génération..." : "Suggérer le brise-glace"}
+        </Button>
+      </div>
+
       <Textarea
         id="hook"
         label="Accroche d'ouverture"

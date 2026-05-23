@@ -14,6 +14,7 @@ import {
   rankProgress,
   ppnForSession,
 } from "@/lib/ranks";
+import { getClientVocab } from "@/lib/vocabulary";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,7 @@ export default async function DashboardPage() {
   let myUserId: string | null = null;
   let myAvatarUrl: string | null = null;
   let role: UserRole = "commercial";
+  let organizationId: string | null = null;
 
   if (configured) {
     const {
@@ -44,7 +46,7 @@ export default async function DashboardPage() {
       myUserId = user.id;
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, first_name, role, avatar_url")
+        .select("full_name, first_name, role, avatar_url, organization_id")
         .eq("id", user.id)
         .single();
       const p = profile as {
@@ -52,7 +54,9 @@ export default async function DashboardPage() {
         first_name?: string | null;
         role?: UserRole;
         avatar_url?: string | null;
+        organization_id?: string | null;
       } | null;
+      organizationId = p?.organization_id ?? null;
       myAvatarUrl = p?.avatar_url ?? null;
       role = p?.role ?? "commercial";
       const firstName = p?.first_name?.trim();
@@ -102,6 +106,7 @@ export default async function DashboardPage() {
   }
   const isManager =
     role === "manager" || role === "org_admin" || role === "platform_admin";
+  const vocab = getClientVocab(organizationId);
 
   // ---------- Stats perso ----------
   const completed = myAllSessions.filter((s) => s.status === "completed");
@@ -189,7 +194,7 @@ export default async function DashboardPage() {
           </div>
           <div className="flex gap-3 shrink-0 flex-wrap">
             <Link href="/clients" className="mission-cta mission-cta-ghost">
-              Mes clients
+              {vocab.myItems}
             </Link>
             <Link href="/sessions/new" className="mission-cta">
               Lancer une mission →
@@ -259,13 +264,14 @@ export default async function DashboardPage() {
               <div>
                 <span className="mission-eyebrow">Tes terrains de jeu</span>
                 <h2 className="mission-h1" style={{ fontSize: "1.6rem" }}>
-                  {clients.length} client{clients.length > 1 ? "s" : ""}{" "}
+                  {clients.length}{" "}
+                  {clients.length > 1 ? vocab.plural : vocab.singular}{" "}
                   en pipeline.
                 </h2>
               </div>
               {clients.length > 6 && (
                 <Link href="/clients" className="mission-link">
-                  Voir tous les clients →
+                  Voir tout →
                 </Link>
               )}
             </div>

@@ -4,7 +4,7 @@ import { NewClientUploader } from "./NewClientUploader";
 import { NewClientWizard } from "./NewClientWizard";
 import { getCurrentUser } from "@/lib/auth-helpers";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { NOXIAS_ORG_ID } from "@/lib/supabase/types";
+import { getClientVocab, isNoxiasOrg } from "@/lib/vocabulary";
 
 export const dynamic = "force-dynamic";
 
@@ -18,9 +18,10 @@ export default async function NewClientPage({
   if (!user) redirect("/login");
 
   const params = await searchParams;
-  const isNoxias = user.profile.organization_id === NOXIAS_ORG_ID;
+  const isNoxias = isNoxiasOrg(user.profile.organization_id);
   const forceUpload = params.mode === "upload";
   const showWizard = !isNoxias && !forceUpload;
+  const vocab = getClientVocab(user.profile.organization_id);
 
   return (
     <div className="container-noxias py-10 max-w-3xl">
@@ -30,12 +31,10 @@ export default async function NewClientPage({
           className="text-small hover:underline"
           style={{ color: "rgba(255, 255, 255, 0.65)" }}
         >
-          ← Retour aux offres
+          ← Retour aux {vocab.plural}
         </Link>
         <span className="divider-green block mb-3 mt-4" />
-        <h1 className="text-h2">
-          {showWizard ? "Nouvelle offre" : "Nouveau client"}
-        </h1>
+        <h1 className="text-h2">{vocab.newItem}</h1>
         <p
           className="text-body-l mt-2"
           style={{ color: "rgba(255, 255, 255, 0.65)" }}
