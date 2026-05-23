@@ -50,7 +50,7 @@ export default async function LoginPage({
             </h1>
             <p className="login-tagline">
               Deviens un expert du cold call et fais exploser{" "}
-              <span className="login-tagline-accent">tes primes</span>.
+              <span className="login-tagline-accent">tes résultats</span>.
             </p>
             <p className="login-subtitle">
               Scoring sur 20 critères, classement équipe en direct, badges

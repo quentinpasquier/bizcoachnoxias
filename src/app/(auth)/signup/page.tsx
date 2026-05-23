@@ -23,15 +23,16 @@ export default function SignUpPage() {
               className="text-body-l mt-2"
               style={{ color: "var(--color-gray)" }}
             >
-              Outil interne Noxias. Les comptes commerciaux sont créés par
-              l'administrateur.
+              Accès sur invitation. Les comptes sont créés par l'administrateur
+              de ton organisation.
             </p>
           </div>
 
           <Card className="space-y-3">
             <p className="text-body" style={{ color: "var(--color-dark)" }}>
-              Pour obtenir un accès, contacte l'administrateur Noxias. Il te
-              communiquera tes identifiants après création du compte.
+              Pour obtenir un accès, contacte l'administrateur de ton
+              organisation. Il te communiquera tes identifiants après création
+              du compte.
             </p>
           </Card>
 
