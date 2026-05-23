@@ -108,11 +108,26 @@ export function pickFrenchVoice(gender: Gender): SpeechSynthesisVoice | null {
   ];
   const lowQualityKeywords = ["compact", "espeak"];
 
+  // Voix typiquement québécoises/canadiennes du système, à éviter pour un
+  // prospect français de France (l'accent dépayse l'oreille de l'utilisateur).
+  // Liste basée sur les noms par défaut macOS, Windows et Google.
+  const canadianKeywords = [
+    "amelie",
+    "amélie",
+    "chantal",
+    "caroline",
+    "nathalie",
+    "felix",
+    "félix",
+    "jacques",
+  ];
+
   const genderTargets = gender === "homme" ? masculineKeywords : feminineKeywords;
   const oppositeTargets = gender === "homme" ? feminineKeywords : masculineKeywords;
 
   const scored = french.map((v) => {
     const name = v.name.toLowerCase();
+    const lang = v.lang.toLowerCase();
     let score = 0;
 
     if (genderTargets.some((kw) => name.includes(kw))) score += 100;
@@ -122,21 +137,42 @@ export function pickFrenchVoice(gender: Gender): SpeechSynthesisVoice | null {
     if (lowQualityKeywords.some((kw) => name.includes(kw))) score -= 30;
 
     if (v.localService === false) score += 20;
-    if (v.lang.toLowerCase() === "fr-fr") score += 5;
+
+    // Très forte préférence pour le français de France (fr-FR) plutôt que
+    // canadien (fr-CA) ou belge (fr-BE). +300 pour fr-FR, -500 pour fr-CA
+    // afin que MÊME si c'est la seule voix masculine/féminine dispo, on
+    // préfère un autre genre fr-FR plutôt qu'un fr-CA du bon genre.
+    if (lang === "fr-fr" || lang === "fr") score += 300;
+    if (lang === "fr-ca") score -= 500;
+    if (lang === "fr-be" || lang === "fr-ch") score -= 100;
+
+    // Pénalité supplémentaire sur les noms typiquement québécois.
+    if (canadianKeywords.some((kw) => name.includes(kw))) score -= 200;
+
     if (v.default) score += 1;
 
     return { voice: v, score };
   });
 
-  scored.sort((a, b) => b.score - a.score);
+  // Filtre dur : si on a au moins une voix fr-FR, on jette les fr-CA.
+  // Évite le cas dégueulasse "le seul homme français dispo est Quebecois".
+  const hasFrFr = scored.some((s) => {
+    const l = s.voice.lang.toLowerCase();
+    return l === "fr-fr" || l === "fr";
+  });
+  const filtered = hasFrFr
+    ? scored.filter((s) => s.voice.lang.toLowerCase() !== "fr-ca")
+    : scored;
 
-  if (typeof window !== "undefined" && scored[0]) {
+  filtered.sort((a, b) => b.score - a.score);
+
+  if (typeof window !== "undefined" && filtered[0]) {
     console.info(
-      `[TTS] Voix navigateur : ${scored[0].voice.name} (score ${scored[0].score})`,
+      `[TTS] Voix navigateur : ${filtered[0].voice.name} (${filtered[0].voice.lang}, score ${filtered[0].score})`,
     );
   }
 
-  return scored[0]?.voice ?? french[0] ?? null;
+  return filtered[0]?.voice ?? french[0] ?? null;
 }
 
 interface SpeakOptions {
@@ -320,6 +356,7 @@ interface MinimalSpeechRecognition {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
+  maxAlternatives: number;
   start(): void;
   stop(): void;
   abort(): void;
@@ -379,7 +416,97 @@ export function createRecognition(
   // continuous: false → s'arrête tout seul après un silence (auto-VAD)
   recognition.continuous = options.continuous ?? true;
   recognition.interimResults = true;
+  recognition.maxAlternatives = 3;
   return recognition;
 }
 
 export type { MinimalSpeechRecognition, SpeechRecognitionEvent };
+
+// =====================================================================
+// MediaRecorder + Whisper backend : transcription haute qualité côté
+// serveur en complément du Web Speech (qui sert pour la preview interim).
+// =====================================================================
+
+// Demande l'accès micro avec les contraintes audio qui aident le plus la
+// transcription : noise suppression, echo cancellation, auto gain control.
+// Le stream retourné est partagé entre MediaRecorder et SpeechRecognition.
+export async function requestMicrophoneStream(): Promise<MediaStream | null> {
+  if (typeof window === "undefined") return null;
+  if (!navigator.mediaDevices?.getUserMedia) return null;
+  try {
+    return await navigator.mediaDevices.getUserMedia({
+      audio: {
+        noiseSuppression: true,
+        echoCancellation: true,
+        autoGainControl: true,
+        channelCount: 1,
+      },
+    });
+  } catch {
+    return null;
+  }
+}
+
+// Choisit le mimeType MediaRecorder le mieux supporté par le navigateur.
+// Whisper accepte webm/opus, mp4, ogg : on prend ce qui est dispo.
+export function pickRecorderMimeType(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  if (typeof MediaRecorder === "undefined") return undefined;
+  const candidates = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/ogg;codecs=opus",
+    "audio/mp4",
+  ];
+  for (const c of candidates) {
+    if (MediaRecorder.isTypeSupported(c)) return c;
+  }
+  return undefined;
+}
+
+// Envoie un blob audio à /api/transcribe et renvoie la transcription.
+// Si le backend est indisponible (pas d'OPENAI_API_KEY), renvoie null pour
+// que l'appelant retombe sur la transcription Web Speech.
+export async function transcribeAudio(
+  blob: Blob,
+  options: { prompt?: string; signal?: AbortSignal } = {},
+): Promise<string | null> {
+  const form = new FormData();
+  form.append("audio", blob, `recording.${blob.type.includes("ogg") ? "ogg" : "webm"}`);
+  if (options.prompt) form.append("prompt", options.prompt);
+
+  try {
+    const res = await fetch("/api/transcribe", {
+      method: "POST",
+      body: form,
+      signal: options.signal,
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { text?: string };
+    return (data.text ?? "").trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+// Indique si Whisper est dispo côté backend (clé OpenAI configurée).
+// Vérifié 1× par session via le client pour ne pas faire la requête à chaque
+// début d'écoute. Met en cache le résultat.
+let whisperAvailableCache: boolean | null = null;
+export async function isWhisperAvailable(): Promise<boolean> {
+  if (whisperAvailableCache !== null) return whisperAvailableCache;
+  if (typeof window === "undefined") return false;
+  try {
+    const res = await fetch("/api/transcribe", { method: "GET" });
+    if (!res.ok) {
+      whisperAvailableCache = false;
+      return false;
+    }
+    const data = (await res.json()) as { available?: boolean };
+    whisperAvailableCache = Boolean(data.available);
+    return whisperAvailableCache;
+  } catch {
+    whisperAvailableCache = false;
+    return false;
+  }
+}

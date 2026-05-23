@@ -393,7 +393,9 @@
   }
   .nav-pill-config.nav-pill-active {
     background: #FFFFFF;
-    color: var(--color-dark);
+    /* Hardcode foncé : .app-shell réassigne --color-dark à #FFFFFF, donc
+       var(--color-dark) ici donnait du blanc-sur-blanc invisible. */
+    color: #221932;
   }
 
   .nav-pill-primary {
@@ -490,7 +492,7 @@
 }
 .animate-ring { animation: ring 1.4s ease-out infinite; }
 
-/* ========== LOGIN PAGE — wahou layout ========== */
+/* ========== LOGIN PAGE · wahou layout ========== */
 .login-page {
   position: relative;
   min-height: 100vh;
@@ -1318,7 +1320,7 @@
 }
 
 /* =============================================================================
-   MISSION SPACE — design system partagé pour les surfaces gameifiées
+   MISSION SPACE · design system partagé pour les surfaces gameifiées
    (dashboard, sessions/new, briefing, leaderboard, feedback).
    ============================================================================= */
 .mission-page {
@@ -1685,7 +1687,7 @@
 }
 
 /* =====================================================================
-   GLASS CARDS — style iOS 26 / Liquid Glass
+   GLASS CARDS · style iOS 26 / Liquid Glass
    .card classique devient transparente verre dépoli sur app-shell
    ===================================================================== */
 .app-shell .card {
@@ -1898,7 +1900,7 @@
   color: rgba(255, 255, 255, 0.35);
 }
 
-/* SelectableCard glass — pour le formulaire NewSession */
+/* SelectableCard glass · pour le formulaire NewSession */
 .selectable-card {
   position: relative;
   width: 100%;
@@ -2147,7 +2149,7 @@
   to { transform: rotate(360deg); }
 }
 
-/* ========== EVALUATOR — débrief en cours ========== */
+/* ========== EVALUATOR · débrief en cours ========== */
 .evaluator-card {
   position: relative;
   overflow: hidden;
@@ -2445,7 +2447,7 @@
 }
 
 /* =============================================================================
-   CHATROOM — page d'appel en violet
+   CHATROOM · page d'appel en violet
    ============================================================================= */
 .chatroom {
   position: relative;

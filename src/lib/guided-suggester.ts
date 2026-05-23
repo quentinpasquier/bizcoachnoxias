@@ -82,7 +82,7 @@ Génère ${count} personas adaptés.`;
 
   const block = response.content.find((b) => b.type === "text");
   if (!block || block.type !== "text") {
-    throw new Error("Claude n'a rien renvoyé");
+    throw new Error("Le cerveau IA n'a rien renvoyé");
   }
 
   const parsed = parseJson<{ personas: SuggestedPersona[] }>(block.text);
@@ -105,7 +105,7 @@ export async function suggestHook(ctx: OfferContext): Promise<HookSuggestion> {
 Règles :
 - Réponds UNIQUEMENT en JSON valide.
 - En français.
-- Pas de "Bonjour je m'appelle X de la société Y" — ça c'est du pitch creux. Va sur la douleur ou un constat marquant.
+- Pas de "Bonjour je m'appelle X de la société Y", ça c'est du pitch creux. Va sur la douleur ou un constat marquant.
 - Les arguments massue doivent pouvoir se dire à l'oral sans transition.
 
 Format JSON EXACT :
@@ -132,7 +132,7 @@ Génère l'accroche d'ouverture et les arguments massue.`;
 
   const block = response.content.find((b) => b.type === "text");
   if (!block || block.type !== "text") {
-    throw new Error("Claude n'a rien renvoyé");
+    throw new Error("Le cerveau IA n'a rien renvoyé");
   }
   const parsed = parseJson<HookSuggestion>(block.text);
   return {
@@ -179,7 +179,7 @@ Génère ${count} objections spécifiques à cette offre.`;
 
   const block = response.content.find((b) => b.type === "text");
   if (!block || block.type !== "text") {
-    throw new Error("Claude n'a rien renvoyé");
+    throw new Error("Le cerveau IA n'a rien renvoyé");
   }
 
   const parsed = parseJson<{ objections: string[] }>(block.text);

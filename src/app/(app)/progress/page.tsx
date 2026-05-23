@@ -714,7 +714,7 @@ function Heatmap({ data }: { data: { date: string; count: number }[] }) {
         return (
           <span
             key={d.date}
-            title={`${d.date} — ${d.count} appels`}
+            title={`${d.date} · ${d.count} appels`}
             style={{
               width: 24,
               height: 24,

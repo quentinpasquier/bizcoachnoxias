@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Renseigne d'abord la promesse ou le pitch produit pour que Claude puisse suggérer.",
+          "Renseigne d'abord la promesse ou le pitch produit pour que le cerveau IA puisse suggérer.",
       },
       { status: 400 },
     );

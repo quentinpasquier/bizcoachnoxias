@@ -128,7 +128,7 @@ export async function generateProspectReply(args: {
 
   const textBlock = response.content.find((b) => b.type === "text");
   if (!textBlock || textBlock.type !== "text") {
-    throw new Error("Réponse Claude vide");
+    throw new Error("Réponse du cerveau IA vide");
   }
 
   return parseSignal(textBlock.text);

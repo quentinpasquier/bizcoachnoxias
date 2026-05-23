@@ -290,7 +290,7 @@ export function CoachMascot({
   );
 }
 
-// Alias de compat — les anciens imports `CamilleMascot` continuent de
+// Alias de compat : les anciens imports `CamilleMascot` continuent de
 // fonctionner pendant la transition. À supprimer une fois tous les imports
 // migrés.
 export const CamilleMascot = CoachMascot;

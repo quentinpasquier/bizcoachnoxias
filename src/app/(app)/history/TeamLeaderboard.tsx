@@ -523,7 +523,7 @@ function PlayerCard({
 
   const lastSessionDate = row.lastSession
     ? formatRelativeFr(row.lastSession.started_at)
-    : "—";
+    : "·";
 
   return (
     <Link

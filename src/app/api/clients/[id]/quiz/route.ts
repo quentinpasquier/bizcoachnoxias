@@ -94,10 +94,10 @@ export async function POST(
     try {
       quiz = await generateQuizFromClient(client);
     } catch (err) {
-      console.error("[quiz] Génération Claude échouée :", err);
-      const msg = (err as Error).message ?? "Erreur Claude inconnue";
+      console.error("[quiz] Génération du cerveau IA échouée :", err);
+      const msg = (err as Error).message ?? "Erreur du cerveau IA inconnue";
       return NextResponse.json(
-        { error: `Génération Claude échouée : ${msg}` },
+        { error: `Génération du cerveau IA échouée : ${msg}` },
         { status: 500 },
       );
     }

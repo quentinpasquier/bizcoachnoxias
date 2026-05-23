@@ -25,7 +25,7 @@ export interface ClientVocab {
 export function isNoxiasOrg(organizationId: string | null | undefined): boolean {
   // Quand l'org est inconnue (mode démo, fallback côté serveur sans profile),
   // on retombe sur le vocabulaire Noxias par sécurité. Tout user connecté a
-  // forcément un organization_id (NOT NULL) — donc cette branche ne tape que
+  // forcément un organization_id (NOT NULL) : donc cette branche ne tape que
   // sur la démo et les cas dégradés.
   if (!organizationId) return true;
   return organizationId === NOXIAS_ORG_ID;

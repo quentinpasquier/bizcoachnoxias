@@ -180,7 +180,7 @@ export function NewClientUploader() {
           id="fallbackName"
           label="Nom du client (optionnel)"
           placeholder="DOKO, Cabinet Mercier, Studio Octant..."
-          hint="Si Claude n'arrive pas à le déduire des docs, on utilisera ce nom."
+          hint="Si le cerveau IA n'arrive pas à le déduire des docs, on utilisera ce nom."
           value={fallbackName}
           onChange={(e) => setFallbackName(e.target.value)}
           disabled={loading}

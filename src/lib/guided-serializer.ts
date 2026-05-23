@@ -1,7 +1,7 @@
 // Convertit le payload du wizard "configuration guidée" (orgs clientes qui
 // n'ont pas de matrice de prospection formalisée) en un blob texte structuré
 // qui mime une matrice + boîte à outils. Ce blob est ensuite passé à
-// extractClientFields() — pas besoin de toucher au pipeline d'extraction
+// extractClientFields() : pas besoin de toucher au pipeline d'extraction
 // existant utilisé par les commerciaux Noxias.
 
 export interface GuidedPersonaInput {

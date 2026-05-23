@@ -6,10 +6,17 @@ export const maxDuration = 30;
 
 const OPENAI_TTS_URL = "https://api.openai.com/v1/audio/speech";
 
-// Pool de voix par genre. La voix retenue varie d'une session à l'autre
-// (déterministe via le seed pour rester stable au sein d'une session).
-const VOICES_HOMME = ["onyx", "echo", "fable", "alloy"];
-const VOICES_FEMME = ["nova", "shimmer", "alloy"];
+// Pool de voix par genre, sélectionnées pour leur naturel en français
+// métropolitain. La voix retenue varie d'une session à l'autre (déterministe
+// via le seed pour rester stable au sein d'une session).
+//
+// Voix écartées sciemment :
+// - fable : accent British, déplacé pour un prospect français
+// - alloy : prononciation anglo-saxonne en français, "ti" mou
+// - ash, sage, ballad, coral, verse : voix plus récentes mais variables
+//   sur le français selon les modèles
+const VOICES_HOMME = ["onyx", "echo"];
+const VOICES_FEMME = ["nova", "shimmer"];
 
 function pickVoice(gender: Gender, seed: string): string {
   const pool = gender === "femme" ? VOICES_FEMME : VOICES_HOMME;
@@ -54,6 +61,15 @@ export async function POST(request: Request) {
 
   const voice = pickVoice(gender, seed);
 
+  // gpt-4o-mini-tts (mars 2025) : modèle de voix steerable qui accepte un
+  // champ `instructions`. Plus naturel que tts-1-hd pour le français et
+  // surtout : on peut imposer un accent spécifique (français de France) et
+  // un ton (dynamique, professionnel pressé) au lieu de subir la prononciation
+  // anglo-saxonne par défaut. Cout : ~$0.015 / minute audio, vs $0.030/1K
+  // characters pour tts-1-hd — similaire en pratique pour des replies courtes.
+  const instructions =
+    "Parle en français de France métropolitain, accent neutre parisien (jamais québécois, jamais belge, jamais suisse). Ton : professionnel mais dynamique, légèrement pressé comme un dirigeant qui vient de prendre un appel imprévu de prospection commerciale. Articule naturellement, sans exagérer. Les hésitations courtes (\"euh\", \"hum\") sont permises si elles sont dans le texte, mais ne les ajoute pas. Rythme : conversationnel, pas posé comme une lecture.";
+
   const response = await fetch(OPENAI_TTS_URL, {
     method: "POST",
     headers: {
@@ -61,11 +77,12 @@ export async function POST(request: Request) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "tts-1-hd",
+      model: "gpt-4o-mini-tts",
       input: text,
       voice,
+      instructions,
       response_format: "mp3",
-      speed: 1.05,
+      speed: 1.08,
     }),
   });
 

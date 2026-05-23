@@ -34,7 +34,7 @@ export function HeaderNav({
 
   return (
     <nav className="hidden md:flex items-center gap-3 flex-1 ml-6">
-      {/* Section GAMING (violet) — la plus importante */}
+      {/* Section GAMING (violet) : la plus importante */}
       <div className="nav-section nav-section-gaming">
         {GAMING_ITEMS.map((item) => {
           const active = isActive(item.href);
@@ -56,7 +56,7 @@ export function HeaderNav({
         })}
       </div>
 
-      {/* Section CONFIG (blanc) — secondaire */}
+      {/* Section CONFIG (blanc) : secondaire */}
       <div className="nav-section nav-section-config">
         {configItems.map((item) => {
           const active = isActive(item.href);
@@ -78,7 +78,7 @@ export function HeaderNav({
             className={`nav-pill nav-pill-config ${
               isActive("/admin") ? "nav-pill-active" : ""
             }`}
-            title="Back-office Noxias — gestion des organisations clientes"
+            title="Back-office Noxias · gestion des organisations clientes"
           >
             Admin
           </Link>

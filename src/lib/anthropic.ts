@@ -15,6 +15,9 @@ export function getAnthropic(): Anthropic {
   return client;
 }
 
+// Prospect : Sonnet 4.6 pour la finesse du persona (nuances d'objection,
+// ton réaliste, sous-entendus). Le surcoût de latence vs Haiku est compensé
+// côté UX par la réduction des délais silence/respiration côté front.
 export const PROSPECT_MODEL = "claude-sonnet-4-6";
 // Évaluateur : Haiku 4.5 pour passer le timeout Vercel (10s sur Hobby).
 // L'analyse de transcript et la production de JSON structuré sont des

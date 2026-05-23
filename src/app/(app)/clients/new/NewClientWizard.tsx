@@ -93,28 +93,61 @@ export function NewClientWizard({ initial }: NewClientWizardProps = {}) {
   >(null);
   const [expandedPersona, setExpandedPersona] = useState<number | null>(0);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [restorePromptOpen, setRestorePromptOpen] = useState(false);
+  const [pendingDraft, setPendingDraft] = useState<{
+    payload: GuidedWizardPayload;
+    savedAt?: number;
+  } | null>(null);
   const hydrated = useRef(false);
 
-  // Hydratation localStorage : si on est en mode création et qu'un brouillon
-  // existe, on le restaure au montage. Pas de localStorage en mode édition
-  // (l'état initial vient du DB).
+  // Hydratation localStorage : si un brouillon existe en mode création, on
+  // propose à l'utilisateur de le reprendre via un prompt explicite plutôt que
+  // de le restaurer silencieusement. hydrated.current ne passe à true qu'une
+  // fois la décision prise (resume ou fresh), pour empêcher la sauvegarde
+  // automatique d'écraser le brouillon pendant que le prompt est ouvert.
   useEffect(() => {
     if (isEdit) return;
     if (typeof window === "undefined") return;
     if (hydrated.current) return;
-    hydrated.current = true;
     try {
       const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as { payload: GuidedWizardPayload };
+      if (!raw) {
+        hydrated.current = true;
+        return;
+      }
+      const parsed = JSON.parse(raw) as {
+        payload: GuidedWizardPayload;
+        savedAt?: number;
+      };
       if (parsed && typeof parsed.payload === "object") {
-        setPayload(parsed.payload);
-        setDraftRestored(true);
+        setPendingDraft({ payload: parsed.payload, savedAt: parsed.savedAt });
+        setRestorePromptOpen(true);
+      } else {
+        hydrated.current = true;
       }
     } catch {
-      // ignore — brouillon corrompu
+      hydrated.current = true;
     }
   }, [isEdit]);
+
+  function resumeDraft() {
+    if (pendingDraft) {
+      setPayload(pendingDraft.payload);
+      setDraftRestored(true);
+    }
+    setRestorePromptOpen(false);
+    setPendingDraft(null);
+    hydrated.current = true;
+  }
+
+  function startFresh() {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+    }
+    setRestorePromptOpen(false);
+    setPendingDraft(null);
+    hydrated.current = true;
+  }
 
   // Sauvegarde localStorage à chaque changement du payload en mode création.
   useEffect(() => {
@@ -127,7 +160,7 @@ export function NewClientWizard({ initial }: NewClientWizardProps = {}) {
         JSON.stringify({ payload, savedAt: Date.now() }),
       );
     } catch {
-      // ignore — quota dépassé / mode privé
+      // ignore : quota dépassé / mode privé
     }
   }, [payload, isEdit]);
 
@@ -224,7 +257,7 @@ export function NewClientWizard({ initial }: NewClientWizardProps = {}) {
   async function handleSuggestPersonas() {
     if (!payload.value_prop_one_liner.trim() && !payload.product_pitch.trim()) {
       setError(
-        "Remplis d'abord la promesse ou le pitch produit (étape 1-2) pour que Claude puisse suggérer.",
+        "Remplis d'abord la promesse ou le pitch produit (étape 1-2) pour que le cerveau IA puisse suggérer.",
       );
       return;
     }
@@ -274,7 +307,7 @@ export function NewClientWizard({ initial }: NewClientWizardProps = {}) {
   async function handleSuggestHook() {
     if (!payload.value_prop_one_liner.trim() && !payload.product_pitch.trim()) {
       setError(
-        "Remplis d'abord la promesse ou le pitch produit pour que Claude puisse suggérer.",
+        "Remplis d'abord la promesse ou le pitch produit pour que le cerveau IA puisse suggérer.",
       );
       return;
     }
@@ -318,7 +351,7 @@ export function NewClientWizard({ initial }: NewClientWizardProps = {}) {
   async function handleSuggestObjections() {
     if (!payload.value_prop_one_liner.trim() && !payload.product_pitch.trim()) {
       setError(
-        "Remplis d'abord la promesse ou le pitch produit pour que Claude puisse suggérer.",
+        "Remplis d'abord la promesse ou le pitch produit pour que le cerveau IA puisse suggérer.",
       );
       return;
     }
@@ -411,6 +444,16 @@ export function NewClientWizard({ initial }: NewClientWizardProps = {}) {
 
   return (
     <div className="space-y-6">
+      {/* Modal : reprise de configuration */}
+      {restorePromptOpen && pendingDraft && (
+        <RestoreDraftModal
+          draftPayload={pendingDraft.payload}
+          savedAt={pendingDraft.savedAt}
+          onResume={resumeDraft}
+          onFresh={startFresh}
+        />
+      )}
+
       {/* Banner brouillon restauré */}
       {draftRestored && !isEdit && (
         <div
@@ -620,10 +663,16 @@ function StepOffer({
         subtitle="Le coach a besoin de connaître ce que tu vends pour générer un prospect réaliste."
       />
       <CoachTip>
-        Ne pitche pas ton produit, vends la douleur résolue. La promesse qui
-        marche dit ce que <strong style={{ color: "#FFFFFF" }}>tu apportes</strong>{" "}
-        à l&apos;autre, en 1 phrase qu&apos;il pourrait répéter à son associé.
-        Si elle commence par &quot;Nous proposons...&quot;, recommence.
+        Le secret d&apos;une promesse qui fait dire &quot;continue&quot; au
+        prospect, c&apos;est la formule{" "}
+        <strong style={{ color: "#FFFFFF" }}>
+          &quot;On aide [persona ultra précis] à [outcome chiffré] sans [pain
+          habituel]&quot;
+        </strong>
+        . Le mot &quot;on&quot;, un verbe d&apos;action, un résultat. Pas
+        &quot;nous proposons une solution de...&quot;. Si ta promesse commence
+        par ton entreprise au lieu du prospect, t&apos;as déjà perdu son
+        attention.
       </CoachTip>
       <Input
         id="name"
@@ -641,6 +690,14 @@ function StepOffer({
         value={payload.sector}
         onChange={(e) => patch({ sector: e.target.value })}
       />
+      <CoachTip variant="compact">
+        L&apos;erreur la plus fréquente :{" "}
+        <strong style={{ color: "#FFFFFF" }}>promesse trop large</strong>.
+        &quot;On aide les entreprises à mieux vendre&quot; = audible par
+        personne. &quot;On aide les directions commerciales de SaaS série A à
+        doubler leur taux de prise de RDV en 6 semaines&quot; = ça décroche.
+        Plus tu cibles, plus ça mord.
+      </CoachTip>
       <Textarea
         id="value_prop_one_liner"
         label="Promesse en une phrase *"
@@ -668,13 +725,28 @@ function StepValueProp({
         subtitle="Ce que le commercial doit vendre, et la preuve concrète qu'il peut avancer."
       />
       <CoachTip>
-        Quand je relis un pitch, je cherche 3 choses :{" "}
+        Le mythe à casser :{" "}
+        <strong style={{ color: "#FFFFFF" }}>
+          &quot;plus c&apos;est court, mieux c&apos;est&quot;
+        </strong>
+        . Faux. Les data sur 300M d&apos;appels analysés (Gong) montrent que
+        les pitchs qui décrochent un RDV durent en moyenne{" "}
+        <strong style={{ color: "#FFFFFF" }}>53 secondes, pas 25</strong>. Un
+        pitch trop court signale du vide. Ce que je cherche dans un pitch :{" "}
         <strong style={{ color: "#FFFFFF" }}>un chiffre</strong>,{" "}
         <strong style={{ color: "#FFFFFF" }}>une preuve concrète</strong> (cas
         client, livrable),{" "}
         <strong style={{ color: "#FFFFFF" }}>un opposant</strong> (ce que tu
-        n&apos;es pas). Si y&apos;en a aucun des trois, le commercial se fait
-        bouffer en 30 secondes.
+        n&apos;es pas). Sans ces trois, t&apos;es mort en 30 secondes.
+      </CoachTip>
+      <CoachTip variant="compact">
+        Trigger phrase qui double le taux de RDV (data Gong) :{" "}
+        <strong style={{ color: "#FFFFFF" }}>
+          &quot;La raison de mon appel, c&apos;est...&quot;
+        </strong>
+        . La structure 45-60s qui marche : (1) nomme un pair connu du prospect,
+        (2) décris SON pain spécifique, (3) délivre l&apos;outcome chiffré, (4)
+        demande 15 min sans engagement, jamais une &quot;démo&quot;.
       </CoachTip>
       <Textarea
         id="product_pitch"
@@ -685,6 +757,16 @@ function StepValueProp({
         value={payload.product_pitch}
         onChange={(e) => patch({ product_pitch: e.target.value })}
       />
+      <CoachTip variant="compact">
+        Tangible = ce que le prospect peut{" "}
+        <strong style={{ color: "#FFFFFF" }}>
+          tenir dans sa main 60 jours après signature
+        </strong>
+        . Pas &quot;gain de productivité&quot;, mais &quot;un site en ligne, un
+        dashboard partagé, 3 réunions hebdo&quot;. Si t&apos;écris
+        &quot;amélioration du ROI&quot; ici, t&apos;as encore raisonné en
+        feature. Reformule en LIVRABLE.
+      </CoachTip>
       <Textarea
         id="tangible_value"
         label="Valeur tangible livrée en 30-60 jours"
@@ -693,6 +775,14 @@ function StepValueProp({
         value={payload.tangible_value}
         onChange={(e) => patch({ tangible_value: e.target.value })}
       />
+      <CoachTip variant="compact">
+        La meilleure façon de te différencier, c&apos;est de{" "}
+        <strong style={{ color: "#FFFFFF" }}>dire ce que tu n&apos;es pas</strong>.
+        &quot;On n&apos;est pas une agence qui vous facture l&apos;heure&quot;,
+        &quot;on n&apos;est pas un SaaS générique à configurer 6 mois&quot;.
+        L&apos;opposition reste en mémoire mieux que l&apos;affirmation. Vise 2
+        oppositions concrètes contre ton concurrent type.
+      </CoachTip>
       <Textarea
         id="differentiation"
         label="Différenciation concurrentielle"
@@ -700,14 +790,6 @@ function StepValueProp({
         rows={2}
         value={payload.differentiation}
         onChange={(e) => patch({ differentiation: e.target.value })}
-      />
-      <Textarea
-        id="channels"
-        label="Où trouve-t-on tes cibles ?"
-        placeholder="Ex : Google Maps zones industrielles BTP, salons spécialisés, LinkedIn dirigeants PME."
-        rows={2}
-        value={payload.channels}
-        onChange={(e) => patch({ channels: e.target.value })}
       />
     </div>
   );
@@ -741,20 +823,36 @@ function StepPersonas({
         subtitle="Qui le commercial va appeler. Ajoute autant de profils distincts que tu veux entraîner (recommandé : 2-4)."
       />
       <CoachTip>
-        Un bon persona n&apos;est pas un poste. C&apos;est un trio :{" "}
-        <strong style={{ color: "#FFFFFF" }}>un job</strong>,{" "}
-        <strong style={{ color: "#FFFFFF" }}>une douleur précise qui le
-        réveille la nuit</strong>, et{" "}
-        <strong style={{ color: "#FFFFFF" }}>un événement déclencheur</strong>{" "}
-        qui fait qu&apos;aujourd&apos;hui il achèterait. Sans ces trois trucs,
-        tes commerciaux pitchent dans le vide.
+        Un persona n&apos;est PAS un job title. C&apos;est un trio :{" "}
+        <strong style={{ color: "#FFFFFF" }}>un job to be done</strong> (le
+        résultat qu&apos;il veut accomplir),{" "}
+        <strong style={{ color: "#FFFFFF" }}>
+          une douleur précise qui le réveille la nuit
+        </strong>
+        , et un{" "}
+        <strong style={{ color: "#FFFFFF" }}>événement déclencheur</strong> qui
+        rend le moment opportun. Gartner documente que la décision B2B implique
+        6 à 10 stakeholders. Tu n&apos;as pas besoin de tous les avoir, mais tu
+        dois savoir lequel tu pitches.
+      </CoachTip>
+      <CoachTip variant="compact">
+        Un ICP solide se construit en 4 couches :{" "}
+        <strong style={{ color: "#FFFFFF" }}>firmographique</strong> (taille,
+        secteur, géo),{" "}
+        <strong style={{ color: "#FFFFFF" }}>technographique</strong> (stack en
+        place, concurrents installés),{" "}
+        <strong style={{ color: "#FFFFFF" }}>comportementale</strong>{" "}
+        (recrutement, contenu consommé), et{" "}
+        <strong style={{ color: "#FFFFFF" }}>trigger events</strong> (levée,
+        expansion, leadership). Si tu maîtrises 2-3 couches, c&apos;est assez,
+        l&apos;IA peut combler les autres.
       </CoachTip>
 
       <Textarea
         id="ideal_targets"
         label="Cibles idéales (libre)"
         placeholder="Ex : PME industrielles 10-50 salariés, marques premium locales, dirigeants de cabinets BtoB."
-        hint="Texte libre — vue d'ensemble. Tu détailles les personas un par un en dessous."
+        hint="Texte libre, vue d'ensemble. Tu détailles les personas un par un en dessous."
         rows={2}
         value={payload.ideal_targets}
         onChange={(e) => patch({ ideal_targets: e.target.value })}
@@ -775,8 +873,8 @@ function StepPersonas({
             className="text-meta mt-1"
             style={{ color: "rgba(255, 255, 255, 0.7)" }}
           >
-            Claude peut te suggérer 3 personas distincts à partir de ta promesse.
-            Tu édites ensuite.
+            Le cerveau IA peut te suggérer 3 personas distincts à partir de ta
+            promesse. Tu édites ensuite.
           </p>
         </div>
         <Button
@@ -801,7 +899,7 @@ function StepPersonas({
             }}
           >
             Aucun persona pour l'instant. Ajoute-en un manuellement ou laisse
-            Claude te suggérer.
+            le cerveau IA te suggérer.
           </div>
         )}
         {payload.personas.map((p, idx) => (
@@ -922,6 +1020,18 @@ function PersonaCard({
             value={persona.typical_company}
             onChange={(e) => onChange({ typical_company: e.target.value })}
           />
+          <CoachTip variant="compact">
+            Les douleurs qui décrochent un RDV sont{" "}
+            <strong style={{ color: "#FFFFFF" }}>
+              hiérarchisées par fréquence ET intensité
+            </strong>
+            . Si tu mets 5 pains génériques, ton commercial pitchera dans le
+            vide. Cible{" "}
+            <strong style={{ color: "#FFFFFF" }}>2 pains MAX</strong> qui font
+            mal <em>maintenant</em>. Le test : si le prospect dit &quot;oui,
+            c&apos;est exactement ça&quot; en l&apos;écoutant, t&apos;as gagné.
+            Sinon c&apos;est du remplissage.
+          </CoachTip>
           <Textarea
             id={`p-${idx}-pains`}
             label="Douleurs principales (1 par ligne)"
@@ -946,6 +1056,19 @@ function PersonaCard({
             value={persona.motivations}
             onChange={(e) => onChange({ motivations: e.target.value })}
           />
+          <CoachTip variant="compact" accent="green">
+            Les vrais triggers que je traque chez Noxias :{" "}
+            <strong style={{ color: "#FFFFFF" }}>levée de fonds récente</strong>{" "}
+            (budget actif sous 90 jours),{" "}
+            <strong style={{ color: "#FFFFFF" }}>
+              recrutement sur poste lié
+            </strong>{" "}
+            (création de fonction = pain documenté),{" "}
+            <strong style={{ color: "#FFFFFF" }}>changement de leadership</strong>{" "}
+            (le nouveau cherche à laisser sa marque dans les 100 premiers jours),
+            expansion géo/produit. Sans trigger, ton appel arrive au mauvais
+            moment.
+          </CoachTip>
           <Textarea
             id={`p-${idx}-triggers`}
             label="Événements déclencheurs d'achat (1 par ligne)"
@@ -1011,13 +1134,15 @@ function StepObjections({
         subtitle="Coche les objections universelles que tu entends + ajoute les spécifiques à ta proposition."
       />
       <CoachTip>
-        Les 5 objections classiques (déjà un presta, pas de budget, pas le
-        moment), tu les connais. Le vrai boulot c&apos;est les{" "}
+        À retenir :{" "}
         <strong style={{ color: "#FFFFFF" }}>
-          10-15 objections spécifiques à ton offre
-        </strong>{" "}
-        — celles qu&apos;on n&apos;entend que dans ton univers. C&apos;est ça
-        qui plombe les RDV en avancé.
+          50% des objections en cold call sont des brush-offs réflexes
+        </strong>
+        , pas de vraies objections. &quot;Pas le temps&quot;, &quot;envoyez un
+        mail&quot;, &quot;pas intéressé&quot; dans les 10 premières secondes =
+        mécanisme défensif, pas avis raisonné. Un cold call qui décroche traite
+        en moyenne <strong>3 à 4 objections</strong>. La question n&apos;est pas
+        de les éviter, c&apos;est de les <em>creuser</em>.
       </CoachTip>
 
       <div>
@@ -1091,6 +1216,28 @@ function StepObjections({
         </div>
       </div>
 
+      <CoachTip variant="compact">
+        Framework de base : LAER (Listen-Acknowledge-Explore-Respond). Version
+        pro que j&apos;utilise :{" "}
+        <strong style={{ color: "#FFFFFF" }}>mirroring + labeling</strong> de
+        Chris Voss. Tu répètes les 3 derniers mots du prospect (&quot;déjà un
+        prestataire ?&quot;) ou tu nommes l&apos;émotion (&quot;on dirait que ce
+        sujet vous fatigue&quot;). Ça pousse à élaborer : c&apos;est là que tu
+        trouves la vraie objection cachée derrière la phrase réflexe.
+      </CoachTip>
+
+      <CoachTip variant="compact" accent="green">
+        Pour récolter les objections spécifiques de ton offre :{" "}
+        <strong style={{ color: "#FFFFFF" }}>
+          relis tes 10 derniers deals perdus
+        </strong>{" "}
+        et les comptes-rendus. Les objections génériques (budget, timing), tu
+        les connais déjà. Cherche les phrases EXACTES que tes prospects
+        sortaient (&quot;on a essayé X y&apos;a 2 ans et ça a foiré&quot;,
+        &quot;mon DAF refuse les abonnements SaaS&quot;). C&apos;est l&apos;or,
+        ce qui distingue tes commerciaux d&apos;un commercial random.
+      </CoachTip>
+
       <div
         className="flex items-center justify-between gap-3 flex-wrap rounded-xl p-4"
         style={{
@@ -1106,8 +1253,8 @@ function StepObjections({
             className="text-meta mt-1"
             style={{ color: "rgba(255, 255, 255, 0.7)" }}
           >
-            Celles qui sont propres à ce que tu vends. Claude peut t'en suggérer
-            15 ciblées à partir de ta promesse.
+            Celles qui sont propres à ce que tu vends. Le cerveau IA peut
+            t&apos;en suggérer 15 ciblées à partir de ta promesse.
           </p>
         </div>
         <Button
@@ -1123,7 +1270,7 @@ function StepObjections({
 
       <Textarea
         id="specific_objections"
-        label={`Objections spécifiques (1 par ligne) — ${specificCount} ajoutée${specificCount > 1 ? "s" : ""}`}
+        label={`Objections spécifiques (1 par ligne) · ${specificCount} ajoutée${specificCount > 1 ? "s" : ""}`}
         placeholder={"Ex :\nOn fait ça en interne avec notre équipe tech\nOn a déjà investi dans un autre outil l'an dernier\nNotre CIO ne valide pas les nouveaux SaaS"}
         rows={8}
         value={payload.specific_objections}
@@ -1135,7 +1282,7 @@ function StepObjections({
         style={{ color: "rgba(255, 255, 255, 0.55)" }}
       >
         Total : <strong style={{ color: "#FFFFFF" }}>{total} objection{total > 1 ? "s" : ""}</strong>
-        . Claude les répartira intelligemment entre tes personas à la création.
+        . Le cerveau IA les répartira intelligemment entre tes personas à la création.
       </p>
     </div>
   );
@@ -1159,11 +1306,19 @@ function StepHook({
         subtitle="La porte d'entrée d'un appel et les phrases qui font mouche. Optionnel mais ça enrichit l'entraînement."
       />
       <CoachTip>
-        Une bonne accroche n&apos;est pas un pitch. C&apos;est{" "}
-        <strong style={{ color: "#FFFFFF" }}>une question ou un constat</strong>{" "}
-        qui retourne le prospect en 5 secondes. Si tu commences par
-        &quot;Bonjour je suis X de la société Y et nous proposons...&quot;,
-        t&apos;es déjà mort. Vise la douleur ou le décalage.
+        Un opener ≠ un pitch. L&apos;opener c&apos;est les{" "}
+        <strong style={{ color: "#FFFFFF" }}>10-15 premières secondes</strong>{" "}
+        pour passer le réflexe de raccrochage. Le pitch vient APRÈS. Data Gong
+        sur 300M de calls :{" "}
+        <strong style={{ color: "#FFFFFF" }}>
+          &quot;Comment ça va depuis la dernière fois ?&quot; = 10% de succès
+        </strong>{" "}
+        (vs baseline industrie 1,5%). Pattern interrupt : le cerveau croit
+        reconnaître un familier. À l&apos;inverse :{" "}
+        <strong style={{ color: "#FFFFFF" }}>
+          &quot;Did I catch you at a bad time&quot; = −40% de RDV
+        </strong>
+        , c&apos;est grillé. Trop répandu.
       </CoachTip>
 
       <div
@@ -1181,8 +1336,8 @@ function StepHook({
             className="text-meta mt-1"
             style={{ color: "rgba(255, 255, 255, 0.7)" }}
           >
-            Claude peut te générer un brise-glace + 5-7 arguments massue à
-            partir de ta promesse. Tu édites ensuite.
+            Le cerveau IA peut te générer un brise-glace + 5-7 arguments
+            massue à partir de ta promesse. Tu édites ensuite.
           </p>
         </div>
         <Button
@@ -1196,6 +1351,19 @@ function StepHook({
         </Button>
       </div>
 
+      <CoachTip variant="compact">
+        L&apos;opener qui décroche le mieux selon Gong :{" "}
+        <strong style={{ color: "#FFFFFF" }}>demande 27 secondes</strong>{" "}
+        d&apos;attention upfront. Pas une permission floue (&quot;vous avez 5
+        min ?&quot; = −40%), un CONTRAT de temps précis. Phrase testée : « Je
+        sais que je tombe à l&apos;improviste, vous m&apos;accordez 27 secondes
+        pour vous dire pourquoi je vous appelle, et après vous décidez ? ».
+        Ensuite{" "}
+        <strong style={{ color: "#FFFFFF" }}>
+          &quot;la raison de mon appel&quot;
+        </strong>{" "}
+        (×2,1 de RDV).
+      </CoachTip>
       <Textarea
         id="hook"
         label="Accroche d'ouverture"
@@ -1205,6 +1373,17 @@ function StepHook({
         value={payload.hook}
         onChange={(e) => patch({ hook: e.target.value })}
       />
+      <CoachTip variant="compact" accent="green">
+        Mes 3 armes en closing d&apos;objection, signature Chris Voss :{" "}
+        <strong style={{ color: "#FFFFFF" }}>mirroring</strong> (répéter les 3
+        derniers mots avec curiosité, fait élaborer),{" "}
+        <strong style={{ color: "#FFFFFF" }}>labeling</strong> (&quot;on dirait
+        que...&quot; désamorce l&apos;émotion),{" "}
+        <strong style={{ color: "#FFFFFF" }}>inversion du oui</strong>{" "}
+        (&quot;est-ce une mauvaise idée qu&apos;on se voie 15 min ?&quot; : le
+        NON est plus sécurisant que le OUI pour un prospect). Liste ici les
+        phrases concrètes que tu sors quand tu sens que ça casse.
+      </CoachTip>
       <Textarea
         id="killer_arguments"
         label="Arguments massue (1 par ligne)"
@@ -1216,4 +1395,137 @@ function StepHook({
       />
     </div>
   );
+}
+
+// Modal d'entrée du wizard quand un brouillon localStorage existe. Donne le
+// choix explicite à l'utilisateur : reprendre la config en cours ou repartir
+// de zéro. Bloque l'UI derrière jusqu'à la décision.
+function RestoreDraftModal({
+  draftPayload,
+  savedAt,
+  onResume,
+  onFresh,
+}: {
+  draftPayload: GuidedWizardPayload;
+  savedAt?: number;
+  onResume: () => void;
+  onFresh: () => void;
+}) {
+  const offerName = draftPayload.name?.trim() || "ton offre";
+  const completedSteps = stepsCompletedFromPayload(draftPayload);
+  const relativeTime = savedAt ? formatRelativeTime(savedAt) : null;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Reprendre la configuration"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{
+        background: "rgba(10, 6, 20, 0.72)",
+        backdropFilter: "blur(8px)",
+      }}
+    >
+      <div
+        className="max-w-md w-full rounded-2xl p-6 sm:p-7"
+        style={{
+          background:
+            "linear-gradient(140deg, rgba(60, 200, 121, 0.10) 0%, rgba(34, 25, 50, 0.95) 100%)",
+          border: "1px solid rgba(60, 200, 121, 0.32)",
+          boxShadow: "0 24px 64px rgba(0, 0, 0, 0.4)",
+        }}
+      >
+        <div
+          className="text-meta uppercase mb-2"
+          style={{
+            color: "var(--color-green)",
+            letterSpacing: "0.18em",
+            fontWeight: 700,
+          }}
+        >
+          Configuration en cours
+        </div>
+        <h3
+          className="text-h3"
+          style={{ color: "#FFFFFF", marginBottom: 12, lineHeight: 1.2 }}
+        >
+          Tu reprends la configuration de {offerName} ?
+        </h3>
+        <p
+          className="text-small"
+          style={{ color: "rgba(255, 255, 255, 0.75)", lineHeight: 1.5 }}
+        >
+          {completedSteps > 0
+            ? `Tu avais déjà rempli ${completedSteps} étape${completedSteps > 1 ? "s" : ""} sur 5`
+            : "Tu avais commencé à remplir le formulaire"}
+          {relativeTime ? ` ${relativeTime}` : ""}. Tu peux continuer là où tu en
+          étais, ou démarrer une nouvelle configuration depuis zéro.
+        </p>
+        <div
+          className="flex flex-col sm:flex-row gap-3 mt-6"
+          style={{ flexDirection: "row-reverse" }}
+        >
+          <button
+            type="button"
+            onClick={onResume}
+            className="flex-1 rounded-lg px-4 py-3 transition-all"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--color-green), rgba(60, 200, 121, 0.85))",
+              color: "#0A1F12",
+              fontWeight: 700,
+              fontSize: "0.95rem",
+              border: "1px solid var(--color-green)",
+              cursor: "pointer",
+            }}
+          >
+            Reprendre la configuration
+          </button>
+          <button
+            type="button"
+            onClick={onFresh}
+            className="flex-1 rounded-lg px-4 py-3 transition-all"
+            style={{
+              background: "rgba(255, 255, 255, 0.06)",
+              color: "rgba(255, 255, 255, 0.85)",
+              fontWeight: 600,
+              fontSize: "0.95rem",
+              border: "1px solid rgba(255, 255, 255, 0.15)",
+              cursor: "pointer",
+            }}
+          >
+            Démarrer une nouvelle offre
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function stepsCompletedFromPayload(p: GuidedWizardPayload): number {
+  let n = 0;
+  if (p.name.trim() && p.value_prop_one_liner.trim()) n += 1;
+  if (p.product_pitch.trim() || p.tangible_value.trim()) n += 1;
+  if (p.personas.length > 0) n += 1;
+  if (
+    p.selected_common_objections.length > 0 ||
+    p.specific_objections.trim()
+  ) {
+    n += 1;
+  }
+  if (p.hook.trim() || p.killer_arguments.trim()) n += 1;
+  return n;
+}
+
+function formatRelativeTime(ts: number): string {
+  const diff = Date.now() - ts;
+  const minutes = Math.floor(diff / 60_000);
+  if (minutes < 1) return "à l'instant";
+  if (minutes < 60) return `il y a ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `il y a ${hours} h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `il y a ${days} jour${days > 1 ? "s" : ""}`;
+  const weeks = Math.floor(days / 7);
+  return `il y a ${weeks} semaine${weeks > 1 ? "s" : ""}`;
 }
