@@ -8,12 +8,7 @@ import {
   computeBadges,
   computeStats,
 } from "@/lib/badges";
-import {
-  totalPpn,
-  rankProgress,
-  MONTHLY_REWARDS,
-  RANK_TIERS,
-} from "@/lib/ranks";
+import { totalPpn, rankProgress } from "@/lib/ranks";
 import type { SessionRow } from "@/lib/supabase/types";
 
 export const dynamic = "force-dynamic";
@@ -89,12 +84,6 @@ export default async function ProgressPage() {
   // Heatmap activité 28 derniers jours
   const heatmap = lastNDaysActivity(completed, 28);
 
-  // Prochain cadeau
-  const nextRewardIndex = Math.min(24, rank.globalIndex + 1);
-  const nextReward = MONTHLY_REWARDS[nextRewardIndex - 1];
-  const nextRewardTier = RANK_TIERS[Math.floor((nextRewardIndex - 1) / 4)]!;
-  const nextRewardRoman = ["I", "II", "III", "IV"][(nextRewardIndex - 1) % 4];
-
   return (
     <div className="container-noxias py-10 space-y-10">
       {/* HERO */}
@@ -116,23 +105,14 @@ export default async function ProgressPage() {
             className="text-body mt-2"
             style={{ color: "rgba(255, 255, 255, 0.7)" }}
           >
-            Ton rang, tes records, tes badges et ton prochain cadeau.
+            Ton rang, tes records et tes badges.
           </p>
         </div>
       </header>
 
-      {/* RANG + PROCHAIN CADEAU */}
-      <section className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-5">
+      {/* RANG */}
+      <section>
         <RankBlock rank={rank} />
-        {nextReward && (
-          <NextRewardBlock
-            reward={nextReward}
-            tierLabel={`${nextRewardTier.label} ${nextRewardRoman}`}
-            tierColor={nextRewardTier.primary}
-            ppnNeeded={rank.ppnToNext}
-            isMaxed={rank.ppnForNext === null}
-          />
-        )}
       </section>
 
       {/* COMPARAISON SEMAINE */}
@@ -270,106 +250,6 @@ export default async function ProgressPage() {
         )}
       </section>
 
-      {/* TOUS LES PALIERS */}
-      <section>
-        <div className="flex items-end justify-between gap-3 flex-wrap mb-4">
-          <h2 className="text-h3" style={{ color: "#FFFFFF" }}>
-            Toute l&apos;échelle des rangs
-          </h2>
-          <span
-            className="text-small"
-            style={{ color: "rgba(255, 255, 255, 0.55)" }}
-          >
-            6 tiers × 4 niveaux · cadeau de fin de mois selon ton rang final
-          </span>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {MONTHLY_REWARDS.map((reward, idx) => {
-            const i = idx + 1;
-            const tierIndex = Math.floor(idx / 4);
-            const subLevel = (idx % 4) + 1;
-            const tier = RANK_TIERS[tierIndex]!;
-            const roman = ["I", "II", "III", "IV"][subLevel - 1];
-            const isCurrent = i === rank.globalIndex;
-            const isReached = i <= rank.globalIndex;
-            return (
-              <div
-                key={i}
-                className="rounded-xl p-4"
-                style={{
-                  background: isCurrent
-                    ? `linear-gradient(140deg, ${tier.primary}33 0%, rgba(34, 25, 50, 0.5) 100%)`
-                    : isReached
-                      ? "rgba(255, 255, 255, 0.05)"
-                      : "rgba(255, 255, 255, 0.03)",
-                  border: `1px solid ${
-                    isCurrent
-                      ? tier.primary
-                      : isReached
-                        ? `${tier.primary}55`
-                        : "rgba(255, 255, 255, 0.06)"
-                  }`,
-                  opacity: isReached ? 1 : 0.55,
-                  backdropFilter: "blur(16px) saturate(160%)",
-                }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span
-                    className="px-2 py-0.5 rounded-full"
-                    style={{
-                      background: `${tier.primary}22`,
-                      border: `1px solid ${tier.primary}66`,
-                      color: tier.primary,
-                      fontSize: "0.6rem",
-                      letterSpacing: "0.18em",
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {tier.label} {roman}
-                  </span>
-                  {isCurrent && (
-                    <span
-                      style={{
-                        color: "var(--color-green)",
-                        fontSize: "0.55rem",
-                        fontWeight: 700,
-                        letterSpacing: "0.18em",
-                      }}
-                    >
-                      ACTUEL
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-start gap-2 mt-2">
-                  <span style={{ fontSize: "1.4rem" }} aria-hidden="true">
-                    {reward.icon}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className="text-small"
-                      style={{
-                        color: isReached ? "#FFFFFF" : "rgba(255, 255, 255, 0.55)",
-                        fontWeight: 600,
-                        lineHeight: 1.25,
-                      }}
-                    >
-                      {reward.label}
-                    </p>
-                    <p
-                      className="text-meta mt-1"
-                      style={{ color: "rgba(255, 255, 255, 0.45)" }}
-                    >
-                      ≈ {reward.approxValueEur} €
-                    </p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
       <div className="text-center pt-2">
         <Link href="/sessions/new" className="mission-cta">
           Lancer une mission maintenant →
@@ -396,8 +276,6 @@ function RankBlock({
     secondary: string;
     glow: string;
     globalIndex: number;
-    monthlyRewardLabel: string;
-    monthlyRewardIcon: string;
   };
 }) {
   return (
@@ -533,90 +411,6 @@ function RankBlock({
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function NextRewardBlock({
-  reward,
-  tierLabel,
-  tierColor,
-  ppnNeeded,
-  isMaxed,
-}: {
-  reward: { label: string; icon: string; approxValueEur: number };
-  tierLabel: string;
-  tierColor: string;
-  ppnNeeded: number | null;
-  isMaxed: boolean;
-}) {
-  return (
-    <div
-      className="rounded-xl p-5"
-      style={{
-        background: `linear-gradient(140deg, ${tierColor}1f 0%, rgba(34, 25, 50, 0.5) 100%)`,
-        border: `1px solid ${tierColor}55`,
-        backdropFilter: "blur(16px) saturate(160%)",
-      }}
-    >
-      <div
-        className="eyebrow"
-        style={{ color: tierColor, fontWeight: 700 }}
-      >
-        Ton prochain cadeau
-      </div>
-      <div className="flex items-start gap-4 mt-3">
-        <span
-          className="rounded-xl flex items-center justify-center shrink-0"
-          style={{
-            width: 64,
-            height: 64,
-            background: `${tierColor}22`,
-            fontSize: "2.2rem",
-          }}
-          aria-hidden="true"
-        >
-          {reward.icon}
-        </span>
-        <div className="flex-1 min-w-0">
-          <p
-            style={{
-              color: "#FFFFFF",
-              fontFamily: "var(--font-ubuntu), Lato, sans-serif",
-              fontSize: "1.15rem",
-              fontWeight: 700,
-              lineHeight: 1.25,
-            }}
-          >
-            {reward.label}
-          </p>
-          <p
-            style={{
-              color: tierColor,
-              fontWeight: 700,
-              fontSize: "0.72rem",
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-              marginTop: 6,
-            }}
-          >
-            {tierLabel} · ≈ {reward.approxValueEur} €
-          </p>
-        </div>
-      </div>
-      <p
-        className="text-small mt-4"
-        style={{ color: "rgba(255, 255, 255, 0.75)", lineHeight: 1.5 }}
-      >
-        {isMaxed ? (
-          "Tu es au sommet. Cadeau prestige garanti."
-        ) : (
-          <>
-            Encore <strong style={{ color: "#FFFFFF" }}>{ppnNeeded} PPN</strong>{" "}
-            pour débloquer ce cadeau. Un RDV décroché = +30 PPN.
-          </>
-        )}
-      </p>
     </div>
   );
 }

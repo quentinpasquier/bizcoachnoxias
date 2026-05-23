@@ -13,8 +13,6 @@ import {
   totalPpn,
   rankProgress,
   ppnForSession,
-  MONTHLY_REWARDS,
-  RANK_TIERS,
 } from "@/lib/ranks";
 
 export const dynamic = "force-dynamic";
@@ -254,9 +252,6 @@ export default async function DashboardPage() {
           </section>
         )}
 
-        {/* PALIERS DE RÉCOMPENSES */}
-        <RewardsLadder currentRank={rank.globalIndex} />
-
         {/* CLIENTS / TERRAINS DE JEU */}
         {clients.length > 0 && (
           <section className="space-y-4">
@@ -433,9 +428,6 @@ function RankCard({
     secondary: string;
     glow: string;
     globalIndex: number;
-    monthlyRewardEur: number;
-    monthlyRewardLabel: string;
-    monthlyRewardIcon: string;
   };
   lastPpnDelta: number;
 }) {
@@ -496,19 +488,6 @@ function RankCard({
             >
               {rank.label}
             </h3>
-            <span
-              className="rounded-full px-2.5 py-1"
-              style={{
-                background: "rgba(60, 200, 121, 0.16)",
-                border: "1px solid rgba(60, 200, 121, 0.40)",
-                color: "var(--color-green)",
-                fontWeight: 700,
-                fontSize: "0.85rem",
-              }}
-              title="Récompense versée à la fin du mois si tu termines à ce rang"
-            >
-              {rank.monthlyRewardIcon} {rank.monthlyRewardLabel}
-            </span>
           </div>
           <div className="flex items-baseline justify-between mb-2">
             <span
@@ -549,7 +528,6 @@ function RankCard({
             style={{ color: "rgba(255,255,255,0.5)" }}
           >
             Un RDV = +30 PPN · Score parfait = +20 PPN · Raccrochage = −10 PPN.
-            Cadeau de fin de mois selon ton rang final (du café au resto gastro).
           </p>
         </div>
       </div>
@@ -918,137 +896,3 @@ function computeStreak(sessions: SessionRow[]): number {
   return streak;
 }
 
-// =================== Paliers de récompenses ===================
-
-function RewardsLadder({ currentRank }: { currentRank: number }) {
-  // currentRank = 1..24
-  // Le palier suivant à viser, et les 5 prochains
-  const nextRank = Math.min(24, currentRank + 1);
-  const visibleStart = Math.max(1, Math.min(nextRank, 21));
-  const visibleRanks = Array.from({ length: 4 }, (_, i) => visibleStart + i);
-
-  return (
-    <section className="space-y-4">
-      <div className="flex items-end justify-between gap-3 flex-wrap">
-        <div>
-          <span className="mission-eyebrow mission-eyebrow-orange">
-            Tes prochains paliers
-          </span>
-          <h2 className="mission-h1" style={{ fontSize: "1.6rem" }}>
-            Tes cadeaux de fin de mois selon ton rang.
-          </h2>
-        </div>
-        <span
-          className="text-small"
-          style={{ color: "rgba(255, 255, 255, 0.55)" }}
-        >
-          Tu es au rang {currentRank}/24
-        </span>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {visibleRanks.map((idx) => {
-          const reward = MONTHLY_REWARDS[idx - 1];
-          if (!reward) return null;
-          const tierIndex = Math.floor((idx - 1) / 4);
-          const subLevel = ((idx - 1) % 4) + 1;
-          const tier = RANK_TIERS[tierIndex]!;
-          const roman = ["I", "II", "III", "IV"][subLevel - 1];
-          const isCurrent = idx === currentRank;
-          const isReachable = idx <= currentRank;
-          return (
-            <div
-              key={idx}
-              className="rounded-xl p-4 transition-all"
-              style={{
-                background: isCurrent
-                  ? `linear-gradient(140deg, ${tier.primary}30 0%, rgba(34, 25, 50, 0.5) 100%)`
-                  : "rgba(255, 255, 255, 0.04)",
-                border: `1px solid ${
-                  isCurrent
-                    ? tier.primary
-                    : isReachable
-                      ? `${tier.primary}55`
-                      : "rgba(255, 255, 255, 0.08)"
-                }`,
-                opacity: isReachable ? 1 : 0.85,
-                backdropFilter: "blur(16px) saturate(160%)",
-              }}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span
-                  className="px-2 py-0.5 rounded-full"
-                  style={{
-                    background: `${tier.primary}22`,
-                    border: `1px solid ${tier.primary}66`,
-                    color: tier.primary,
-                    fontSize: "0.6rem",
-                    letterSpacing: "0.18em",
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                  }}
-                >
-                  {tier.label} {roman}
-                </span>
-                {isCurrent && (
-                  <span
-                    className="text-meta"
-                    style={{
-                      color: "var(--color-green)",
-                      fontWeight: 700,
-                      fontSize: "0.6rem",
-                      letterSpacing: "0.18em",
-                    }}
-                  >
-                    ACTUEL
-                  </span>
-                )}
-              </div>
-              <div className="flex items-start gap-3 mt-3">
-                <span
-                  className="rounded-lg flex items-center justify-center shrink-0"
-                  style={{
-                    width: 48,
-                    height: 48,
-                    background: `${tier.primary}1f`,
-                    fontSize: "1.6rem",
-                  }}
-                  aria-hidden="true"
-                >
-                  {reward.icon}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p
-                    className="text-small"
-                    style={{
-                      color: "#FFFFFF",
-                      fontWeight: 600,
-                      lineHeight: "1.3",
-                    }}
-                  >
-                    {reward.label}
-                  </p>
-                  <p
-                    className="text-meta mt-1"
-                    style={{
-                      color: "rgba(255, 255, 255, 0.5)",
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    ≈ {reward.approxValueEur} € · Rang {idx}/24
-                  </p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <p
-        className="text-meta"
-        style={{ color: "rgba(255, 255, 255, 0.5)" }}
-      >
-        Le cadeau est versé à la fin du mois selon ton rang final. Plus tu
-        grimpes, plus le cadeau est gros.
-      </p>
-    </section>
-  );
-}

@@ -36,20 +36,13 @@ const STEPS: Step[] = [
   },
   {
     eyebrow: "Étape 4",
-    title: "Un cadeau physique chaque fin de mois",
-    body: "Selon ton rang en fin de mois, tu reçois un cadeau : 1 café à Bronze I, viennoiserie, ciné, restos, vins, jusqu'à 1 carte cadeau prestige 30 € à Master IV. Plus tu grimpes, plus le cadeau est gros.",
-    accent: "#3CC879",
-    emoji: "🎁",
-  },
-  {
-    eyebrow: "Étape 5",
     title: "30 minutes par jour suffisent",
     body: "Ton quota quotidien est de 30 min. Tu vois ton avancement en temps réel sur le dashboard. Tu maintiens une série en pratiquant chaque jour. Les missions du jour te donnent des objectifs précis.",
     accent: "#4A8FE7",
     emoji: "⏱️",
   },
   {
-    eyebrow: "Étape 6",
+    eyebrow: "Étape 5",
     title: "Tu reçois un briefing avant chaque appel",
     body: "Avant de décrocher, tu reçois un dossier complet : cible, douleurs cachées, KPI surveillés, objections probables. Le but : arriver préparé, pas découvrir le prospect en direct.",
     accent: "#E94B4B",
