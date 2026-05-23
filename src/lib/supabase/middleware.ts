@@ -69,5 +69,22 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Si le compte vient d'être créé par un admin avec un mdp temporaire,
+  // on force le passage par /auth/set-password avant tout accès à l'app.
+  // Check en middleware (et plus seulement dans (app)/layout) car le layout
+  // peut être skippé par le cache RSC de Next sur certaines navigations.
+  if (
+    user &&
+    user.user_metadata?.must_change_password === true &&
+    pathname !== "/auth/set-password" &&
+    !pathname.startsWith("/auth/callback") &&
+    !pathname.startsWith("/api/")
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/set-password";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
   return response;
 }
