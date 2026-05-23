@@ -14,13 +14,14 @@ const STEPS = [
 ];
 
 const FACTS = [
-  "Un cold call dure entre 3 et 6 minutes en moyenne.",
-  "Les meilleurs commerciaux acquittent l'objection avant de répondre.",
-  "Reprendre la main après un « pas le temps » vaut +30 % de RDV.",
-  "Un créneau précis (jour + heure) augmente le taux d'acceptation.",
-  "Demander un mail de confirmation verrouille le RDV à 92 %.",
-  "Les questions ouvertes sont 2× plus engageantes que les fermées.",
-  "30 secondes pour intéresser le prospect en cold call B2B.",
+  "Un cold call B2B se joue dans les 30 premières secondes.",
+  "80 % des RDV se décrochent à partir de la 4e relance, pas à la 1re.",
+  "Les meilleurs commerciaux parlent 43 % du temps, pas plus (source Gong).",
+  "Acquitter l'objection avant de répondre double le taux de RDV.",
+  "Un créneau précis (jour + heure) convertit 2× mieux que « quand vous voulez ».",
+  "Le mail de doc envoyé sans RDV verbal convertit à moins de 2 %.",
+  "Les questions ouvertes génèrent 2× plus d'engagement que les fermées.",
+  "Le top 10 % des SDR tient en moyenne 5 objections avant de lâcher.",
 ];
 
 export function FeedbackEvaluator({ sessionId }: { sessionId: string }) {
