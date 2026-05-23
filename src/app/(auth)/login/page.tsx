@@ -103,7 +103,7 @@ export default async function LoginPage({
             </div>
             <p className="login-form-foot">
               <span className="login-foot-dot" aria-hidden="true" />
-              Accès réservé aux commerciaux Noxias
+              Accès sur invitation uniquement
             </p>
           </div>
         </section>

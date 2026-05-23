@@ -9,6 +9,15 @@ const ASSIGNABLE_ROLES: readonly AssignableRole[] = [
   "org_admin",
 ];
 
+// Trouve l'URL de l'app pour construire le redirect d'invitation.
+// Priorité : NEXT_PUBLIC_APP_URL (env Vercel) > origin de la requête.
+function resolveAppUrl(request: Request): string {
+  const envUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "").trim();
+  if (envUrl) return envUrl.replace(/\/$/, "");
+  const url = new URL(request.url);
+  return `${url.protocol}//${url.host}`;
+}
+
 export async function GET(
   _: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -112,8 +121,15 @@ export async function POST(
   };
 
   if (sendInvite) {
+    // L'invité reçoit un lien magique. Après vérification du token côté
+    // Supabase, il est redirigé vers /auth/callback (qui échange le code
+    // PKCE contre une session) puis vers /auth/set-password pour fixer
+    // son mot de passe.
+    const appUrl = resolveAppUrl(request);
+    const redirectTo = `${appUrl}/auth/callback?next=${encodeURIComponent("/auth/set-password")}`;
     const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
       data: userMetadata,
+      redirectTo,
     });
     if (error || !data?.user) {
       return NextResponse.json(
