@@ -9,9 +9,13 @@ import {
   createRecognition,
   isSpeechRecognitionSupported,
   isSpeechSynthesisSupported,
+  isWhisperAvailable,
   loadVoices,
+  pickRecorderMimeType,
+  requestMicrophoneStream,
   speak,
   stopSpeaking,
+  transcribeAudio,
   type MinimalSpeechRecognition,
   type SpeechRecognitionEvent,
 } from "@/lib/voice";
@@ -96,6 +100,24 @@ export function ChatRoom({ session, initialMessages }: Props) {
   const finalTranscriptRef = useRef("");
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Whisper backend pour la transcription finale (haute qualité). Le micro
+  // partagé est gardé dans micStreamRef ; MediaRecorder collecte les chunks
+  // pendant que SpeechRecognition fait l'interim live. À la fin du silence,
+  // on envoie le blob audio à /api/transcribe et on utilise ce texte (pas
+  // celui du Web Speech) comme transcription finale.
+  const [whisperEnabled, setWhisperEnabled] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recorderMimeRef = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    // Vérifie une fois si l'OPENAI_API_KEY est configurée côté serveur.
+    void isWhisperAvailable().then(setWhisperEnabled);
+    recorderMimeRef.current = pickRecorderMimeType();
+  }, []);
+
   // Délai de silence avant de considérer que le commercial a fini sa phrase.
   // L'auto-VAD natif du navigateur coupe vers 700-1000ms : trop court pour
   // une vraie pause de réflexion. On gère manuellement avec 1800ms.
@@ -115,6 +137,21 @@ export function ChatRoom({ session, initialMessages }: Props) {
       try {
         recognitionRef.current?.abort();
       } catch {}
+      // Stop MediaRecorder + libère le flux micro pour éteindre l'indicateur
+      // d'enregistrement du navigateur. Sans ça, le voyant rouge reste allumé
+      // dans l'onglet après la navigation.
+      try {
+        if (
+          mediaRecorderRef.current &&
+          mediaRecorderRef.current.state !== "inactive"
+        ) {
+          mediaRecorderRef.current.stop();
+        }
+      } catch {}
+      if (micStreamRef.current) {
+        micStreamRef.current.getTracks().forEach((t) => t.stop());
+        micStreamRef.current = null;
+      }
     };
   }, []);
 
@@ -153,7 +190,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
         if (autoMode && !ended && voiceSupported.stt) {
           setTimeout(() => {
             if (!isListening && !sending && !ended) {
-              startListening();
+              void startListening();
             }
           }, POST_PROSPECT_DELAY_MS);
         }
@@ -311,8 +348,42 @@ export function ChatRoom({ session, initialMessages }: Props) {
     }, SILENCE_END_MS);
   }
 
-  function startListening() {
-    if (!voiceSupported.stt || isListening || sending || ended) return;
+  // Stop le MediaRecorder en cours et résout avec le blob audio final.
+  // Le blob inclut la dernière `ondataavailable` déclenchée par stop().
+  function stopRecorderAndGetBlob(): Promise<Blob | null> {
+    return new Promise((resolve) => {
+      const rec = mediaRecorderRef.current;
+      if (!rec || rec.state === "inactive") {
+        resolve(null);
+        return;
+      }
+      rec.onstop = () => {
+        const type = recorderMimeRef.current ?? "audio/webm";
+        const blob = new Blob(audioChunksRef.current, { type });
+        audioChunksRef.current = [];
+        mediaRecorderRef.current = null;
+        resolve(blob.size > 0 ? blob : null);
+      };
+      try {
+        rec.stop();
+      } catch {
+        mediaRecorderRef.current = null;
+        resolve(null);
+      }
+    });
+  }
+
+  // Construit un prompt de contexte pour Whisper à partir du client + persona
+  // de la session. Aide à transcrire les noms propres et le vocabulaire métier.
+  function buildWhisperPrompt(): string {
+    const parts: string[] = [];
+    if (session.client_name_snapshot) parts.push(session.client_name_snapshot);
+    if (session.persona_label) parts.push(session.persona_label);
+    return parts.join(", ");
+  }
+
+  async function startListening() {
+    if (!voiceSupported.stt || isListening || sending || ended || transcribing) return;
     if (isSpeaking) {
       stopSpeaking();
       setIsSpeaking(false);
@@ -321,6 +392,33 @@ export function ChatRoom({ session, initialMessages }: Props) {
     finalTranscriptRef.current = "";
     setInterimTranscript("");
     clearSilenceTimer();
+
+    // Si Whisper est dispo, on prépare en parallèle un MediaRecorder qui
+    // capture l'audio. Le Web Speech sert toujours pour l'interim live ;
+    // Whisper donnera la transcription finale envoyée au bot. Le micro
+    // stream est partagé et conservé pendant toute la session pour éviter
+    // de re-demander la permission à chaque utterance.
+    if (whisperEnabled && recorderMimeRef.current) {
+      try {
+        if (!micStreamRef.current) {
+          micStreamRef.current = await requestMicrophoneStream();
+        }
+        if (micStreamRef.current) {
+          const rec = new MediaRecorder(micStreamRef.current, {
+            mimeType: recorderMimeRef.current,
+          });
+          audioChunksRef.current = [];
+          rec.ondataavailable = (e) => {
+            if (e.data && e.data.size > 0) audioChunksRef.current.push(e.data);
+          };
+          rec.start();
+          mediaRecorderRef.current = rec;
+        }
+      } catch {
+        // Si MediaRecorder échoue, on continue avec Web Speech seul.
+        mediaRecorderRef.current = null;
+      }
+    }
 
     // En mode auto, on garde continuous=true et on gère NOUS-MÊMES la fin
     // de phrase via un timer de silence (1800ms). C'est plus permissif que
@@ -355,19 +453,54 @@ export function ChatRoom({ session, initialMessages }: Props) {
     };
 
     recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => {
+    recognition.onend = async () => {
       clearSilenceTimer();
       setIsListening(false);
-      const finalText = finalTranscriptRef.current.trim();
+      const fallbackText = finalTranscriptRef.current.trim();
       setInterimTranscript("");
-      if (finalText.length > 0) {
-        void sendMessage(finalText);
-      }
       finalTranscriptRef.current = "";
+
+      // Si Whisper était activé et qu'on a un enregistrement, on attend la
+      // transcription serveur (haute qualité) avant d'envoyer au bot. C'est
+      // ~1s de latence en plus mais beaucoup moins de fautes sur le métier.
+      if (whisperEnabled && mediaRecorderRef.current) {
+        setTranscribing(true);
+        try {
+          const blob = await stopRecorderAndGetBlob();
+          // 1024 bytes seuil : sous ce volume, l'audio est probablement vide
+          // (clic accidentel, micro pas encore monté). On retombe sur le
+          // texte Web Speech (ou rien).
+          if (blob && blob.size > 1024) {
+            const whisperText = await transcribeAudio(blob, {
+              prompt: buildWhisperPrompt(),
+            });
+            if (whisperText && whisperText.length > 0) {
+              setTranscribing(false);
+              void sendMessage(whisperText);
+              return;
+            }
+          }
+        } catch {
+          // Fallback Web Speech ci-dessous.
+        }
+        setTranscribing(false);
+      }
+
+      if (fallbackText.length > 0) {
+        void sendMessage(fallbackText);
+      }
     };
     recognition.onerror = (e: Event) => {
       const err = (e as unknown as { error?: string }).error ?? "unknown";
       clearSilenceTimer();
+      // Si une erreur survient en cours d'enregistrement, on jette le blob.
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        try {
+          mediaRecorderRef.current.stop();
+        } catch {}
+        mediaRecorderRef.current = null;
+        audioChunksRef.current = [];
+      }
       if (err === "no-speech" || err === "aborted") {
         setIsListening(false);
         // En auto-mode, on retente après une pause si no-speech, mais SANS
@@ -375,7 +508,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
         if (autoMode && err === "no-speech" && !ended && !sending && !isSpeaking) {
           setTimeout(() => {
             if (!isListening && !sending && !ended && !isSpeaking) {
-              startListening();
+              void startListening();
             }
           }, 800);
         }
@@ -408,7 +541,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
     if (isListening) {
       stopListening();
     } else {
-      startListening();
+      void startListening();
     }
   }
 
@@ -445,23 +578,27 @@ export function ChatRoom({ session, initialMessages }: Props) {
 
   const stateLabel = isSpeaking
     ? "Il te répond"
-    : isListening
-      ? "À toi de jouer"
-      : sending
-        ? "Il prend son temps..."
-        : ended
-          ? "Appel terminé"
-          : "En ligne";
+    : transcribing
+      ? "Transcription..."
+      : isListening
+        ? "À toi de jouer"
+        : sending
+          ? "Il prend son temps..."
+          : ended
+            ? "Appel terminé"
+            : "En ligne";
 
   const stateColor = isSpeaking
     ? "var(--color-purple)"
-    : isListening
-      ? "var(--color-red)"
-      : sending
-        ? "var(--color-gray)"
-        : ended
+    : transcribing
+      ? "var(--color-gray)"
+      : isListening
+        ? "var(--color-red)"
+        : sending
           ? "var(--color-gray)"
-          : "var(--color-green)";
+          : ended
+            ? "var(--color-gray)"
+            : "var(--color-green)";
 
   const useVoice = voiceMode && voiceSupported.tts && voiceSupported.stt;
 

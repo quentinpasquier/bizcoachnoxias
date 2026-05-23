@@ -393,7 +393,9 @@
   }
   .nav-pill-config.nav-pill-active {
     background: #FFFFFF;
-    color: var(--color-dark);
+    /* Hardcode foncé : .app-shell réassigne --color-dark à #FFFFFF, donc
+       var(--color-dark) ici donnait du blanc-sur-blanc invisible. */
+    color: #221932;
   }
 
   .nav-pill-primary {

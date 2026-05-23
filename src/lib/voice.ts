@@ -320,6 +320,7 @@ interface MinimalSpeechRecognition {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
+  maxAlternatives: number;
   start(): void;
   stop(): void;
   abort(): void;
@@ -379,7 +380,97 @@ export function createRecognition(
   // continuous: false → s'arrête tout seul après un silence (auto-VAD)
   recognition.continuous = options.continuous ?? true;
   recognition.interimResults = true;
+  recognition.maxAlternatives = 3;
   return recognition;
 }
 
 export type { MinimalSpeechRecognition, SpeechRecognitionEvent };
+
+// =====================================================================
+// MediaRecorder + Whisper backend : transcription haute qualité côté
+// serveur en complément du Web Speech (qui sert pour la preview interim).
+// =====================================================================
+
+// Demande l'accès micro avec les contraintes audio qui aident le plus la
+// transcription : noise suppression, echo cancellation, auto gain control.
+// Le stream retourné est partagé entre MediaRecorder et SpeechRecognition.
+export async function requestMicrophoneStream(): Promise<MediaStream | null> {
+  if (typeof window === "undefined") return null;
+  if (!navigator.mediaDevices?.getUserMedia) return null;
+  try {
+    return await navigator.mediaDevices.getUserMedia({
+      audio: {
+        noiseSuppression: true,
+        echoCancellation: true,
+        autoGainControl: true,
+        channelCount: 1,
+      },
+    });
+  } catch {
+    return null;
+  }
+}
+
+// Choisit le mimeType MediaRecorder le mieux supporté par le navigateur.
+// Whisper accepte webm/opus, mp4, ogg : on prend ce qui est dispo.
+export function pickRecorderMimeType(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  if (typeof MediaRecorder === "undefined") return undefined;
+  const candidates = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/ogg;codecs=opus",
+    "audio/mp4",
+  ];
+  for (const c of candidates) {
+    if (MediaRecorder.isTypeSupported(c)) return c;
+  }
+  return undefined;
+}
+
+// Envoie un blob audio à /api/transcribe et renvoie la transcription.
+// Si le backend est indisponible (pas d'OPENAI_API_KEY), renvoie null pour
+// que l'appelant retombe sur la transcription Web Speech.
+export async function transcribeAudio(
+  blob: Blob,
+  options: { prompt?: string; signal?: AbortSignal } = {},
+): Promise<string | null> {
+  const form = new FormData();
+  form.append("audio", blob, `recording.${blob.type.includes("ogg") ? "ogg" : "webm"}`);
+  if (options.prompt) form.append("prompt", options.prompt);
+
+  try {
+    const res = await fetch("/api/transcribe", {
+      method: "POST",
+      body: form,
+      signal: options.signal,
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { text?: string };
+    return (data.text ?? "").trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+// Indique si Whisper est dispo côté backend (clé OpenAI configurée).
+// Vérifié 1× par session via le client pour ne pas faire la requête à chaque
+// début d'écoute. Met en cache le résultat.
+let whisperAvailableCache: boolean | null = null;
+export async function isWhisperAvailable(): Promise<boolean> {
+  if (whisperAvailableCache !== null) return whisperAvailableCache;
+  if (typeof window === "undefined") return false;
+  try {
+    const res = await fetch("/api/transcribe", { method: "GET" });
+    if (!res.ok) {
+      whisperAvailableCache = false;
+      return false;
+    }
+    const data = (await res.json()) as { available?: boolean };
+    whisperAvailableCache = Boolean(data.available);
+    return whisperAvailableCache;
+  } catch {
+    whisperAvailableCache = false;
+    return false;
+  }
+}
