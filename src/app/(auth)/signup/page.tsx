@@ -24,15 +24,14 @@ export default function SignUpPage() {
               style={{ color: "var(--color-gray)" }}
             >
               Accès sur invitation. Les comptes sont créés par l'administrateur
-              de ton organisation.
+              Noxias.
             </p>
           </div>
 
           <Card className="space-y-3">
             <p className="text-body" style={{ color: "var(--color-dark)" }}>
-              Pour obtenir un accès, contacte l'administrateur de ton
-              organisation. Il te communiquera tes identifiants après création
-              du compte.
+              Pour obtenir un accès, contacte l'administrateur Noxias. Il te
+              communiquera tes identifiants après création du compte.
             </p>
           </Card>
 
