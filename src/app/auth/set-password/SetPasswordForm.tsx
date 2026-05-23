@@ -29,7 +29,12 @@ export function SetPasswordForm({ email }: { email: string }) {
     setLoading(true);
     try {
       const supabase = createClient();
-      const { error: updateErr } = await supabase.auth.updateUser({ password });
+      // updateUser merge le `data` avec le user_metadata existant : on en
+      // profite pour clear le flag must_change_password (cf. (app)/layout).
+      const { error: updateErr } = await supabase.auth.updateUser({
+        password,
+        data: { must_change_password: false },
+      });
       if (updateErr) {
         setError(updateErr.message);
         setLoading(false);

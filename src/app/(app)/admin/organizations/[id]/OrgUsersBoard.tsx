@@ -44,15 +44,32 @@ export function OrgUsersBoard({
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<AssignableRole>("commercial");
-  const [sendInvite, setSendInvite] = useState(true);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [createdSummary, setCreatedSummary] = useState<{
+    email: string;
+    password: string;
+  } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tempPassword, setTempPassword] = useState<string | null>(null);
+
+  function generatePassword(): string {
+    // 12 caractères alphanum + symboles, sans confusions (0/O, 1/l/I)
+    const charset =
+      "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789!?#%@";
+    let out = "";
+    const arr = new Uint32Array(12);
+    crypto.getRandomValues(arr);
+    for (let i = 0; i < arr.length; i++) {
+      out += charset[arr[i]! % charset.length];
+    }
+    return out;
+  }
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setTempPassword(null);
+    setCreatedSummary(null);
     setSubmitting(true);
     try {
       const res = await fetch(
@@ -64,7 +81,7 @@ export function OrgUsersBoard({
             email,
             full_name: fullName,
             role,
-            send_invite: sendInvite,
+            password,
           }),
         },
       );
@@ -84,15 +101,25 @@ export function OrgUsersBoard({
         },
         ...prev,
       ]);
-      if (json.temp_password) setTempPassword(json.temp_password);
+      setCreatedSummary({ email, password });
       setEmail("");
       setFullName("");
       setRole("commercial");
-      if (!json.temp_password) setAdding(false);
+      setPassword("");
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function copyCredentials() {
+    if (!createdSummary) return;
+    const text = `Email : ${createdSummary.email}\nMot de passe : ${createdSummary.password}\nÀ la 1re connexion, tu devras choisir ton mot de passe permanent.`;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // navigateur sans Clipboard API → l'utilisateur sélectionne à la main
     }
   }
 
@@ -141,7 +168,7 @@ export function OrgUsersBoard({
       {allowAddUser && !adding && (
         <div className="flex justify-end">
           <Button onClick={() => setAdding(true)} variant="primary">
-            + Inviter un utilisateur
+            + Créer un compte
           </Button>
         </div>
       )}
@@ -170,7 +197,7 @@ export function OrgUsersBoard({
               placeholder="Jean Dupont"
             />
           </div>
-          <div className="flex gap-4 items-end flex-wrap">
+          <div className="grid gap-4 md:grid-cols-2 items-end">
             <div className="flex flex-col gap-2">
               <label
                 className="text-small font-medium"
@@ -190,39 +217,101 @@ export function OrgUsersBoard({
                 ))}
               </select>
             </div>
-            <label className="flex items-center gap-2 text-body cursor-pointer pb-2">
-              <input
-                type="checkbox"
-                checked={sendInvite}
-                onChange={(e) => setSendInvite(e.target.checked)}
-              />
-              Envoyer un email d&apos;invitation
-            </label>
+            <div className="flex flex-col gap-2">
+              <label
+                className="text-small font-medium"
+                style={{ color: "#b495ff" }}
+              >
+                Mot de passe temporaire
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  placeholder="8 caractères minimum"
+                  className="input flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  className="text-meta px-2"
+                  style={{ color: "rgba(255,255,255,0.65)" }}
+                  title={showPassword ? "Masquer" : "Afficher"}
+                >
+                  {showPassword ? "Masquer" : "Voir"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPassword(generatePassword());
+                    setShowPassword(true);
+                  }}
+                  className="text-meta px-2"
+                  style={{ color: "var(--color-green)" }}
+                  title="Générer un mdp aléatoire"
+                >
+                  Générer
+                </button>
+              </div>
+            </div>
           </div>
+          <p className="text-meta" style={{ color: "rgba(255,255,255,0.5)" }}>
+            L&apos;utilisateur sera contraint de choisir son propre mot de passe
+            à sa première connexion.
+          </p>
           {error && (
             <p className="text-meta" style={{ color: "var(--color-red)" }}>
               {error}
             </p>
           )}
-          {tempPassword && (
+          {createdSummary && (
             <div
-              className="p-3 rounded text-meta"
-              style={{ background: "rgba(244, 180, 0, 0.15)" }}
+              className="p-3 rounded text-meta space-y-2"
+              style={{ background: "rgba(60, 200, 121, 0.12)" }}
             >
-              Compte créé sans email. Mot de passe temporaire :{" "}
-              <code>{tempPassword}</code>
-              <br />
-              Communique-le manuellement à l&apos;utilisateur. Il pourra le
-              changer après connexion.
+              <div>
+                Compte créé. Communique ces identifiants à
+                l&apos;utilisateur&nbsp;:
+              </div>
+              <div className="font-mono text-body">
+                Email : <strong>{createdSummary.email}</strong>
+                <br />
+                Mot de passe : <strong>{createdSummary.password}</strong>
+              </div>
+              <div className="flex gap-3 items-center">
+                <button
+                  type="button"
+                  onClick={copyCredentials}
+                  className="underline"
+                  style={{ color: "var(--color-green)" }}
+                >
+                  Copier
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreatedSummary(null);
+                    setAdding(false);
+                  }}
+                  className="underline"
+                  style={{ color: "rgba(255,255,255,0.65)" }}
+                >
+                  Fermer
+                </button>
+              </div>
             </div>
           )}
           <div className="flex gap-3">
-            <Button type="submit" disabled={submitting || !email || !fullName}>
-              {submitting
-                ? "Envoi…"
-                : sendInvite
-                  ? "Envoyer l'invitation"
-                  : "Créer le compte"}
+            <Button
+              type="submit"
+              disabled={
+                submitting || !email || !fullName || password.length < 8
+              }
+            >
+              {submitting ? "Création…" : "Créer le compte"}
             </Button>
             <Button
               type="button"
@@ -230,7 +319,8 @@ export function OrgUsersBoard({
               onClick={() => {
                 setAdding(false);
                 setError(null);
-                setTempPassword(null);
+                setCreatedSummary(null);
+                setPassword("");
               }}
             >
               Annuler

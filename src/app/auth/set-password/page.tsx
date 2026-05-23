@@ -44,19 +44,37 @@ export default async function SetPasswordPage() {
     orgName = (org as { name: string } | null)?.name ?? null;
   }
 
+  const mustChange = user.user_metadata?.must_change_password === true;
+
   return (
     <div className="container-noxias py-16 max-w-xl mx-auto">
       <div className="ui-card ui-card-padded space-y-6">
         <div>
-          <h1 className="text-h2">Bienvenue{p?.full_name ? ` ${p.full_name.split(" ")[0]}` : ""}.</h1>
+          <h1 className="text-h2">
+            Bienvenue{p?.full_name ? ` ${p.full_name.split(" ")[0]}` : ""}.
+          </h1>
           <p
             className="text-body mt-2"
             style={{ color: "rgba(255, 255, 255, 0.7)" }}
           >
-            {orgName ? (
+            {mustChange ? (
+              orgName ? (
+                <>
+                  Tu rejoins l&apos;espace <strong>{orgName}</strong>. Tu utilises
+                  un mot de passe temporaire fourni par ton administrateur. Choisis
+                  ton mot de passe permanent pour activer ton compte.
+                </>
+              ) : (
+                <>
+                  Tu utilises un mot de passe temporaire fourni par ton
+                  administrateur. Choisis ton mot de passe permanent pour activer
+                  ton compte.
+                </>
+              )
+            ) : orgName ? (
               <>
-                Tu rejoins l&apos;espace <strong>{orgName}</strong>. Crée ton mot de
-                passe pour activer ton compte.
+                Tu rejoins l&apos;espace <strong>{orgName}</strong>. Crée ton mot
+                de passe pour activer ton compte.
               </>
             ) : (
               <>Crée ton mot de passe pour activer ton compte.</>
@@ -66,15 +84,17 @@ export default async function SetPasswordPage() {
 
         <SetPasswordForm email={user.email ?? ""} />
 
-        <p
-          className="text-meta"
-          style={{ color: "rgba(255, 255, 255, 0.45)" }}
-        >
-          Tu pourras le changer à tout moment depuis ton profil.{" "}
-          <Link href="/login" className="underline">
-            Annuler
-          </Link>
-        </p>
+        {!mustChange && (
+          <p
+            className="text-meta"
+            style={{ color: "rgba(255, 255, 255, 0.45)" }}
+          >
+            Tu pourras le changer à tout moment depuis ton profil.{" "}
+            <Link href="/login" className="underline">
+              Annuler
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   );

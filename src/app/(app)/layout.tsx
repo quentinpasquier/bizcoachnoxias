@@ -37,6 +37,12 @@ export default async function AppLayout({
     redirect("/login");
   }
 
+  // Si le compte a été créé par un admin avec un mdp temporaire, on force
+  // le passage par /auth/set-password avant tout accès à l'app.
+  if (user.user_metadata?.must_change_password === true) {
+    redirect("/auth/set-password");
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name, avatar_url, role, organization_id")
