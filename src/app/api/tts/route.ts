@@ -6,10 +6,17 @@ export const maxDuration = 30;
 
 const OPENAI_TTS_URL = "https://api.openai.com/v1/audio/speech";
 
-// Pool de voix par genre. La voix retenue varie d'une session à l'autre
-// (déterministe via le seed pour rester stable au sein d'une session).
-const VOICES_HOMME = ["onyx", "echo", "fable", "alloy"];
-const VOICES_FEMME = ["nova", "shimmer", "alloy"];
+// Pool de voix par genre, sélectionnées pour leur naturel en français
+// métropolitain. La voix retenue varie d'une session à l'autre (déterministe
+// via le seed pour rester stable au sein d'une session).
+//
+// Voix écartées sciemment :
+// - fable : accent British, déplacé pour un prospect français
+// - alloy : prononciation anglo-saxonne en français, "ti" mou
+// - ash, sage, ballad, coral, verse : voix plus récentes mais variables
+//   sur le français selon les modèles
+const VOICES_HOMME = ["onyx", "echo"];
+const VOICES_FEMME = ["nova", "shimmer"];
 
 function pickVoice(gender: Gender, seed: string): string {
   const pool = gender === "femme" ? VOICES_FEMME : VOICES_HOMME;
