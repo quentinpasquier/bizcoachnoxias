@@ -30,7 +30,6 @@ export async function GET(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Récupère les emails via auth.admin (RLS contourné)
   const ids = (profiles ?? []).map((p) => (p as { id: string }).id);
   const emailById = new Map<string, string | null>();
   if (ids.length > 0) {
@@ -64,6 +63,9 @@ export async function GET(
   return NextResponse.json({ users });
 }
 
+// Crée un compte utilisateur dans une org avec un mot de passe défini par
+// l'admin. Le flag must_change_password=true dans user_metadata force le
+// user à le changer à sa première connexion (cf. (app)/layout.tsx).
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -79,10 +81,10 @@ export async function POST(
 
   const email = typeof body.email === "string" ? body.email.trim() : "";
   const fullName = typeof body.full_name === "string" ? body.full_name.trim() : "";
+  const password = typeof body.password === "string" ? body.password : "";
   const role: AssignableRole = ASSIGNABLE_ROLES.includes(body.role)
     ? body.role
     : "commercial";
-  const sendInvite = body.send_invite !== false; // par défaut, envoie le mail
 
   if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
     return NextResponse.json({ error: "Email invalide" }, { status: 400 });
@@ -90,10 +92,15 @@ export async function POST(
   if (!fullName) {
     return NextResponse.json({ error: "Nom complet obligatoire" }, { status: 400 });
   }
+  if (password.length < 8) {
+    return NextResponse.json(
+      { error: "Mot de passe temporaire trop court (8 caractères minimum)" },
+      { status: 400 },
+    );
+  }
 
   const supabase = createServiceClient();
 
-  // Vérifie que l'org existe
   const { data: org } = await supabase
     .from("organizations")
     .select("id, name")
@@ -103,47 +110,32 @@ export async function POST(
     return NextResponse.json({ error: "Organisation introuvable" }, { status: 404 });
   }
 
-  // Si sendInvite : envoie un email d'invitation magic-link (le user fixe son mdp)
-  // Sinon : crée le user avec un mdp aléatoire (à communiquer à la main)
-  const userMetadata = {
-    full_name: fullName,
-    organization_id: orgId,
-    role,
-  };
-
-  if (sendInvite) {
-    const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
-      data: userMetadata,
-    });
-    if (error || !data?.user) {
-      return NextResponse.json(
-        { error: error?.message ?? "Invitation impossible" },
-        { status: 500 },
-      );
-    }
-    return NextResponse.json({
-      user: { id: data.user.id, email: data.user.email },
-      invited: true,
-    });
-  }
-
-  const tempPassword =
-    Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
   const { data, error } = await supabase.auth.admin.createUser({
     email,
-    password: tempPassword,
-    email_confirm: true,
-    user_metadata: userMetadata,
+    password,
+    email_confirm: true, // pas de mail de confirmation : compte actif tout de suite
+    user_metadata: {
+      full_name: fullName,
+      organization_id: orgId,
+      role,
+      must_change_password: true,
+    },
   });
   if (error || !data?.user) {
+    const code = (error as { code?: string } | null)?.code;
+    if (code === "email_exists" || /already.*registered/i.test(error?.message ?? "")) {
+      return NextResponse.json(
+        { error: `Un compte existe déjà avec l'email ${email}.` },
+        { status: 409 },
+      );
+    }
     return NextResponse.json(
       { error: error?.message ?? "Création impossible" },
       { status: 500 },
     );
   }
+
   return NextResponse.json({
     user: { id: data.user.id, email: data.user.email },
-    invited: false,
-    temp_password: tempPassword,
   });
 }

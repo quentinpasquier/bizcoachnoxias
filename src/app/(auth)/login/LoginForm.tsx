@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -18,6 +18,29 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(initialError ?? null);
   const [loading, setLoading] = useState(false);
+
+  // Quand le user atterrit ici depuis un lien d'invitation périmé/déjà utilisé,
+  // Supabase met les détails dans le fragment de l'URL (#error=...). On le lit
+  // côté client pour afficher un message clair plutôt qu'un login muet.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash;
+    if (!hash || !hash.includes("error=")) return;
+    const params = new URLSearchParams(hash.slice(1));
+    const code = params.get("error_code");
+    const desc = params.get("error_description");
+    if (code === "otp_expired" || desc?.includes("expired")) {
+      setError(
+        "Ton lien d'invitation a expiré ou a déjà été utilisé. Demande un nouveau lien à ton administrateur.",
+      );
+    } else if (desc) {
+      setError(decodeURIComponent(desc.replace(/\+/g, " ")));
+    } else if (code) {
+      setError(`Erreur d'authentification (${code}). Demande un nouveau lien.`);
+    }
+    // Nettoie l'URL pour éviter qu'un reload re-déclenche l'erreur
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
