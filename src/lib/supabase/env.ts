@@ -11,6 +11,14 @@ export function getSupabaseAnonKey(): string {
   return (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "").trim();
 }
 
+export function getSupabaseServiceRoleKey(): string {
+  return (process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
+}
+
+export function hasServiceRoleKey(): boolean {
+  return getSupabaseServiceRoleKey().length > 0;
+}
+
 export function isSupabaseConfigured(): boolean {
   const url = getSupabaseUrl();
   const key = getSupabaseAnonKey();

@@ -102,7 +102,8 @@ export default async function DashboardPage() {
       );
     }
   }
-  const isManager = role === "manager";
+  const isManager =
+    role === "manager" || role === "org_admin" || role === "platform_admin";
 
   // ---------- Stats perso ----------
   const completed = myAllSessions.filter((s) => s.status === "completed");

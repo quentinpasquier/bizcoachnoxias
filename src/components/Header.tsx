@@ -12,11 +12,28 @@ interface HeaderProps {
     full_name?: string | null;
     avatar_url?: string | null;
     role?: UserRole;
+    organization_name?: string | null;
   } | null;
 }
 
 export function Header({ user }: HeaderProps) {
-  const isManager = user?.role === "manager";
+  const isManager =
+    user?.role === "manager" ||
+    user?.role === "org_admin" ||
+    user?.role === "platform_admin";
+  const isPlatformAdmin = user?.role === "platform_admin";
+  const roleLabel = (() => {
+    switch (user?.role) {
+      case "platform_admin":
+        return "Admin Noxias";
+      case "org_admin":
+        return "Admin";
+      case "manager":
+        return "Manager";
+      default:
+        return null;
+    }
+  })();
   return (
     <header
       className="sticky top-0 z-40 border-b backdrop-blur-md"
@@ -32,7 +49,10 @@ export function Header({ user }: HeaderProps) {
 
         {user && (
           <>
-            <HeaderNav isManager={isManager} />
+            <HeaderNav
+              isManager={isManager}
+              isPlatformAdmin={isPlatformAdmin}
+            />
             <div className="flex items-center gap-3 pl-4 border-l border-white/10 shrink-0">
               <OnboardingTrigger />
               <Link
@@ -43,19 +63,26 @@ export function Header({ user }: HeaderProps) {
                 <div className="hidden md:flex flex-col items-end">
                   <span className="text-meta text-white/85 leading-tight flex items-center gap-2">
                     {user.full_name ?? "Commercial"}
-                    {isManager && (
+                    {roleLabel && (
                       <span
                         className="text-[10px] uppercase tracking-widest px-1.5 py-0.5 rounded"
                         style={{
-                          background: "var(--color-green)",
+                          background: isPlatformAdmin
+                            ? "var(--color-warning, #F4B400)"
+                            : "var(--color-green)",
                           color: "var(--color-dark)",
                           fontWeight: 700,
                         }}
                       >
-                        Manager
+                        {roleLabel}
                       </span>
                     )}
                   </span>
+                  {user.organization_name && (
+                    <span className="text-meta text-white/60 leading-tight">
+                      {user.organization_name}
+                    </span>
+                  )}
                   {user.email && (
                     <span className="text-meta text-white/45 leading-tight">
                       {user.email}

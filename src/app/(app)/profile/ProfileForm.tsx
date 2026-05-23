@@ -166,7 +166,15 @@ export function ProfileForm({
         </Field>
         <Field label="Rôle">
           <input
-            value={role === "manager" ? "Manager" : "Commercial"}
+            value={
+              role === "platform_admin"
+                ? "Admin Noxias"
+                : role === "org_admin"
+                  ? "Admin"
+                  : role === "manager"
+                    ? "Manager"
+                    : "Commercial"
+            }
             disabled
             className="input"
           />

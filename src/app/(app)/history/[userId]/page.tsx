@@ -126,10 +126,15 @@ export default async function PlayerHistoryPage({
             <span style={{ color: "rgba(255,255,255,0.65)" }}>
               {ppn.toLocaleString("fr-FR")} PPN cumulés
             </span>
-            {profile.role === "manager" && (
+            {(profile.role === "manager" ||
+              profile.role === "org_admin" ||
+              profile.role === "platform_admin") && (
               <span
                 style={{
-                  background: "var(--color-green)",
+                  background:
+                    profile.role === "platform_admin"
+                      ? "var(--color-warning, #F4B400)"
+                      : "var(--color-green)",
                   color: "var(--color-dark)",
                   fontSize: "0.62rem",
                   letterSpacing: "0.18em",
@@ -139,7 +144,11 @@ export default async function PlayerHistoryPage({
                   textTransform: "uppercase",
                 }}
               >
-                Manager
+                {profile.role === "platform_admin"
+                  ? "Admin Noxias"
+                  : profile.role === "org_admin"
+                    ? "Admin"
+                    : "Manager"}
               </span>
             )}
           </div>

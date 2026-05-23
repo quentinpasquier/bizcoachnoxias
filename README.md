@@ -4,7 +4,11 @@
 
 Noxias prospecte au nom de plusieurs clients. Avant de décrocher pour de vrai, ses commerciaux s'entraînent ici : ils choisissent un **client** (avec son pitch et ses objections), un **persona** à appeler (DG PME, DAF, DRH, Dir. Marketing, Founder scaleup, CEO grand compte) et un **niveau** (Débutant → Expert), puis tentent d'obtenir un RDV. Le prospect peut raccrocher selon son niveau d'exigence. À la fin, une restitution chiffrée sur 5 axes (accroche, découverte, objections, valeur, closing) avec forces, axes d'amélioration et prochaines actions.
 
-Accès réservé aux emails **@noxias.com** (enforced en base via trigger Postgres).
+Outil **multi-tenant** : chaque organisation (Noxias + clients externes) a son
+espace cloisonné — un user ne voit jamais les données d'une autre org. Le
+signup public reste réservé aux emails **@noxias.com** ; les utilisateurs des
+orgs clientes sont créés via le back-office `/admin` (réservé aux
+`platform_admin` Noxias).
 
 ## Stack
 
@@ -169,6 +173,40 @@ npm run lint        # eslint
 ## Déploiement
 
 Voir [`DEPLOYMENT.md`](./DEPLOYMENT.md) — instructions pas à pas Vercel + Supabase + Anthropic.
+
+## Multi-tenancy
+
+Migration `0009_organizations.sql` introduit la notion d'**organisation**.
+Chaque ressource (profil, client, session, message, quiz) est scopée par
+`organization_id` ; les RLS garantissent l'isolation au niveau base.
+
+### Rôles
+
+| Rôle | Périmètre |
+|---|---|
+| `commercial` | Voit ses propres sessions de SON org |
+| `manager` | Voit toutes les sessions de SON org |
+| `org_admin` | Manager + gestion clients/users de SON org |
+| `platform_admin` | Super-admin Noxias, voit/gère TOUTES les orgs |
+
+### Créer une organisation cliente (super-admin)
+
+1. Aller sur `/admin/organizations` (visible si `platform_admin`)
+2. Créer l'org (nom + slug)
+3. Inviter ses utilisateurs depuis la page de l'org : email + rôle. Soit
+   email d'invitation magique, soit création directe avec mot de passe
+   temporaire.
+
+Le système utilise `SUPABASE_SERVICE_ROLE_KEY` côté serveur uniquement (voir
+`.env.example`).
+
+### Garde-fous
+
+- Trigger BEFORE INSERT sur `clients` / `sessions` qui empêche un user
+  d'insérer dans une autre org que la sienne (sauf platform_admin)
+- `handle_new_user` plus `enforce_signup_rules` lit `organization_id` depuis
+  `raw_user_meta_data`. Signup public sans org_id ⇒ refusé sauf @noxias.com.
+- L'org Noxias (id fixe `00000000-...-001`) ne peut pas être supprimée.
 
 ## Roadmap (post-v1)
 

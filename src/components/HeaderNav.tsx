@@ -12,7 +12,13 @@ const GAMING_ITEMS = [
 
 const CONFIG_ITEMS = [{ href: "/clients", label: "Clients" }];
 
-export function HeaderNav({ isManager }: { isManager?: boolean }) {
+export function HeaderNav({
+  isManager,
+  isPlatformAdmin,
+}: {
+  isManager?: boolean;
+  isPlatformAdmin?: boolean;
+}) {
   const pathname = usePathname();
 
   function isActive(href: string): boolean {
@@ -63,6 +69,17 @@ export function HeaderNav({ isManager }: { isManager?: boolean }) {
             </Link>
           );
         })}
+        {isPlatformAdmin && (
+          <Link
+            href="/admin/organizations"
+            className={`nav-pill nav-pill-config ${
+              isActive("/admin") ? "nav-pill-active" : ""
+            }`}
+            title="Back-office Noxias — gestion des organisations clientes"
+          >
+            Admin
+          </Link>
+        )}
       </div>
     </nav>
   );
