@@ -53,6 +53,29 @@ export async function POST(request: Request) {
   }
   const client = clientData as Client;
 
+  // Récupère les 3 derniers scénarios joués par CE commercial sur CE client.
+  // Sert à empêcher le générateur de retomber sur les mêmes nom/entreprise.
+  // Limité à 3 pour ne pas exploser le contexte ni la latence (1 query légère).
+  const { data: recentSessionsData } = await supabase
+    .from("sessions")
+    .select("scenario_data")
+    .eq("user_id", user.id)
+    .eq("client_id", client.id)
+    .not("scenario_data", "is", null)
+    .order("started_at", { ascending: false })
+    .limit(3);
+
+  const recentScenarios = (recentSessionsData ?? [])
+    .map((row) => row.scenario_data as { persona_name?: string; persona_role?: string; company_name?: string } | null)
+    .filter((s): s is { persona_name: string; persona_role: string; company_name: string } =>
+      Boolean(s && s.persona_name && s.persona_role && s.company_name),
+    )
+    .map((s) => ({
+      persona_name: s.persona_name,
+      persona_role: s.persona_role,
+      company_name: s.company_name,
+    }));
+
   // Génère le scénario via Claude (peut prendre 5-10s)
   let scenario;
   try {
@@ -61,6 +84,7 @@ export async function POST(request: Request) {
       difficulty: difficulty as Difficulty,
       gender: gender as Gender,
       personaLabel: personaLabel.trim(),
+      recentScenarios,
     });
   } catch (err) {
     return NextResponse.json(
