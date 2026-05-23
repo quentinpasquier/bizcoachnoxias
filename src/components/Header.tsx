@@ -13,6 +13,7 @@ interface HeaderProps {
     avatar_url?: string | null;
     role?: UserRole;
     organization_name?: string | null;
+    is_noxias_org?: boolean;
   } | null;
 }
 
@@ -22,6 +23,7 @@ export function Header({ user }: HeaderProps) {
     user?.role === "org_admin" ||
     user?.role === "platform_admin";
   const isPlatformAdmin = user?.role === "platform_admin";
+  const isNoxiasOrg = user?.is_noxias_org ?? true; // par défaut Noxias (demo / fallback)
   const roleLabel = (() => {
     switch (user?.role) {
       case "platform_admin":
@@ -52,6 +54,7 @@ export function Header({ user }: HeaderProps) {
             <HeaderNav
               isManager={isManager}
               isPlatformAdmin={isPlatformAdmin}
+              isNoxiasOrg={isNoxiasOrg}
             />
             <div className="flex items-center gap-3 pl-4 border-l border-white/10 shrink-0">
               <OnboardingTrigger />

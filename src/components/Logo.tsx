@@ -3,7 +3,7 @@ interface LogoProps {
   size?: number;
 }
 
-// Wordmark "BIZCOACH" + tagline "powered by Noxias".
+// Wordmark "BIFFCOACH" + tagline "powered by Noxias".
 // variant=dark  -> blanc (header app, login, 404)
 // variant=light -> violet/dark (signup et fonds clairs)
 export function Logo({ variant = "dark", size = 32 }: LogoProps) {
@@ -20,7 +20,7 @@ export function Logo({ variant = "dark", size = 32 }: LogoProps) {
     <span
       className="select-none inline-flex flex-col leading-none"
       style={{ gap: Math.max(2, Math.round(size * 0.06)) }}
-      aria-label="Bizcoach, powered by Noxias"
+      aria-label="BIFFCOACH, powered by Noxias"
     >
       <span
         style={{
@@ -33,7 +33,7 @@ export function Logo({ variant = "dark", size = 32 }: LogoProps) {
           fontFamily: "var(--font-ubuntu), Lato, system-ui, sans-serif",
         }}
       >
-        Bizcoach
+        BIFFCOACH
       </span>
       <span
         style={{

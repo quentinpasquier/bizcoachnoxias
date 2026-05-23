@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { VoiceOrb } from "@/components/VoiceOrb";
+import { CoachTip } from "@/components/CoachTip";
 import { getPersonaBullets } from "@/lib/briefing";
 import type { Difficulty, Gender, PersonaProfile } from "@/lib/supabase/types";
 
@@ -143,6 +144,16 @@ export function NewSessionForm({
         <div className="space-y-8 min-w-0">
           {/* STEPPER */}
           <Stepper completed={completedSteps} total={4} />
+
+          {/* Conseil du coach */}
+          <CoachTip collapsible defaultOpen={false}>
+            Premier conseil : commence par{" "}
+            <strong style={{ color: "#FFFFFF" }}>Débutant 3 fois</strong> sur
+            un même persona pour caler ton accroche et ton pitch. Passe à{" "}
+            <strong style={{ color: "#FFFFFF" }}>Avancé</strong> quand tu
+            décroches 2 RDV d&apos;affilée. Le niveau Expert n&apos;est pas un
+            objectif, c&apos;est un test pour voir si t&apos;es au point.
+          </CoachTip>
 
           {/* Étape 1 : Client */}
           <StepSection

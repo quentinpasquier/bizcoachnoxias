@@ -41,7 +41,7 @@ export default async function LoginPage({
           </div>
 
           <div className="login-hero-text">
-            <span className="login-eyebrow">Camille · Coach commerciale</span>
+            <span className="login-eyebrow">Quentin Pasquier · Ton coach</span>
             <h1 className="login-headline">
               <span className="login-headline-light">Salut.</span>
               <span className="login-headline-green">
@@ -50,32 +50,33 @@ export default async function LoginPage({
             </h1>
             <p className="login-tagline">
               Deviens un expert du cold call et fais exploser{" "}
-              <span className="login-tagline-accent">tes primes</span>.
+              <span className="login-tagline-accent">tes résultats</span>.
             </p>
             <p className="login-subtitle">
-              Scoring sur 20 critères, classement équipe en direct, badges
-              déblocables. Reprends l&apos;entraînement là où tu t&apos;es
-              arrêté.
+              Construit par Quentin Pasquier, fondateur de Noxias, à partir de
+              <strong style={{ color: "#FFFFFF" }}> 10 000+ calls analysés </strong>
+              en production. Scoring sur 20 critères, classement équipe en direct,
+              badges déblocables.
             </p>
           </div>
 
           <ul className="login-pills">
             <li className="login-pill">
               <span className="login-pill-icon">
-                <PillIconTarget />
+                <PillIconTrophy />
               </span>
               <div>
-                <strong>20 critères</strong>
-                <span>évalués par appel</span>
+                <strong>10 ans</strong>
+                <span>de terrain commercial</span>
               </div>
             </li>
             <li className="login-pill">
               <span className="login-pill-icon">
-                <PillIconTrophy />
+                <PillIconTarget />
               </span>
               <div>
-                <strong>Classement</strong>
-                <span>équipe en direct</span>
+                <strong>10 000+ calls</strong>
+                <span>analysés en prod Noxias</span>
               </div>
             </li>
             <li className="login-pill">

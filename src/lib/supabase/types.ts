@@ -98,6 +98,33 @@ export interface QuizAttemptRow {
   completed_at: string;
 }
 
+// Réponses brutes du wizard 5 étapes (orgs clientes). Stocké tel quel pour
+// permettre l'édition via le même wizard. Voir migration 0010.
+export interface GuidedPayloadStored {
+  name: string;
+  sector: string;
+  value_prop_one_liner: string;
+  product_pitch: string;
+  ideal_targets: string;
+  tangible_value: string;
+  channels: string;
+  differentiation: string;
+  personas: Array<{
+    label: string;
+    role: string;
+    typical_company: string;
+    key_pains: string;
+    key_kpis: string;
+    motivations: string;
+    triggers: string;
+    decision_signals: string;
+  }>;
+  selected_common_objections: string[];
+  specific_objections: string;
+  hook: string;
+  killer_arguments: string;
+}
+
 export interface Client {
   id: string;
   organization_id: string;
@@ -114,6 +141,7 @@ export interface Client {
   synced_files: SyncedFile[];
   target_personas: string[];
   persona_profiles: PersonaProfile[];
+  guided_payload: GuidedPayloadStored | null;
   quiz_data: QuizData | null;
   quiz_generated_at: string | null;
   created_at: string;

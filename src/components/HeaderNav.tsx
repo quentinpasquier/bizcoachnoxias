@@ -10,16 +10,19 @@ const GAMING_ITEMS = [
   { href: "/history", label: "Historique" },
 ];
 
-const CONFIG_ITEMS = [{ href: "/clients", label: "Clients" }];
-
 export function HeaderNav({
   isManager,
   isPlatformAdmin,
+  isNoxiasOrg = true,
 }: {
   isManager?: boolean;
   isPlatformAdmin?: boolean;
+  isNoxiasOrg?: boolean;
 }) {
   const pathname = usePathname();
+  const configItems = [
+    { href: "/clients", label: isNoxiasOrg ? "Clients" : "Offres" },
+  ];
 
   function isActive(href: string): boolean {
     return (
@@ -55,7 +58,7 @@ export function HeaderNav({
 
       {/* Section CONFIG (blanc) — secondaire */}
       <div className="nav-section nav-section-config">
-        {CONFIG_ITEMS.map((item) => {
+        {configItems.map((item) => {
           const active = isActive(item.href);
           return (
             <Link

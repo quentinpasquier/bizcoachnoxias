@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { OnboardingGuide } from "@/components/OnboardingGuide";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { isNoxiasOrg } from "@/lib/vocabulary";
 import type { UserRole } from "@/lib/supabase/types";
 
 export default async function AppLayout({
@@ -68,6 +69,8 @@ export default async function AppLayout({
     organizationName = (org as { name: string } | null)?.name ?? null;
   }
 
+  const orgIsNoxias = isNoxiasOrg(p?.organization_id);
+
   return (
     <div className="app-shell">
       <Header
@@ -77,10 +80,11 @@ export default async function AppLayout({
           avatar_url: p?.avatar_url ?? null,
           role: p?.role ?? "commercial",
           organization_name: organizationName,
+          is_noxias_org: orgIsNoxias,
         }}
       />
       <main className="app-main">{children}</main>
-      <OnboardingGuide />
+      <OnboardingGuide isNoxiasOrg={orgIsNoxias} />
     </div>
   );
 }

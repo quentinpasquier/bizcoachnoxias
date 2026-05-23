@@ -2,21 +2,22 @@
 
 type MascotState = "idle" | "happy" | "speaking" | "thinking";
 
-interface CamilleMascotProps {
+interface CoachMascotProps {
   state?: MascotState;
   size?: number;
   withHalo?: boolean;
 }
 
-// Camille, la mascotte commerciale Noxias.
-// Visage sympa, casque téléphonique, badge vert. Sert d'avatar humain
-// dans l'app (login, dashboard, briefing) pour humaniser l'expérience.
-// SVG vectoriel, animations CSS légères.
-export function CamilleMascot({
+// Quentin, le coach commercial signé Noxias. Stylé en avatar : coupe courte,
+// casque téléphonique, badge vert sur le blazer. Sert d'avatar humain dans
+// l'app (login, dashboard, briefing) pour humaniser le coaching.
+// SVG vectoriel, animations CSS légères. Le composant est exporté sous deux
+// noms (CoachMascot et CamilleMascot) pour compat ascendante des imports.
+export function CoachMascot({
   state = "idle",
   size = 96,
   withHalo = false,
-}: CamilleMascotProps) {
+}: CoachMascotProps) {
   const animation =
     state === "thinking"
       ? "camilleThink 2.4s ease-in-out infinite"
@@ -54,33 +55,29 @@ export function CamilleMascot({
           zIndex: 1,
           filter: "drop-shadow(0 6px 16px rgba(34, 25, 50, 0.32))",
         }}
-        aria-label="Camille, coach commerciale Noxias"
+        aria-label="Quentin Pasquier, ton coach commercial"
       >
         <defs>
-          <linearGradient id="camille-bg" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id="coach-bg" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#3d2860" />
             <stop offset="100%" stopColor="#221932" />
           </linearGradient>
-          <linearGradient id="camille-skin" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#FDE0C7" />
-            <stop offset="100%" stopColor="#F2BF99" />
+          <linearGradient id="coach-skin" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#F2C9A1" />
+            <stop offset="100%" stopColor="#D9A06F" />
           </linearGradient>
-          <linearGradient id="camille-hair" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id="coach-hair" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#3a2244" />
             <stop offset="100%" stopColor="#1d1126" />
           </linearGradient>
-          <linearGradient id="camille-blazer" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id="coach-blazer" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#34244B" />
             <stop offset="100%" stopColor="#1c1230" />
           </linearGradient>
-          <radialGradient id="camille-cheek" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#FF9DA5" stopOpacity="0.55" />
-            <stop offset="100%" stopColor="#FF9DA5" stopOpacity="0" />
-          </radialGradient>
         </defs>
 
         {/* Cercle de fond avec dégradé */}
-        <circle cx="60" cy="60" r="58" fill="url(#camille-bg)" />
+        <circle cx="60" cy="60" r="58" fill="url(#coach-bg)" />
         <circle
           cx="60"
           cy="60"
@@ -93,11 +90,11 @@ export function CamilleMascot({
         {/* Épaules / blazer */}
         <path
           d="M 22 110 Q 30 86 60 86 Q 90 86 98 110 Z"
-          fill="url(#camille-blazer)"
+          fill="url(#coach-blazer)"
         />
-        {/* Col blanc */}
+        {/* Chemise blanche (col en V ouvert, sans cravate, à la dirigeant moderne) */}
         <path
-          d="M 50 88 L 60 94 L 70 88 L 67 100 L 60 102 L 53 100 Z"
+          d="M 50 88 L 60 96 L 70 88 L 65 102 L 60 104 L 55 102 Z"
           fill="#FAFAFA"
           opacity="0.92"
         />
@@ -121,18 +118,12 @@ export function CamilleMascot({
         {/* Cou */}
         <path
           d="M 53 78 L 53 88 Q 60 90 67 88 L 67 78 Z"
-          fill="url(#camille-skin)"
+          fill="url(#coach-skin)"
         />
         <path
           d="M 53 84 Q 60 88 67 84"
           fill="rgba(0,0,0,0.10)"
           stroke="none"
-        />
-
-        {/* Cheveux derrière */}
-        <path
-          d="M 28 56 Q 28 36 60 30 Q 92 36 92 56 L 92 76 Q 92 80 88 80 L 32 80 Q 28 80 28 76 Z"
-          fill="url(#camille-hair)"
         />
 
         {/* Visage */}
@@ -141,26 +132,28 @@ export function CamilleMascot({
           cy="60"
           rx="22"
           ry="25"
-          fill="url(#camille-skin)"
+          fill="url(#coach-skin)"
         />
 
-        {/* Cheveux frange */}
+        {/* Cheveux courts : coupe nette, dégradés sur les côtés.
+            Forme : couvre le haut du crâne et descend légèrement sur les
+            tempes, sans couvrir les oreilles. */}
         <path
-          d="M 38 48 Q 44 38 60 36 Q 76 38 82 48 Q 78 44 70 44 Q 60 44 50 48 Q 44 48 38 48 Z"
-          fill="url(#camille-hair)"
+          d="M 38 50
+             Q 38 32 60 28
+             Q 82 32 82 50
+             Q 78 44 74 43
+             Q 66 41 60 42
+             Q 54 41 46 43
+             Q 42 44 38 50 Z"
+          fill="url(#coach-hair)"
         />
+        {/* Petite mèche sur le front (asymétrie naturelle) */}
         <path
-          d="M 38 58 Q 36 70 38 80 L 42 80 Q 40 70 42 60 Z"
-          fill="url(#camille-hair)"
+          d="M 56 38 Q 62 36 66 42 Q 60 42 56 44 Z"
+          fill="url(#coach-hair)"
+          opacity="0.9"
         />
-        <path
-          d="M 82 58 Q 84 70 82 80 L 78 80 Q 80 70 78 60 Z"
-          fill="url(#camille-hair)"
-        />
-
-        {/* Joues */}
-        <circle cx="48" cy="66" r="5" fill="url(#camille-cheek)" />
-        <circle cx="72" cy="66" r="5" fill="url(#camille-cheek)" />
 
         {/* Yeux verts */}
         <g
@@ -182,18 +175,18 @@ export function CamilleMascot({
           <circle cx="69" cy="60.5" r="1.3" fill="rgba(60, 200, 121, 0.25)" />
         </g>
 
-        {/* Sourcils */}
+        {/* Sourcils plus marqués (visage masculin) */}
         <path
-          d="M 47 52 Q 51 49 55 52"
+          d="M 46 51 Q 51 49 56 52"
           stroke="#2a1733"
-          strokeWidth="1.6"
+          strokeWidth="2"
           fill="none"
           strokeLinecap="round"
         />
         <path
-          d="M 65 52 Q 69 49 73 52"
+          d="M 64 52 Q 69 49 74 51"
           stroke="#2a1733"
-          strokeWidth="1.6"
+          strokeWidth="2"
           fill="none"
           strokeLinecap="round"
         />
@@ -201,10 +194,17 @@ export function CamilleMascot({
         {/* Nez */}
         <path
           d="M 59 64 Q 58 68 60 70 Q 62 68 61 64"
-          stroke="rgba(0,0,0,0.10)"
-          strokeWidth="1.2"
+          stroke="rgba(0,0,0,0.12)"
+          strokeWidth="1.3"
           fill="none"
           strokeLinecap="round"
+        />
+
+        {/* Légère barbe naissante (ombre sur la mâchoire) */}
+        <path
+          d="M 44 74 Q 50 84 60 84 Q 70 84 76 74"
+          fill="rgba(58, 34, 68, 0.10)"
+          stroke="none"
         />
 
         {/* Bouche */}
@@ -219,28 +219,21 @@ export function CamilleMascot({
         >
           {state === "happy" || state === "speaking" ? (
             <path
-              d="M 53 73 Q 60 80 67 73"
-              stroke="#A61F3F"
+              d="M 53 73 Q 60 79 67 73"
+              stroke="#7a3340"
               strokeWidth="2"
               fill="none"
               strokeLinecap="round"
             />
           ) : (
             <path
-              d="M 54 74 Q 60 78 66 74"
-              stroke="#A61F3F"
+              d="M 54 74 Q 60 77 66 74"
+              stroke="#7a3340"
               strokeWidth="2"
               fill="none"
               strokeLinecap="round"
             />
           )}
-          {/* Lèvre inférieure */}
-          <path
-            d="M 56 76 Q 60 77 64 76"
-            stroke="rgba(166, 31, 63, 0.4)"
-            strokeWidth="1"
-            fill="none"
-          />
         </g>
 
         {/* Casque téléphonique - arceau */}
@@ -285,7 +278,7 @@ export function CamilleMascot({
           fill="var(--color-green, #3CC879)"
         />
 
-        {/* Petite étincelle verte (effet idle) */}
+        {/* Petite étincelle verte (effet happy) */}
         {state === "happy" && (
           <g style={{ animation: "camilleSparkle 1.2s ease-out infinite" }}>
             <circle cx="98" cy="34" r="1.8" fill="var(--color-green, #3CC879)" />
@@ -296,3 +289,8 @@ export function CamilleMascot({
     </div>
   );
 }
+
+// Alias de compat — les anciens imports `CamilleMascot` continuent de
+// fonctionner pendant la transition. À supprimer une fois tous les imports
+// migrés.
+export const CamilleMascot = CoachMascot;

@@ -128,7 +128,7 @@ export function BriefingScreen({
                     className="briefing-eyebrow"
                     style={{ color: diffColor }}
                   >
-                    Camille te briefe · {difficultyConfig.label}{" "}
+                    Quentin te briefe · {difficultyConfig.label}{" "}
                     <DifficultyStars stars={stars} color={diffColor} />
                   </span>
                   <h1 className="briefing-h1">

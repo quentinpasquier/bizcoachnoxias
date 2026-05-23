@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Badge, DifficultyBadge } from "@/components/ui/Badge";
+import { CoachTip } from "@/components/CoachTip";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTimeFr, formatDuration } from "@/lib/format";
 import type {
@@ -212,6 +213,14 @@ export default async function FeedbackPage({
                 propose une formulation prête à utiliser la prochaine fois.
               </p>
             </div>
+            <CoachTip accent="green">
+              Lis les leviers <strong style={{ color: "#FFFFFF" }}>avant</strong>{" "}
+              le score. Le chiffre c&apos;est de la dopamine — ce qui te fait
+              progresser ce sont les reformulations concrètes ci-dessous. Refais
+              1 session demain en intégrant{" "}
+              <strong style={{ color: "#FFFFFF" }}>2 reformulations max</strong>,
+              pas plus. C&apos;est comme ça qu&apos;on construit un réflexe.
+            </CoachTip>
             <div className="space-y-4">
               {evaluation.quote_rewrites.map((q, idx) => (
                 <QuoteRewriteCard key={idx} rewrite={q} />

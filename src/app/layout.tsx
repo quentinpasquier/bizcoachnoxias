@@ -17,14 +17,14 @@ const ubuntu = Ubuntu({
 });
 
 export const metadata: Metadata = {
-  title: "Noxias Coach · Ton coach commercial",
+  title: "BIFFCOACH · Ton coach commercial signé Noxias",
   description:
-    "Ton coach commercial. Entraîne-toi face à de vrais prospects, mesure ta progression, décroche plus de RDV.",
+    "Le coach commercial de Quentin Pasquier, fondateur de Noxias. 10 000+ calls analysés, branché sur la production de l'agence. Entraîne-toi face à de vrais prospects, mesure ta progression, décroche plus de RDV.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
-  applicationName: "Noxias Coach",
+  applicationName: "BIFFCOACH",
   appleWebApp: {
     capable: true,
-    title: "Noxias Coach",
+    title: "BIFFCOACH",
     statusBarStyle: "default",
   },
 };

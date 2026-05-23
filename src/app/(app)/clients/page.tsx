@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { ClientsBoard } from "./ClientsBoard";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { getClientVocab } from "@/lib/vocabulary";
 import type { Client, SessionRow } from "@/lib/supabase/types";
 
 interface ClientWithStats {
@@ -26,8 +27,22 @@ export default async function ClientsPage() {
   const configured = isSupabaseConfigured();
 
   let clients: ClientWithStats[] = [];
+  let organizationId: string | null = null;
 
   if (configured) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("organization_id")
+        .eq("id", user.id)
+        .single();
+      organizationId = (profile as { organization_id: string } | null)
+        ?.organization_id ?? null;
+    }
+
     const [{ data: clientsData }, { data: sessionsData }] = await Promise.all([
       supabase
         .from("clients")
@@ -72,39 +87,43 @@ export default async function ClientsPage() {
     });
   }
 
+  const vocab = getClientVocab(organizationId);
+
   return (
     <div className="container-noxias py-12 space-y-8">
       <PageHeader
-        title="Clients"
+        title={vocab.pluralCap}
         subtitle={
           clients.length > 0
-            ? `${clients.length} client${clients.length > 1 ? "s" : ""} suivi${clients.length > 1 ? "s" : ""}`
-            : "Aucun client pour l'instant"
+            ? `${clients.length} ${clients.length > 1 ? vocab.plural : vocab.singular} ${
+                clients.length > 1 ? "configurés" : "configurée"
+              }`
+            : vocab.emptyTitle
         }
         action={
           <Link href="/clients/new" className="btn btn-dark">
-            + Nouveau client
+            + {vocab.newItem}
           </Link>
         }
       />
 
       {clients.length === 0 ? (
         <Card variant="lavender" className="text-center py-16">
-          <h3 className="text-h3 mb-2">Aucun client pour l&apos;instant.</h3>
+          <h3 className="text-h3 mb-2">{vocab.emptyTitle}</h3>
           <p
             className="text-body mb-6"
             style={{ color: "rgba(255, 255, 255, 0.65)" }}
           >
             {configured
-              ? "Crée ton premier client en uploadant ses docs."
-              : "Mode démo. Connecte Supabase pour voir tes clients."}
+              ? vocab.emptyBody
+              : `Mode démo. Connecte Supabase pour voir tes ${vocab.plural}.`}
           </p>
           <Link href="/clients/new" className="btn btn-primary inline-flex">
-            Créer un client
+            {vocab.newItem}
           </Link>
         </Card>
       ) : (
-        <ClientsBoard clients={clients} />
+        <ClientsBoard clients={clients} vocab={vocab} />
       )}
     </div>
   );

@@ -6,11 +6,18 @@ import { Card } from "@/components/ui/Card";
 import { StatusPill } from "@/components/ui/Status";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { FilterChip } from "@/components/ui/FilterChip";
+import type { ClientVocab } from "@/lib/vocabulary";
 import type { ClientWithStats } from "./page";
 
 type FilterKey = "all" | "active" | "ready" | "without-docs" | "inactive";
 
-export function ClientsBoard({ clients }: { clients: ClientWithStats[] }) {
+export function ClientsBoard({
+  clients,
+  vocab,
+}: {
+  clients: ClientWithStats[];
+  vocab: ClientVocab;
+}) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [search, setSearch] = useState("");
 
@@ -49,7 +56,7 @@ export function ClientsBoard({ clients }: { clients: ClientWithStats[] }) {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher un client ou un secteur..."
+              placeholder={vocab.searchPlaceholder}
               className="bg-transparent outline-none flex-1 text-body"
               style={{ color: "var(--color-dark)" }}
             />
@@ -94,12 +101,10 @@ export function ClientsBoard({ clients }: { clients: ClientWithStats[] }) {
         </div>
       </Card>
 
-      {/* Grille de clients */}
+      {/* Grille */}
       {filtered.length === 0 ? (
         <Card variant="lavender" className="text-center py-12">
-          <p style={{ color: "var(--color-gray)" }}>
-            Aucun client ne correspond.
-          </p>
+          <p style={{ color: "var(--color-gray)" }}>{vocab.noResults}</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
