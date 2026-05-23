@@ -620,10 +620,16 @@ function StepOffer({
         subtitle="Le coach a besoin de connaître ce que tu vends pour générer un prospect réaliste."
       />
       <CoachTip>
-        Ne pitche pas ton produit, vends la douleur résolue. La promesse qui
-        marche dit ce que <strong style={{ color: "#FFFFFF" }}>tu apportes</strong>{" "}
-        à l&apos;autre, en 1 phrase qu&apos;il pourrait répéter à son associé.
-        Si elle commence par &quot;Nous proposons...&quot;, recommence.
+        Le secret d&apos;une promesse qui fait dire &quot;continue&quot; au
+        prospect, c&apos;est la formule{" "}
+        <strong style={{ color: "#FFFFFF" }}>
+          &quot;On aide [persona ultra précis] à [outcome chiffré] sans [pain
+          habituel]&quot;
+        </strong>
+        . Le mot &quot;on&quot;, un verbe d&apos;action, un résultat. Pas
+        &quot;nous proposons une solution de...&quot;. Si ta promesse commence
+        par ton entreprise au lieu du prospect, t&apos;as déjà perdu son
+        attention.
       </CoachTip>
       <Input
         id="name"
@@ -641,6 +647,14 @@ function StepOffer({
         value={payload.sector}
         onChange={(e) => patch({ sector: e.target.value })}
       />
+      <CoachTip variant="compact">
+        L&apos;erreur la plus fréquente :{" "}
+        <strong style={{ color: "#FFFFFF" }}>promesse trop large</strong>.
+        &quot;On aide les entreprises à mieux vendre&quot; = audible par
+        personne. &quot;On aide les directions commerciales de SaaS série A à
+        doubler leur taux de prise de RDV en 6 semaines&quot; = ça décroche.
+        Plus tu cibles, plus ça mord.
+      </CoachTip>
       <Textarea
         id="value_prop_one_liner"
         label="Promesse en une phrase *"
@@ -668,13 +682,28 @@ function StepValueProp({
         subtitle="Ce que le commercial doit vendre, et la preuve concrète qu'il peut avancer."
       />
       <CoachTip>
-        Quand je relis un pitch, je cherche 3 choses :{" "}
+        Le mythe à casser :{" "}
+        <strong style={{ color: "#FFFFFF" }}>
+          &quot;plus c&apos;est court, mieux c&apos;est&quot;
+        </strong>
+        . Faux. Les data sur 300M d&apos;appels analysés (Gong) montrent que
+        les pitchs qui décrochent un RDV durent en moyenne{" "}
+        <strong style={{ color: "#FFFFFF" }}>53 secondes — pas 25</strong>. Un
+        pitch trop court signale du vide. Ce que je cherche dans un pitch :{" "}
         <strong style={{ color: "#FFFFFF" }}>un chiffre</strong>,{" "}
         <strong style={{ color: "#FFFFFF" }}>une preuve concrète</strong> (cas
         client, livrable),{" "}
         <strong style={{ color: "#FFFFFF" }}>un opposant</strong> (ce que tu
-        n&apos;es pas). Si y&apos;en a aucun des trois, le commercial se fait
-        bouffer en 30 secondes.
+        n&apos;es pas). Sans ces trois, t&apos;es mort en 30 secondes.
+      </CoachTip>
+      <CoachTip variant="compact">
+        Trigger phrase qui double le taux de RDV (data Gong) :{" "}
+        <strong style={{ color: "#FFFFFF" }}>
+          &quot;La raison de mon appel, c&apos;est...&quot;
+        </strong>
+        . La structure 45-60s qui marche : (1) nomme un pair connu du prospect,
+        (2) décris SON pain spécifique, (3) délivre l&apos;outcome chiffré, (4)
+        demande 15 min sans engagement — jamais une &quot;démo&quot;.
       </CoachTip>
       <Textarea
         id="product_pitch"
@@ -685,6 +714,16 @@ function StepValueProp({
         value={payload.product_pitch}
         onChange={(e) => patch({ product_pitch: e.target.value })}
       />
+      <CoachTip variant="compact">
+        Tangible = ce que le prospect peut{" "}
+        <strong style={{ color: "#FFFFFF" }}>
+          tenir dans sa main 60 jours après signature
+        </strong>
+        . Pas &quot;gain de productivité&quot;, mais &quot;un site en ligne, un
+        dashboard partagé, 3 réunions hebdo&quot;. Si t&apos;écris
+        &quot;amélioration du ROI&quot; ici, t&apos;as encore raisonné en
+        feature. Reformule en LIVRABLE.
+      </CoachTip>
       <Textarea
         id="tangible_value"
         label="Valeur tangible livrée en 30-60 jours"
@@ -693,6 +732,14 @@ function StepValueProp({
         value={payload.tangible_value}
         onChange={(e) => patch({ tangible_value: e.target.value })}
       />
+      <CoachTip variant="compact">
+        La meilleure façon de te différencier, c&apos;est de{" "}
+        <strong style={{ color: "#FFFFFF" }}>dire ce que tu n&apos;es pas</strong>.
+        &quot;On n&apos;est pas une agence qui vous facture l&apos;heure&quot;,
+        &quot;on n&apos;est pas un SaaS générique à configurer 6 mois&quot;.
+        L&apos;opposition reste en mémoire mieux que l&apos;affirmation. Vise 2
+        oppositions concrètes contre ton concurrent type.
+      </CoachTip>
       <Textarea
         id="differentiation"
         label="Différenciation concurrentielle"
@@ -701,6 +748,15 @@ function StepValueProp({
         value={payload.differentiation}
         onChange={(e) => patch({ differentiation: e.target.value })}
       />
+      <CoachTip variant="compact">
+        Les <strong style={{ color: "#FFFFFF" }}>trigger events</strong> battent
+        les firmographiques. Aaron Ross documente{" "}
+        <strong style={{ color: "#FFFFFF" }}>18% de reply rate</strong> sur un
+        outreach trigger-based vs <strong>3%</strong> sans. Liste ici les
+        SIGNAUX qui te disent qu&apos;un prospect est mûr : levée récente,
+        recrutement sur poste lié, changement de direction, déménagement, nouvel
+        ERP. C&apos;est ça que ton commercial chassera.
+      </CoachTip>
       <Textarea
         id="channels"
         label="Où trouve-t-on tes cibles ?"
@@ -741,13 +797,29 @@ function StepPersonas({
         subtitle="Qui le commercial va appeler. Ajoute autant de profils distincts que tu veux entraîner (recommandé : 2-4)."
       />
       <CoachTip>
-        Un bon persona n&apos;est pas un poste. C&apos;est un trio :{" "}
-        <strong style={{ color: "#FFFFFF" }}>un job</strong>,{" "}
-        <strong style={{ color: "#FFFFFF" }}>une douleur précise qui le
-        réveille la nuit</strong>, et{" "}
-        <strong style={{ color: "#FFFFFF" }}>un événement déclencheur</strong>{" "}
-        qui fait qu&apos;aujourd&apos;hui il achèterait. Sans ces trois trucs,
-        tes commerciaux pitchent dans le vide.
+        Un persona n&apos;est PAS un job title. C&apos;est un trio :{" "}
+        <strong style={{ color: "#FFFFFF" }}>un job to be done</strong> (le
+        résultat qu&apos;il veut accomplir),{" "}
+        <strong style={{ color: "#FFFFFF" }}>
+          une douleur précise qui le réveille la nuit
+        </strong>
+        , et un{" "}
+        <strong style={{ color: "#FFFFFF" }}>événement déclencheur</strong> qui
+        rend le moment opportun. Gartner documente que la décision B2B implique
+        6 à 10 stakeholders. Tu n&apos;as pas besoin de tous les avoir, mais tu
+        dois savoir lequel tu pitches.
+      </CoachTip>
+      <CoachTip variant="compact">
+        Un ICP solide se construit en 4 couches :{" "}
+        <strong style={{ color: "#FFFFFF" }}>firmographique</strong> (taille,
+        secteur, géo),{" "}
+        <strong style={{ color: "#FFFFFF" }}>technographique</strong> (stack en
+        place, concurrents installés),{" "}
+        <strong style={{ color: "#FFFFFF" }}>comportementale</strong>{" "}
+        (recrutement, contenu consommé), et{" "}
+        <strong style={{ color: "#FFFFFF" }}>trigger events</strong> (levée,
+        expansion, leadership). Si tu maîtrises 2-3 couches, c&apos;est assez —
+        l&apos;IA peut combler les autres.
       </CoachTip>
 
       <Textarea
@@ -922,6 +994,18 @@ function PersonaCard({
             value={persona.typical_company}
             onChange={(e) => onChange({ typical_company: e.target.value })}
           />
+          <CoachTip variant="compact">
+            Les douleurs qui décrochent un RDV sont{" "}
+            <strong style={{ color: "#FFFFFF" }}>
+              hiérarchisées par fréquence ET intensité
+            </strong>
+            . Si tu mets 5 pains génériques, ton commercial pitchera dans le
+            vide. Cible{" "}
+            <strong style={{ color: "#FFFFFF" }}>2 pains MAX</strong> qui font
+            mal <em>maintenant</em>. Le test : si le prospect dit &quot;oui,
+            c&apos;est exactement ça&quot; en l&apos;écoutant, t&apos;as gagné.
+            Sinon c&apos;est du remplissage.
+          </CoachTip>
           <Textarea
             id={`p-${idx}-pains`}
             label="Douleurs principales (1 par ligne)"
@@ -946,6 +1030,19 @@ function PersonaCard({
             value={persona.motivations}
             onChange={(e) => onChange({ motivations: e.target.value })}
           />
+          <CoachTip variant="compact" accent="green">
+            Les vrais triggers que je traque chez Noxias :{" "}
+            <strong style={{ color: "#FFFFFF" }}>levée de fonds récente</strong>{" "}
+            (budget actif sous 90 jours),{" "}
+            <strong style={{ color: "#FFFFFF" }}>
+              recrutement sur poste lié
+            </strong>{" "}
+            (création de fonction = pain documenté),{" "}
+            <strong style={{ color: "#FFFFFF" }}>changement de leadership</strong>{" "}
+            (le nouveau cherche à laisser sa marque dans les 100 premiers jours),
+            expansion géo/produit. Sans trigger, ton appel arrive au mauvais
+            moment.
+          </CoachTip>
           <Textarea
             id={`p-${idx}-triggers`}
             label="Événements déclencheurs d'achat (1 par ligne)"
@@ -1011,13 +1108,15 @@ function StepObjections({
         subtitle="Coche les objections universelles que tu entends + ajoute les spécifiques à ta proposition."
       />
       <CoachTip>
-        Les 5 objections classiques (déjà un presta, pas de budget, pas le
-        moment), tu les connais. Le vrai boulot c&apos;est les{" "}
+        À retenir :{" "}
         <strong style={{ color: "#FFFFFF" }}>
-          10-15 objections spécifiques à ton offre
-        </strong>{" "}
-        — celles qu&apos;on n&apos;entend que dans ton univers. C&apos;est ça
-        qui plombe les RDV en avancé.
+          50% des objections en cold call sont des brush-offs réflexes
+        </strong>
+        , pas de vraies objections. &quot;Pas le temps&quot;, &quot;envoyez un
+        mail&quot;, &quot;pas intéressé&quot; dans les 10 premières secondes =
+        mécanisme défensif, pas avis raisonné. Un cold call qui décroche traite
+        en moyenne <strong>3 à 4 objections</strong>. La question n&apos;est pas
+        de les éviter — c&apos;est de les <em>creuser</em>.
       </CoachTip>
 
       <div>
@@ -1091,6 +1190,28 @@ function StepObjections({
         </div>
       </div>
 
+      <CoachTip variant="compact">
+        Framework de base : LAER (Listen-Acknowledge-Explore-Respond). Version
+        pro que j&apos;utilise :{" "}
+        <strong style={{ color: "#FFFFFF" }}>mirroring + labeling</strong> de
+        Chris Voss. Tu répètes les 3 derniers mots du prospect (&quot;déjà un
+        prestataire ?&quot;) ou tu nommes l&apos;émotion (&quot;on dirait que ce
+        sujet vous fatigue&quot;). Ça pousse à élaborer — c&apos;est là que tu
+        trouves la vraie objection cachée derrière la phrase réflexe.
+      </CoachTip>
+
+      <CoachTip variant="compact" accent="green">
+        Pour récolter les objections spécifiques de ton offre :{" "}
+        <strong style={{ color: "#FFFFFF" }}>
+          relis tes 10 derniers deals perdus
+        </strong>{" "}
+        et les comptes-rendus. Les objections génériques (budget, timing), tu
+        les connais déjà. Cherche les phrases EXACTES que tes prospects
+        sortaient (&quot;on a essayé X y&apos;a 2 ans et ça a foiré&quot;,
+        &quot;mon DAF refuse les abonnements SaaS&quot;). C&apos;est l&apos;or —
+        ce qui distingue tes commerciaux d&apos;un commercial random.
+      </CoachTip>
+
       <div
         className="flex items-center justify-between gap-3 flex-wrap rounded-xl p-4"
         style={{
@@ -1106,8 +1227,8 @@ function StepObjections({
             className="text-meta mt-1"
             style={{ color: "rgba(255, 255, 255, 0.7)" }}
           >
-            Celles qui sont propres à ce que tu vends. Claude peut t'en suggérer
-            15 ciblées à partir de ta promesse.
+            Celles qui sont propres à ce que tu vends. Claude peut t&apos;en
+            suggérer 15 ciblées à partir de ta promesse.
           </p>
         </div>
         <Button
@@ -1159,11 +1280,19 @@ function StepHook({
         subtitle="La porte d'entrée d'un appel et les phrases qui font mouche. Optionnel mais ça enrichit l'entraînement."
       />
       <CoachTip>
-        Une bonne accroche n&apos;est pas un pitch. C&apos;est{" "}
-        <strong style={{ color: "#FFFFFF" }}>une question ou un constat</strong>{" "}
-        qui retourne le prospect en 5 secondes. Si tu commences par
-        &quot;Bonjour je suis X de la société Y et nous proposons...&quot;,
-        t&apos;es déjà mort. Vise la douleur ou le décalage.
+        Un opener ≠ un pitch. L&apos;opener c&apos;est les{" "}
+        <strong style={{ color: "#FFFFFF" }}>10-15 premières secondes</strong>{" "}
+        pour passer le réflexe de raccrochage. Le pitch vient APRÈS. Data Gong
+        sur 300M de calls :{" "}
+        <strong style={{ color: "#FFFFFF" }}>
+          &quot;Comment ça va depuis la dernière fois ?&quot; = 10% de succès
+        </strong>{" "}
+        (vs baseline industrie 1,5%). Pattern interrupt — le cerveau croit
+        reconnaître un familier. À l&apos;inverse :{" "}
+        <strong style={{ color: "#FFFFFF" }}>
+          &quot;Did I catch you at a bad time&quot; = −40% de RDV
+        </strong>
+        , c&apos;est grillé. Trop répandu.
       </CoachTip>
 
       <div
@@ -1196,6 +1325,19 @@ function StepHook({
         </Button>
       </div>
 
+      <CoachTip variant="compact">
+        L&apos;opener qui décroche le mieux selon Gong :{" "}
+        <strong style={{ color: "#FFFFFF" }}>demande 27 secondes</strong>{" "}
+        d&apos;attention upfront. Pas une permission floue (&quot;vous avez 5
+        min ?&quot; = −40%), un CONTRAT de temps précis. Phrase testée : « Je
+        sais que je tombe à l&apos;improviste — vous m&apos;accordez 27 secondes
+        pour vous dire pourquoi je vous appelle, et après vous décidez ? ».
+        Ensuite{" "}
+        <strong style={{ color: "#FFFFFF" }}>
+          &quot;la raison de mon appel&quot;
+        </strong>{" "}
+        (×2,1 de RDV).
+      </CoachTip>
       <Textarea
         id="hook"
         label="Accroche d'ouverture"
@@ -1205,6 +1347,17 @@ function StepHook({
         value={payload.hook}
         onChange={(e) => patch({ hook: e.target.value })}
       />
+      <CoachTip variant="compact" accent="green">
+        Mes 3 armes en closing d&apos;objection, signature Chris Voss :{" "}
+        <strong style={{ color: "#FFFFFF" }}>mirroring</strong> (répéter les 3
+        derniers mots avec curiosité, fait élaborer),{" "}
+        <strong style={{ color: "#FFFFFF" }}>labeling</strong> (&quot;on dirait
+        que...&quot; désamorce l&apos;émotion),{" "}
+        <strong style={{ color: "#FFFFFF" }}>inversion du oui</strong>{" "}
+        (&quot;est-ce une mauvaise idée qu&apos;on se voie 15 min ?&quot; — le
+        NON est plus sécurisant que le OUI pour un prospect). Liste ici les
+        phrases concrètes que tu sors quand tu sens que ça casse.
+      </CoachTip>
       <Textarea
         id="killer_arguments"
         label="Arguments massue (1 par ligne)"

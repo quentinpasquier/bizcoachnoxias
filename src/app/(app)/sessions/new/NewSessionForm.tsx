@@ -147,12 +147,21 @@ export function NewSessionForm({
 
           {/* Conseil du coach */}
           <CoachTip collapsible defaultOpen={false}>
-            Premier conseil : commence par{" "}
-            <strong style={{ color: "#FFFFFF" }}>Débutant 3 fois</strong> sur
-            un même persona pour caler ton accroche et ton pitch. Passe à{" "}
-            <strong style={{ color: "#FFFFFF" }}>Avancé</strong> quand tu
-            décroches 2 RDV d&apos;affilée. Le niveau Expert n&apos;est pas un
-            objectif, c&apos;est un test pour voir si t&apos;es au point.
+            Conseil tactique : ne saute pas les niveaux.{" "}
+            <strong style={{ color: "#FFFFFF" }}>
+              3 sessions Débutant sur le même persona
+            </strong>{" "}
+            pour caler ton opener et ton pitch (objectif : décrocher 2 RDV
+            d&apos;affilée). Passe Intermédiaire quand t&apos;as compris la
+            mécanique. Avancé = prospect retors. Expert = simulation gros
+            compte. Travailler en alternant les niveaux casse
+            l&apos;apprentissage —{" "}
+            <strong style={{ color: "#FFFFFF" }}>
+              un persona à fond pendant 5-10 sessions
+            </strong>{" "}
+            est plus efficace que zapper tous les jours. Stat Gong : un
+            commercial qui répète le même call pattern dépasse la baseline
+            industrie en 3-4 semaines.
           </CoachTip>
 
           {/* Étape 1 : Client */}

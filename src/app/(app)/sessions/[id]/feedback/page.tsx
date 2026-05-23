@@ -214,12 +214,18 @@ export default async function FeedbackPage({
               </p>
             </div>
             <CoachTip accent="green">
-              Lis les leviers <strong style={{ color: "#FFFFFF" }}>avant</strong>{" "}
-              le score. Le chiffre c&apos;est de la dopamine — ce qui te fait
-              progresser ce sont les reformulations concrètes ci-dessous. Refais
-              1 session demain en intégrant{" "}
-              <strong style={{ color: "#FFFFFF" }}>2 reformulations max</strong>,
-              pas plus. C&apos;est comme ça qu&apos;on construit un réflexe.
+              Lis les leviers{" "}
+              <strong style={{ color: "#FFFFFF" }}>avant</strong> le score. Le
+              chiffre c&apos;est de la dopamine — ce qui te fait progresser ce
+              sont les <strong>reformulations concrètes</strong> ci-dessous. La
+              règle qui marche, observée sur mes équipes Noxias :{" "}
+              <strong style={{ color: "#FFFFFF" }}>
+                refais 1 session demain en intégrant 2 reformulations MAX
+              </strong>
+              . Le cerveau retient quand tu charges UN nouveau réflexe à la
+              fois. En charger 5 d&apos;un coup = tu n&apos;en intègres aucun.
+              Patience : c&apos;est sur 20-30 sessions qu&apos;un pattern
+              s&apos;installe.
             </CoachTip>
             <div className="space-y-4">
               {evaluation.quote_rewrites.map((q, idx) => (
