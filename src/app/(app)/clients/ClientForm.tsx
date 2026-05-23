@@ -128,7 +128,7 @@ export function ClientForm({ initial, vocab: vocabProp }: Props) {
     const extractMessage = data.extracted
       ? " Personas, objections, pitch et value prop extraits automatiquement."
       : data.extractionError
-        ? ` (Extraction Claude échouée : ${data.extractionError})`
+        ? ` (Extraction du cerveau IA échouée : ${data.extractionError})`
         : "";
     const failureMessage = failures.length > 0
       ? ` ⚠️ ${failures.length} échec(s) : ${failures.map((f: { filename: string; error: string }) => `${f.filename} (${f.error})`).join(", ")}`
@@ -193,8 +193,9 @@ export function ClientForm({ initial, vocab: vocabProp }: Props) {
         </div>
         <p className="text-small mb-4" style={{ color: "rgba(255, 255, 255, 0.65)" }}>
           Upload la matrice de prospection et la boîte à outils de {vocab.singular === "offre" ? "ton offre" : "ce client"} (PDF, DOCX, CSV, TXT, MD).
-          Claude extrait automatiquement personas, objections, pitch et value prop. Le contenu sert
-          de référence pour générer les scénarios à chaque session.
+          Le cerveau IA branché à Noxias extrait automatiquement personas,
+          objections, pitch et value prop. Le contenu sert de référence pour
+          générer les scénarios à chaque session.
         </p>
 
         {!isEdit && (
@@ -241,7 +242,7 @@ export function ClientForm({ initial, vocab: vocabProp }: Props) {
               />
               {uploading ? (
                 <p className="text-body" style={{ color: "var(--color-green)" }}>
-                  Upload + parsing + extraction Claude en cours...
+                  Upload + parsing + extraction IA en cours...
                 </p>
               ) : (
                 <>

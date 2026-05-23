@@ -216,7 +216,7 @@ export default async function FeedbackPage({
             <CoachTip accent="green">
               Lis les leviers{" "}
               <strong style={{ color: "#FFFFFF" }}>avant</strong> le score. Le
-              chiffre c&apos;est de la dopamine — ce qui te fait progresser ce
+              chiffre c&apos;est de la dopamine, ce qui te fait progresser ce
               sont les <strong>reformulations concrètes</strong> ci-dessous. La
               règle qui marche, observée sur mes équipes Noxias :{" "}
               <strong style={{ color: "#FFFFFF" }}>

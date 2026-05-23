@@ -13,7 +13,7 @@ import { CoachMascot } from "./CamilleMascot";
 //   - compact : ligne unique, pour les zones serrées
 //
 // Le titre par défaut est "Le conseil du coach". Le ton est direct,
-// dirigeant à dirigeant — pas de jargon corporate.
+// dirigeant à dirigeant, pas de jargon corporate.
 
 interface CoachTipProps {
   children: ReactNode;

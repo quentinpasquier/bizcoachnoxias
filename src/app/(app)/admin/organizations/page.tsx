@@ -80,7 +80,7 @@ export default async function AdminOrganizationsPage() {
     <div className="container-noxias py-12 space-y-8">
       <PageHeader
         title="Organisations"
-        subtitle={`${enriched.length} organisation${enriched.length > 1 ? "s" : ""} — Noxias + clients`}
+        subtitle={`${enriched.length} organisation${enriched.length > 1 ? "s" : ""} · Noxias + clients`}
       />
       <OrganizationsBoard initialOrgs={enriched} />
     </div>

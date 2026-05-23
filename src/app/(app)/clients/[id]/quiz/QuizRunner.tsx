@@ -134,7 +134,7 @@ export function QuizRunner({ clientId, initialQuiz }: Props) {
           className="text-body mb-6"
           style={{ color: "rgba(255, 255, 255, 0.65)" }}
         >
-          Claude va lire les docs du client et préparer 12 questions.
+          Le cerveau IA va lire les docs du client et préparer 12 questions.
         </p>
         {genError && (
           <div

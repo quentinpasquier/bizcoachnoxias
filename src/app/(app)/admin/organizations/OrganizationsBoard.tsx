@@ -83,7 +83,7 @@ export function OrganizationsBoard({ initialOrgs }: { initialOrgs: OrgRow[] }) {
             />
             <Input
               label="Slug (optionnel)"
-              placeholder="acme — auto-généré si vide"
+              placeholder="acme · auto-généré si vide"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
             />

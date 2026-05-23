@@ -12,7 +12,7 @@ export default async function AdminLayout({
     return (
       <div className="container-noxias py-12">
         <p className="text-body" style={{ color: "rgba(255, 255, 255, 0.65)" }}>
-          Mode démo — back-office indisponible (Supabase non configuré).
+          Mode démo · back-office indisponible (Supabase non configuré).
         </p>
       </div>
     );

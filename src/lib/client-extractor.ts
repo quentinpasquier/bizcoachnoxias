@@ -57,7 +57,7 @@ Règles :
 OBJECTIONS - règle critique :
 - La boîte à outils du client contient typiquement entre 25 et 35 objections différentes, classées (par catégorie : prix, timing, autorité, besoin, confiance, concurrent...).
 - AVANT d'écrire ton JSON, lis et identifie EXHAUSTIVEMENT toutes les objections présentes dans les docs (pas seulement les premières que tu vois). C'est crucial.
-- typical_objections doit contenir TOUTES les objections de la boîte à outils, sans exception. N'en omets aucune sous prétexte qu'elle se ressemble — les nuances comptent pour entraîner les commerciaux.
+- typical_objections doit contenir TOUTES les objections de la boîte à outils, sans exception. N'en omets aucune sous prétexte qu'elle se ressemble, les nuances comptent pour entraîner les commerciaux.
 - Pour chaque persona, sélectionne 8 à 12 objections parmi la liste complète, celles qui sont les plus probables pour ce profil. Une même objection peut apparaître chez plusieurs personas si elle est universelle (ex: prix, timing).
 - Cible : un commercial qui s'entraîne sur n'importe quel persona doit affronter une diversité large d'objections, pas toujours les mêmes 3.
 
@@ -87,7 +87,7 @@ Réponds en JSON pur, rien d'autre.`;
 
   const block = response.content.find((b) => b.type === "text");
   if (!block || block.type !== "text") {
-    throw new Error("Extraction Claude vide");
+    throw new Error("Extraction du cerveau IA vide");
   }
 
   const cleaned = block.text

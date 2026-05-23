@@ -75,7 +75,7 @@ export async function POST(request: Request) {
   } catch (err) {
     return NextResponse.json(
       {
-        error: `Claude n'a pas pu extraire les infos du client : ${(err as Error).message}`,
+        error: `Le cerveau IA n'a pas pu extraire les infos du client : ${(err as Error).message}`,
       },
       { status: 500 },
     );

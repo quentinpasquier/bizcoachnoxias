@@ -42,15 +42,16 @@ export default async function NewClientPage({
           {showWizard ? (
             <>
               Configure ton offre étape par étape. Renseigne ton positionnement,
-              tes personas cibles et les objections que tu rencontres — Claude
-              en déduit personas détaillés, briefings et scénarios pour
-              entraîner ton équipe.
+              tes personas cibles et les objections que tu rencontres : le
+              cerveau IA branché à Noxias en déduit personas détaillés, briefings
+              et scénarios pour entraîner ton équipe.
             </>
           ) : (
             <>
               Upload la matrice de prospection et la boîte à outils du client.
-              Claude lit les docs et configure tout : pitch, personas,
-              objections, briefings de préparation pour les commerciaux.
+              Le cerveau IA branché à Noxias lit les docs et configure tout :
+              pitch, personas, objections, briefings de préparation pour les
+              commerciaux.
             </>
           )}
         </p>

@@ -142,7 +142,7 @@ ${RESPONSE_SCHEMA}
 - Si le référentiel client mentionne un script ou une réponse type, vérifie si le commercial s'en est rapproché.
 - IMPORTANT : Si un RDV a été obtenu, c'est qu'au moins le minimum a été fait. Les critères de closing sont quasi-systématiquement validés dans ce cas.
 
-# QUOTE_REWRITES — le plus important pour le commercial
+# QUOTE_REWRITES · le plus important pour le commercial
 
 Ton meilleur livrable, c'est l'aide concrète pour s'améliorer.
 Génère 4 à 6 quote_rewrites qui :
@@ -207,7 +207,7 @@ ${transcript}
     raw = JSON.parse(cleaned) as RawEvaluatorResponse;
   } catch (err) {
     throw new Error(
-      `Impossible de parser l'évaluation Claude : ${(err as Error).message}\n---\n${cleaned.slice(0, 500)}`,
+      `Impossible de parser l'évaluation du cerveau IA : ${(err as Error).message}\n---\n${cleaned.slice(0, 500)}`,
     );
   }
 

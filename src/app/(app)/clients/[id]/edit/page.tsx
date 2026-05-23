@@ -52,8 +52,9 @@ export default async function EditClientPage({
             className="text-small mt-2"
             style={{ color: "rgba(255, 255, 255, 0.65)" }}
           >
-            Édite tes réponses du builder. Claude regénère les personas, les
-            objections et les briefings à l&apos;enregistrement (30 à 60 sec).
+            Édite tes réponses du builder. Le cerveau IA regénère les
+            personas, les objections et les briefings à l&apos;enregistrement
+            (30 à 60 sec).
           </p>
         )}
       </div>

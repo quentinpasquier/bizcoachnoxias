@@ -227,16 +227,16 @@ export default async function OrgDetailPage({
                       {new Date(s.started_at).toLocaleDateString("fr-FR")}
                     </td>
                     <td className="py-2 pr-3">
-                      {nameById.get(s.user_id) ?? "—"}
+                      {nameById.get(s.user_id) ?? "·"}
                     </td>
                     <td className="py-2 pr-3">
-                      {s.client_name_snapshot ?? "—"}
+                      {s.client_name_snapshot ?? "·"}
                     </td>
                     <td className="py-2 pr-3">{s.persona_label}</td>
                     <td className="py-2 pr-3">{s.difficulty}</td>
                     <td className="py-2 pr-3">{s.status}</td>
                     <td className="py-2">
-                      {s.score === null ? "—" : `${s.score}/100`}
+                      {s.score === null ? "·" : `${s.score}/100`}
                     </td>
                   </tr>
                 ))}

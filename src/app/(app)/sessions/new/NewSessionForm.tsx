@@ -155,7 +155,7 @@ export function NewSessionForm({
             d&apos;affilée). Passe Intermédiaire quand t&apos;as compris la
             mécanique. Avancé = prospect retors. Expert = simulation gros
             compte. Travailler en alternant les niveaux casse
-            l&apos;apprentissage —{" "}
+            l&apos;apprentissage,{" "}
             <strong style={{ color: "#FFFFFF" }}>
               un persona à fond pendant 5-10 sessions
             </strong>{" "}
