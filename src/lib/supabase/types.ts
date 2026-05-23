@@ -10,7 +10,18 @@ export type CategoryKey =
   | "objections"
   | "closing";
 
-export type UserRole = "commercial" | "manager";
+export type UserRole = "commercial" | "manager" | "org_admin" | "platform_admin";
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export const NOXIAS_ORG_ID = "00000000-0000-0000-0000-000000000001";
 
 export interface Profile {
   id: string;
@@ -19,6 +30,7 @@ export interface Profile {
   last_name: string | null;
   avatar_url: string | null;
   role: UserRole;
+  organization_id: string;
   company: string | null;
   role_title: string | null;
   created_at: string;
@@ -88,6 +100,7 @@ export interface QuizAttemptRow {
 
 export interface Client {
   id: string;
+  organization_id: string;
   name: string;
   sector: string | null;
   description: string | null;
@@ -129,6 +142,7 @@ export interface Scenario {
 export interface SessionRow {
   id: string;
   user_id: string;
+  organization_id: string;
   client_id: string | null;
   client_name_snapshot: string | null;
   difficulty: Difficulty;

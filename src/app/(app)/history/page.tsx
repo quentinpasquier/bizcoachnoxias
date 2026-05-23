@@ -64,7 +64,8 @@ export default async function HistoryPage() {
     clients.map((c) => [c.id, { name: c.name, sector: c.sector }]),
   );
 
-  const isManager = role === "manager";
+  const isManager =
+    role === "manager" || role === "org_admin" || role === "platform_admin";
   const subtitle =
     sessions.length === 0
       ? "Aucune session pour l'instant"

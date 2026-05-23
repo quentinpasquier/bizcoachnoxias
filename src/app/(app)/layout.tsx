@@ -39,7 +39,7 @@ export default async function AppLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, avatar_url, role")
+    .select("full_name, avatar_url, role, organization_id")
     .eq("id", user.id)
     .single();
 
@@ -47,7 +47,20 @@ export default async function AppLayout({
     full_name: string | null;
     avatar_url: string | null;
     role: UserRole;
+    organization_id: string | null;
   } | null;
+
+  // Nom de l'org pour le header (utile pour distinguer les orgs clientes
+  // et confirmer au platform_admin dans quel espace il se trouve).
+  let organizationName: string | null = null;
+  if (p?.organization_id) {
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("name")
+      .eq("id", p.organization_id)
+      .single();
+    organizationName = (org as { name: string } | null)?.name ?? null;
+  }
 
   return (
     <div className="app-shell">
@@ -57,6 +70,7 @@ export default async function AppLayout({
           full_name: p?.full_name ?? null,
           avatar_url: p?.avatar_url ?? null,
           role: p?.role ?? "commercial",
+          organization_name: organizationName,
         }}
       />
       <main className="app-main">{children}</main>
