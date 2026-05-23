@@ -1,6 +1,12 @@
-# Noxias Coach
+# BIFFCOACH
 
-> Outil interne Noxias. Coach IA pour les commerciaux qui font de la prospection externalisée.
+> Le coach commercial signé Noxias. Construit par Quentin Pasquier (10 ans de
+> commercial, 7 ans de management, fondateur de l'agence Noxias) à partir de
+> 10 000+ calls réels analysés en production.
+
+Multi-tenant : Noxias l'utilise pour entraîner ses propres commerciaux qui
+font de la prospection externalisée, et les orgs clientes onboardées ont
+leur propre espace pour entraîner leurs équipes sur leurs offres.
 
 Noxias prospecte au nom de plusieurs clients. Avant de décrocher pour de vrai, ses commerciaux s'entraînent ici : ils choisissent un **client** (avec son pitch et ses objections), un **persona** à appeler (DG PME, DAF, DRH, Dir. Marketing, Founder scaleup, CEO grand compte) et un **niveau** (Débutant → Expert), puis tentent d'obtenir un RDV. Le prospect peut raccrocher selon son niveau d'exigence. À la fin, une restitution chiffrée sur 5 axes (accroche, découverte, objections, valeur, closing) avec forces, axes d'amélioration et prochaines actions.
 

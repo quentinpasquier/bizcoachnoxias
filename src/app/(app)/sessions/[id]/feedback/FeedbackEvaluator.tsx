@@ -153,7 +153,7 @@ export function FeedbackEvaluator({ sessionId }: { sessionId: string }) {
               className="text-h2"
               style={{ color: "#FFFFFF", margin: "8px 0 6px", fontSize: "1.6rem" }}
             >
-              Camille analyse ton appel.
+              Quentin analyse ton appel.
             </h1>
             <p
               className="text-small"

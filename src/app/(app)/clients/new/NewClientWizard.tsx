@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Loader } from "@/components/Loader";
 import { CoachAvatar } from "@/components/CoachAvatar";
+import { CoachTip } from "@/components/CoachTip";
 import type {
   GuidedPersonaInput,
   GuidedWizardPayload,
@@ -400,7 +401,7 @@ export function NewClientWizard({ initial }: NewClientWizardProps = {}) {
           <CoachAvatar state="thinking" size={84} withHalo />
           <Loader
             size="lg"
-            message="Camille assemble ton coach personnalisé"
+            message="Quentin assemble ton coach personnalisé"
             detail="20 à 40 secondes : extraction des personas, génération des briefings, structuration des objections."
           />
         </div>
@@ -618,6 +619,12 @@ function StepOffer({
         title="Ton offre, en quelques mots"
         subtitle="Le coach a besoin de connaître ce que tu vends pour générer un prospect réaliste."
       />
+      <CoachTip>
+        Ne pitche pas ton produit, vends la douleur résolue. La promesse qui
+        marche dit ce que <strong style={{ color: "#FFFFFF" }}>tu apportes</strong>{" "}
+        à l&apos;autre, en 1 phrase qu&apos;il pourrait répéter à son associé.
+        Si elle commence par &quot;Nous proposons...&quot;, recommence.
+      </CoachTip>
       <Input
         id="name"
         label="Nom de l'offre / produit *"
@@ -660,6 +667,15 @@ function StepValueProp({
         title="Le pitch et la valeur livrée"
         subtitle="Ce que le commercial doit vendre, et la preuve concrète qu'il peut avancer."
       />
+      <CoachTip>
+        Quand je relis un pitch, je cherche 3 choses :{" "}
+        <strong style={{ color: "#FFFFFF" }}>un chiffre</strong>,{" "}
+        <strong style={{ color: "#FFFFFF" }}>une preuve concrète</strong> (cas
+        client, livrable),{" "}
+        <strong style={{ color: "#FFFFFF" }}>un opposant</strong> (ce que tu
+        n&apos;es pas). Si y&apos;en a aucun des trois, le commercial se fait
+        bouffer en 30 secondes.
+      </CoachTip>
       <Textarea
         id="product_pitch"
         label="Pitch produit"
@@ -724,6 +740,15 @@ function StepPersonas({
         title="Tes personas cibles"
         subtitle="Qui le commercial va appeler. Ajoute autant de profils distincts que tu veux entraîner (recommandé : 2-4)."
       />
+      <CoachTip>
+        Un bon persona n&apos;est pas un poste. C&apos;est un trio :{" "}
+        <strong style={{ color: "#FFFFFF" }}>un job</strong>,{" "}
+        <strong style={{ color: "#FFFFFF" }}>une douleur précise qui le
+        réveille la nuit</strong>, et{" "}
+        <strong style={{ color: "#FFFFFF" }}>un événement déclencheur</strong>{" "}
+        qui fait qu&apos;aujourd&apos;hui il achèterait. Sans ces trois trucs,
+        tes commerciaux pitchent dans le vide.
+      </CoachTip>
 
       <Textarea
         id="ideal_targets"
@@ -985,6 +1010,15 @@ function StepObjections({
         title="Les objections que tes prospects sortent"
         subtitle="Coche les objections universelles que tu entends + ajoute les spécifiques à ta proposition."
       />
+      <CoachTip>
+        Les 5 objections classiques (déjà un presta, pas de budget, pas le
+        moment), tu les connais. Le vrai boulot c&apos;est les{" "}
+        <strong style={{ color: "#FFFFFF" }}>
+          10-15 objections spécifiques à ton offre
+        </strong>{" "}
+        — celles qu&apos;on n&apos;entend que dans ton univers. C&apos;est ça
+        qui plombe les RDV en avancé.
+      </CoachTip>
 
       <div>
         <div
@@ -1124,6 +1158,13 @@ function StepHook({
         title="L'accroche et les arguments massue"
         subtitle="La porte d'entrée d'un appel et les phrases qui font mouche. Optionnel mais ça enrichit l'entraînement."
       />
+      <CoachTip>
+        Une bonne accroche n&apos;est pas un pitch. C&apos;est{" "}
+        <strong style={{ color: "#FFFFFF" }}>une question ou un constat</strong>{" "}
+        qui retourne le prospect en 5 secondes. Si tu commences par
+        &quot;Bonjour je suis X de la société Y et nous proposons...&quot;,
+        t&apos;es déjà mort. Vise la douleur ou le décalage.
+      </CoachTip>
 
       <div
         className="flex items-center justify-between gap-3 flex-wrap rounded-xl p-4"

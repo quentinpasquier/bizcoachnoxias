@@ -5,14 +5,17 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
+import { getClientVocab, type ClientVocab } from "@/lib/vocabulary";
 import type { Client, SyncedFile } from "@/lib/supabase/types";
 
 interface Props {
   initial?: Client;
+  vocab?: ClientVocab;
 }
 
-export function ClientForm({ initial }: Props) {
+export function ClientForm({ initial, vocab: vocabProp }: Props) {
   const router = useRouter();
+  const vocab = vocabProp ?? getClientVocab(undefined); // défaut Noxias
   const isEdit = Boolean(initial);
 
   const [name, setName] = useState(initial?.name ?? "");
@@ -42,7 +45,10 @@ export function ClientForm({ initial }: Props) {
     setError(null);
     setInfo(null);
 
-    if (!name.trim()) return setError("Le nom du client est obligatoire.");
+    if (!name.trim())
+      return setError(
+        `Le nom de ${vocab.singular === "offre" ? "l'offre" : "ce client"} est obligatoire.`,
+      );
     if (!productPitch.trim() && !initial?.synced_content)
       return setError("Le pitch est obligatoire (peut être extrait des docs uploadés).");
 
@@ -90,7 +96,9 @@ export function ClientForm({ initial }: Props) {
   async function handleUploadFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     if (!initial) {
-      setError("Enregistre d'abord le client (au moins le nom), puis upload les docs.");
+      setError(
+        `Enregistre d'abord ${vocab.singular === "offre" ? "l'offre" : "ce client"} (au moins le nom), puis upload les docs.`,
+      );
       return;
     }
 
@@ -134,7 +142,7 @@ export function ClientForm({ initial }: Props) {
 
   async function handleDeleteFile(filename: string) {
     if (!initial) return;
-    if (!confirm(`Retirer « ${filename} » de ce client ?`)) return;
+    if (!confirm(`Retirer « ${filename} » de ${vocab.singular === "offre" ? "cette offre" : "ce client"} ?`)) return;
 
     const res = await fetch(
       `/api/clients/${initial.id}/upload?filename=${encodeURIComponent(filename)}`,
@@ -152,7 +160,7 @@ export function ClientForm({ initial }: Props) {
     if (!initial) return;
     if (
       !confirm(
-        `Supprimer définitivement « ${initial.name} » ? Les sessions passées seront conservées mais le client disparaîtra des listes.`,
+        `Supprimer définitivement « ${initial.name} » ? Les sessions passées seront conservées mais ${vocab.singular === "offre" ? "l'offre disparaîtra" : "le client disparaîtra"} des listes.`,
       )
     ) {
       return;
@@ -184,7 +192,7 @@ export function ClientForm({ initial }: Props) {
           )}
         </div>
         <p className="text-small mb-4" style={{ color: "rgba(255, 255, 255, 0.65)" }}>
-          Upload la matrice de prospection et la boîte à outils du client (PDF, DOCX, CSV, TXT, MD).
+          Upload la matrice de prospection et la boîte à outils de {vocab.singular === "offre" ? "ton offre" : "ce client"} (PDF, DOCX, CSV, TXT, MD).
           Claude extrait automatiquement personas, objections, pitch et value prop. Le contenu sert
           de référence pour générer les scénarios à chaque session.
         </p>
@@ -198,7 +206,7 @@ export function ClientForm({ initial }: Props) {
               border: "1px solid rgba(245, 165, 36, 0.32)",
             }}
           >
-            Crée d'abord le client (au moins son nom), tu pourras uploader les docs ensuite depuis sa fiche.
+            Crée d&apos;abord {vocab.singular === "offre" ? "l'offre" : "le client"} (au moins son nom), tu pourras uploader les docs ensuite depuis sa fiche.
           </p>
         )}
 
@@ -301,12 +309,12 @@ export function ClientForm({ initial }: Props) {
 
       {/* Bloc Identité */}
       <Card className="space-y-5">
-        <h3 className="text-h4">Identité du client</h3>
+        <h3 className="text-h4">Identité de {vocab.singular === "offre" ? "l'offre" : "ce client"}</h3>
 
         <Input
           id="name"
-          label="Nom du client *"
-          placeholder="DOKO"
+          label={`Nom de ${vocab.singular === "offre" ? "l'offre" : "ce client"} *`}
+          placeholder={vocab.singular === "offre" ? "SiteLine" : "DOKO"}
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -399,7 +407,9 @@ export function ClientForm({ initial }: Props) {
             className="w-5 h-5 rounded accent-[var(--color-green)]"
           />
           <label htmlFor="active" className="text-small">
-            Client actif (visible dans les listes de sélection)
+            {vocab.singularCap}{" "}
+            {vocab.singular === "offre" ? "active" : "actif"} (visible dans les
+            listes de sélection)
           </label>
         </div>
       </Card>

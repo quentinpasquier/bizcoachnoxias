@@ -172,7 +172,7 @@ export default async function DashboardPage() {
             <div>
               <span className="mission-classified">
                 <DotPulse />
-                {myAvatarUrl ? "MISSION CONTROL" : "CAMILLE · TON COACH"}
+                {myAvatarUrl ? "MISSION CONTROL" : "QUENTIN · TON COACH"}
               </span>
               <h1 className="mission-h1 mt-3">
                 <span style={{ color: "rgba(255,255,255,0.85)" }}>
