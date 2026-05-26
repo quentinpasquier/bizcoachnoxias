@@ -1,4 +1,4 @@
-# Déploiement — BIFFCOACH
+# Déploiement — CallLab
 
 Pas à pas pour mettre en production sur **Vercel** + **Supabase** + **Anthropic**.
 
