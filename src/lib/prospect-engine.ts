@@ -36,6 +36,30 @@ const STAGE_REGEX =
   /\[STAGE:\s*(brise_glace|presentation|ouverture|objections|action)\s*\]/i;
 const DELTA_REGEX = /\[DELTA:\s*([+-])\s*\]/i;
 
+// Patterns de narration que Claude émet parfois malgré l'interdiction.
+// La prospect doit JOUER le silence ou la pause, pas l'annoncer.
+// Capture : "*silence*", "*Pause*", "**soupire**", "*il rit*", etc.
+const NARRATION_ASTERISK_REGEX = /\*+[^*\n]*\*+/g;
+// Capture les didascalies entre crochets sans préfixe métier (STAGE, HANGUP...).
+// Ex : "[silence]", "[soupire profondément]", "[un temps]".
+const NARRATION_BRACKETS_REGEX =
+  /\[(?!STAGE\b|HANGUP\b|APPOINTMENT\b|CONTINUE\b|DELTA\b)[^\]]+\]/gi;
+// Capture les didascalies entre parenthèses pour les mots-clés scéniques
+// courants ; on évite de toucher aux parenthèses qui contiennent une vraie
+// précision (chiffres, dates, motifs).
+const NARRATION_PARENS_REGEX =
+  /\(\s*(silence|pause|soupir[e]?|soupire\s\w+|rire?|rit|tousse|raclement\sde\sgorge|h[ée]site\s?\w*|h[ée]sitation|respire|murmure|chuchote|aparte?)[^)]{0,30}\)/gi;
+
+function stripNarration(text: string): string {
+  return text
+    .replace(NARRATION_ASTERISK_REGEX, "")
+    .replace(NARRATION_BRACKETS_REGEX, "")
+    .replace(NARRATION_PARENS_REGEX, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\s+([,.;!?])/g, "$1")
+    .trim();
+}
+
 function parseSignal(raw: string): {
   text: string;
   signal: ProspectSignal;
@@ -55,6 +79,12 @@ function parseSignal(raw: string): {
     progress.delta = deltaMatch[1] as "+" | "-";
     working = working.replace(deltaMatch[0], "");
   }
+
+  // Filtre anti-narration : Claude continue parfois à émettre des incises
+  // scéniques (*silence*, *Pause*, *soupire*, **rit**) malgré l'interdiction
+  // explicite du prompt système. On les strip ici pour qu'elles ne soient
+  // jamais vocalisées par le TTS ni affichées au commercial.
+  working = stripNarration(working);
 
   const match = working.match(SIGNAL_REGEX);
   if (!match) {
