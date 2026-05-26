@@ -7,6 +7,7 @@ import { DifficultyBadge } from "@/components/ui/Badge";
 import { VoiceOrb, type OrbState } from "@/components/VoiceOrb";
 import {
   createRecognition,
+  dedupeRepeats,
   isSpeechRecognitionSupported,
   isSpeechSynthesisSupported,
   isWhisperAvailable,
@@ -431,24 +432,29 @@ export function ChatRoom({ session, initialMessages }: Props) {
     }
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
+      // IMPORTANT : on reconstruit le transcript FINAL en repartant de
+      // l'index 0 à chaque événement, plutôt que d'accumuler depuis
+      // event.resultIndex. Certains navigateurs (Chrome continuous mode)
+      // re-émettent les anciens résultats finals dans des événements
+      // successifs avec resultIndex=0. Si on accumulait, ça produirait
+      // "B2B B2B B2B..." dans finalTranscriptRef. En reconstruisant à
+      // chaque fois depuis la full results list, on évite cette boucle.
       let interim = "";
-      let final = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      let finalAll = "";
+      for (let i = 0; i < event.results.length; i++) {
         const result = event.results[i];
         if (result.isFinal) {
-          final += result[0].transcript;
+          finalAll += result[0].transcript;
         } else {
           interim += result[0].transcript;
         }
       }
-      if (final) {
-        finalTranscriptRef.current = (finalTranscriptRef.current + " " + final).trim();
-      }
+      finalTranscriptRef.current = finalAll.trim();
       setInterimTranscript(interim);
 
       // En auto-mode, chaque update repousse le timer de silence.
       // Tant que le commercial parle (final ou interim), on patiente.
-      if (autoMode && (final.length > 0 || interim.length > 0)) {
+      if (autoMode && (finalAll.length > 0 || interim.length > 0)) {
         scheduleSilenceStop(recognition);
       }
     };
@@ -477,7 +483,9 @@ export function ChatRoom({ session, initialMessages }: Props) {
             });
             if (whisperText && whisperText.length > 0) {
               setTranscribing(false);
-              void sendMessage(whisperText);
+              // Défense en profondeur : le serveur déduplique déjà, on
+              // refait une passe côté client au cas où.
+              void sendMessage(dedupeRepeats(whisperText));
               return;
             }
           }
@@ -488,7 +496,10 @@ export function ChatRoom({ session, initialMessages }: Props) {
       }
 
       if (fallbackText.length > 0) {
-        void sendMessage(fallbackText);
+        // Web Speech peut parfois ré-émettre des résultats finals avec le
+        // même index, ce qui produit des doublons. dedupeRepeats nettoie
+        // les patterns évidents (acronymes redoublés, phrases répétées).
+        void sendMessage(dedupeRepeats(fallbackText));
       }
     };
     recognition.onerror = (e: Event) => {
