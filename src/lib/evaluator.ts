@@ -294,11 +294,13 @@ ${transcript}
 Évaluez les ${TOTAL_CRITERIA} critères. Répondez en JSON pur.`;
 
   // Stratégie anti-504 : Sonnet 4.6 d'abord (qualité max) avec timeout
-  // serré 38s. Si Sonnet timeout, fallback Haiku 4.5 (5-10× plus rapide).
-  // Total budget ~55s, tient sous maxDuration=60s. Avec prompt caching,
-  // les sessions répétées sur le même client sont 30-50% plus rapides.
-  const SONNET_TIMEOUT_MS = 38000;
-  const HAIKU_TIMEOUT_MS = 18000;
+  // généreux 90s (largement le temps réel observé même sur cache froid).
+  // Si vraiment Sonnet pend, fallback Haiku 4.5 avec 35s. Total budget
+  // 125s, tient sous maxDuration=180s. Avec prompt caching TTL 1h, la
+  // grande majorité des appels d'une session de training se font sur
+  // cache chaud en ~10-15s.
+  const SONNET_TIMEOUT_MS = 90000;
+  const HAIKU_TIMEOUT_MS = 35000;
   const MAX_TOKENS = 3500;
 
   // Helper pour construire le payload avec cache control. Anthropic cache
