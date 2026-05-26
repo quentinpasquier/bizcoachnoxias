@@ -83,6 +83,126 @@ function buildCriteriaListForPrompt(): string {
   }).join("\n\n");
 }
 
+// Tente de récupérer un JSON utilisable quand Sonnet a tronqué sa sortie
+// (max_tokens atteint en cours de génération). On coupe le texte au dernier
+// élément complet de chaque section et on ferme proprement les structures.
+// Le commercial reçoit un débrief partiel (peut-être 12 critères sur 20,
+// 3 quote_rewrites au lieu de 5) plutôt qu'une erreur sèche.
+function salvageTruncatedJson(text: string): RawEvaluatorResponse | null {
+  // 1. Extraire la liste criteria : trouver "criteria": [ ... derniers objets complets
+  const criteriaMatch = text.match(/"criteria"\s*:\s*\[/);
+  if (!criteriaMatch) return null;
+  const criteriaStart = criteriaMatch.index! + criteriaMatch[0].length;
+
+  // Parcourir jusqu'au dernier '}' valide précédant un ',' ou ']'.
+  // On compte les accolades pour repérer la fin de chaque objet.
+  const criteria: RawCriterionResult[] = [];
+  let i = criteriaStart;
+  let depth = 0;
+  let objStart = -1;
+  while (i < text.length) {
+    const ch = text[i];
+    if (ch === "{") {
+      if (depth === 0) objStart = i;
+      depth++;
+    } else if (ch === "}") {
+      depth--;
+      if (depth === 0 && objStart >= 0) {
+        const objText = text.slice(objStart, i + 1);
+        try {
+          const obj = JSON.parse(objText) as RawCriterionResult;
+          if (typeof obj.id === "string") criteria.push(obj);
+        } catch {
+          // Objet partiel, on l'ignore
+        }
+        objStart = -1;
+      }
+    } else if (ch === "]" && depth === 0) {
+      break;
+    }
+    i++;
+  }
+
+  if (criteria.length === 0) return null;
+
+  // 2. Pour les autres champs (strengths, improvements, next_steps,
+  //    outcome_summary, quote_rewrites), on essaye de les récupérer si
+  //    présents et complets. Sinon on met des placeholders neutres.
+  const strengths = extractStringArray(text, "strengths");
+  const improvements = extractStringArray(text, "improvements");
+  const next_steps = extractStringArray(text, "next_steps");
+
+  const outcomeMatch = text.match(/"outcome_summary"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  const outcome_summary = outcomeMatch
+    ? outcomeMatch[1]!.replace(/\\"/g, '"').replace(/\\n/g, " ")
+    : "Le débrief a été partiellement généré, certains éléments manquent. Relancez une session pour un compte rendu complet.";
+
+  // Quote_rewrites : on récupère les objets complets parsables.
+  const quote_rewrites: RawQuoteRewrite[] = [];
+  const qrMatch = text.match(/"quote_rewrites"\s*:\s*\[/);
+  if (qrMatch) {
+    let j = qrMatch.index! + qrMatch[0].length;
+    let qDepth = 0;
+    let qStart = -1;
+    while (j < text.length) {
+      const ch = text[j];
+      if (ch === "{") {
+        if (qDepth === 0) qStart = j;
+        qDepth++;
+      } else if (ch === "}") {
+        qDepth--;
+        if (qDepth === 0 && qStart >= 0) {
+          const objText = text.slice(qStart, j + 1);
+          try {
+            const obj = JSON.parse(objText) as RawQuoteRewrite;
+            quote_rewrites.push(obj);
+          } catch {
+            // Ignoré
+          }
+          qStart = -1;
+        }
+      } else if (ch === "]" && qDepth === 0) {
+        break;
+      }
+      j++;
+    }
+  }
+
+  return { criteria, strengths, improvements, next_steps, outcome_summary, quote_rewrites };
+}
+
+function extractStringArray(text: string, key: string): string[] {
+  const re = new RegExp(`"${key}"\\s*:\\s*\\[`);
+  const m = text.match(re);
+  if (!m) return [];
+  let i = m.index! + m[0].length;
+  const items: string[] = [];
+  let current = "";
+  let inString = false;
+  let escape = false;
+  while (i < text.length) {
+    const ch = text[i]!;
+    if (escape) {
+      current += ch;
+      escape = false;
+    } else if (ch === "\\" && inString) {
+      escape = true;
+    } else if (ch === '"') {
+      if (inString) {
+        items.push(current);
+        current = "";
+      }
+      inString = !inString;
+    } else if (inString) {
+      current += ch;
+    } else if (ch === "]") {
+      break;
+    }
+    i++;
+  }
+  return items;
+}
+
 export async function evaluateSession(input: EvaluationInput): Promise<Evaluation> {
   const cfg = DIFFICULTY_CONFIG[input.difficulty];
 
@@ -185,6 +305,19 @@ Indicateurs : nombre d'objections tenues sans capituler, relance assumée après
 Indicateurs : qualité des questions de découverte (ouvertes, ancrées sur le métier réel du prospect), écoute active (rebond sur une information donnée plutôt que retour à la trame), adaptation de l'argumentaire au signal capté, acquittement précis avant la réponse à l'objection, créneau proposé en cohérence avec le profil. Un commercial bourrin est combatif mais insupportable : il insiste mécaniquement, répète son argumentaire, ne rebondit pas, finit par brûler la cible.
 
 Dans \`outcome_summary\`, vous DEVEZ identifier l'axe sur lequel le commercial pèche le plus (ou sur lequel il excelle). C'est le levier principal de progression.
+
+# CONTRAINTES DE LONGUEUR (NON NÉGOCIABLES, JSON DOIT TENIR SOUS 5000 TOKENS)
+
+Pour que votre réponse JSON soit complète et parsable, vous DEVEZ respecter les longueurs maximales suivantes par champ. Dépasser tronque la réponse et casse le débrief.
+
+- \`criteria[].comment\` : MAX 25 mots. Un fait, une citation courte, c'est tout. Pas de double phrase.
+- \`strengths[]\`, \`improvements[]\`, \`next_steps[]\` : MAX 35 mots par item. Une seule phrase dense, pas une justification longue.
+- \`outcome_summary\` : MAX 90 mots au total (3 phrases × ~30 mots).
+- \`quote_rewrites[].context\` : MAX 20 mots.
+- \`quote_rewrites[].issue\` : MAX 25 mots.
+- \`quote_rewrites[].better\` : MAX 35 mots (c'est une phrase orale, elle doit pouvoir se prononcer en 8 secondes).
+
+Si vous sentez que vous risquez de dépasser, COUPEZ. Une phrase tranchante vaut mieux qu'un paragraphe étalé.
 
 # FORMAT DE RÉPONSE
 
@@ -299,9 +432,14 @@ ${transcript}
   // 125s, tient sous maxDuration=180s. Avec prompt caching TTL 1h, la
   // grande majorité des appels d'une session de training se font sur
   // cache chaud en ~10-15s.
+  // Budget tokens : 5000 pour avoir la marge confortable. Le nouveau prompt
+  // consultant senior produit des commentaires plus détaillés et l'ancien
+  // max=3500 tronquait parfois la sortie, cassant le JSON. Avec
+  // maxDuration=180s et timeout Sonnet=90s, on peut se permettre les 5000
+  // tokens sans risque de 504. Coût marginal : ~1.5× les sorties courtes.
   const SONNET_TIMEOUT_MS = 90000;
-  const HAIKU_TIMEOUT_MS = 35000;
-  const MAX_TOKENS = 3500;
+  const HAIKU_TIMEOUT_MS = 50000;
+  const MAX_TOKENS = 5000;
 
   // Helper pour construire le payload avec cache control. Anthropic cache
   // le préfixe jusqu'au dernier marqueur cache_control. Ici on a 2 marqueurs :
@@ -385,9 +523,22 @@ ${transcript}
   try {
     raw = JSON.parse(cleaned) as RawEvaluatorResponse;
   } catch (err) {
-    throw new Error(
-      `Impossible de parser l'évaluation du cerveau IA : ${(err as Error).message}\n---\n${cleaned.slice(0, 500)}`,
-    );
+    // Tentative de sauvetage : si la sortie a été tronquée par max_tokens
+    // (Sonnet a généré jusqu'au plafond avant de fermer le JSON), on
+    // essaye de réparer en fermant proprement les structures ouvertes.
+    // Le commercial reçoit alors un débrief partiel mais valide, plutôt
+    // qu'une erreur sèche.
+    const salvaged = salvageTruncatedJson(cleaned);
+    if (salvaged) {
+      console.warn(
+        "[evaluator] JSON tronqué détecté, sauvetage appliqué (criteria/quote_rewrites partiels).",
+      );
+      raw = salvaged;
+    } else {
+      throw new Error(
+        `Impossible de parser l'évaluation du cerveau IA : ${(err as Error).message}\n---\n${cleaned.slice(0, 500)}`,
+      );
+    }
   }
 
   // Map id → result, en se basant sur la liste officielle (sécurise contre id invalides ou manquants)
