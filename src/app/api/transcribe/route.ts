@@ -17,27 +17,43 @@ const OPENAI_TRANSCRIBE_URL = "https://api.openai.com/v1/audio/transcriptions";
 const PROSPECTION_VOCAB_HINT =
   "Conversation téléphonique commerciale française entre un commercial et un prospect. Vocabulaire métier : RDV, ICP, PME, ETI, SaaS, scale-up, dirigeant, gérant, DAF, DRH, DSI, président, qualification, closing, démo, prospection, brise-glace, ROI, KPI, BANT, MEDDIC, opportunité, brief.";
 
-// Détecte et dédupliques les boucles d'hallucination Whisper.
-// Whisper peut renvoyer "B2BB2BB2BB2B" (concaténation d'un même token) ou
-// "c'est bon, c'est bon, c'est bon" (phrase répétée avec séparateur) quand
-// l'audio est très court ou que le prompt contient des répétitions. On
-// nettoie ces deux patterns ici. Conservateur : il faut 3 occurrences
-// consécutives ou plus pour collapser, ce qui évite de toucher aux vraies
-// répétitions oratoires ("non, non, non" reste intact).
+// Détecte et déduplique les boucles d'hallucination Whisper.
+// Whisper peut renvoyer "B2BB2B" (acronyme métier répété), "B2BB2B2B2B2B"
+// (boucle longue), "c'est bon, c'est bon, c'est bon" (phrase répétée avec
+// séparateur), ou encore "merci merci merci" (phrase répétée sans
+// ponctuation) quand l'audio est très court ou que le prompt contient des
+// répétitions. On nettoie ces patterns en cascade. Conservateur sur le
+// texte général (3+ occurrences requises pour collapser), plus agressif
+// sur les acronymes métier (B2B, ICP, DAF, RDV, MEDDIC...) où 2 occurrences
+// suffisent puisque ces chaînes ne se répètent jamais naturellement.
 function dedupeRepeats(text: string): string {
   if (!text) return text;
   let cleaned = text;
-  // 1. Boucles concaténées : "B2BB2BB2BB2B" → "B2B"
-  //    Substring de 2 à 20 chars, répété 2+ fois en plus de l'original
-  //    (donc 3+ occurrences au total).
+
+  // 1. Acronymes métier répétés (2+ occurrences). Pattern strict : commence
+  //    par majuscule, 3 à 6 caractères au total, uppercase/digits seulement.
+  //    Cible "B2BB2B" (B2B doublé), "RDVRDV", "ICPICPICP", "DAFDAF", etc.
+  //    Sans risque de toucher du texte normal car aucun mot français
+  //    régulier ne match ce pattern.
+  cleaned = cleaned.replace(/([A-Z][A-Z0-9]{2,5})\1+/g, "$1");
+
+  // 2. Boucles concaténées générales (3+ occurrences, conservateur).
+  //    "abcabcabc" → "abc", "lalala" → "la". Ne touche pas "papa", "bonbon"
+  //    (seulement 2 occurrences).
   cleaned = cleaned.replace(/(\S{2,20}?)\1{2,}/g, "$1");
-  // 2. Phrases répétées avec ponctuation : "c'est bon, c'est bon, c'est bon" → "c'est bon"
-  //    Phrase de 2 à 50 chars sans ponctuation, suivie de 2+ occurrences
-  //    "ponctuation + même phrase".
+
+  // 3. Phrases répétées avec ponctuation (3+ occurrences).
+  //    "c'est bon, c'est bon, c'est bon" → "c'est bon"
   cleaned = cleaned.replace(
     /(\b[^.,;!?]{2,50}?)([.,;!?]\s*\1){2,}/gi,
     "$1",
   );
+
+  // 4. Phrases répétées avec espace seul (3+ occurrences, min 4 chars).
+  //    "merci merci merci" → "merci". Min 4 chars évite les faux positifs
+  //    sur "ha ha ha" ou "bla bla bla".
+  cleaned = cleaned.replace(/(\b[\wÀ-ÿ' ]{4,40}?)(\s+\1){2,}\b/gi, "$1");
+
   return cleaned.trim();
 }
 

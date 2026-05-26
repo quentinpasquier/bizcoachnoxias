@@ -510,3 +510,20 @@ export async function isWhisperAvailable(): Promise<boolean> {
     return false;
   }
 }
+
+// Filet de sécurité contre les boucles de répétition dans les transcriptions
+// (Whisper hallucinations OU Web Speech re-emission). Applique 4 patterns en
+// cascade. Conservateur : ne touche pas aux vraies répétitions naturelles
+// (papa, bonbon, ha ha ha).
+//
+// Doublonné côté serveur dans /api/transcribe/route.ts ; ici on l'applique en
+// défense en profondeur sur le texte Web Speech avant envoi au bot.
+export function dedupeRepeats(text: string): string {
+  if (!text) return text;
+  let cleaned = text;
+  cleaned = cleaned.replace(/([A-Z][A-Z0-9]{2,5})\1+/g, "$1");
+  cleaned = cleaned.replace(/(\S{2,20}?)\1{2,}/g, "$1");
+  cleaned = cleaned.replace(/(\b[^.,;!?]{2,50}?)([.,;!?]\s*\1){2,}/gi, "$1");
+  cleaned = cleaned.replace(/(\b[\wÀ-ÿ' ]{4,40}?)(\s+\1){2,}\b/gi, "$1");
+  return cleaned.trim();
+}
