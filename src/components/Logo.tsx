@@ -3,7 +3,7 @@ interface LogoProps {
   size?: number;
 }
 
-// Wordmark "CallLab" (camelCase préservé) + tagline "powered by Noxias".
+// Wordmark "CALLAB" (uppercase) + tagline "powered by Noxias".
 // variant=dark  -> blanc (header app, login, 404)
 // variant=light -> violet/dark (signup et fonds clairs)
 export function Logo({ variant = "dark", size = 32 }: LogoProps) {
@@ -20,19 +20,20 @@ export function Logo({ variant = "dark", size = 32 }: LogoProps) {
     <span
       className="select-none inline-flex flex-col leading-none"
       style={{ gap: Math.max(2, Math.round(size * 0.06)) }}
-      aria-label="CallLab, powered by Noxias"
+      aria-label="CALLAB, powered by Noxias"
     >
       <span
         style={{
           color: mainColor,
           fontSize: mainFontSize,
-          letterSpacing: "-0.01em",
+          letterSpacing: "0.04em",
           fontWeight: 800,
+          textTransform: "uppercase",
           lineHeight: 1,
           fontFamily: "var(--font-ubuntu), Lato, system-ui, sans-serif",
         }}
       >
-        CallLab
+        CALLAB
       </span>
       <span
         style={{
