@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 
 const STEPS = [
-  { label: "Je relis ton appel...", duration: 2500 },
-  { label: "Je compte les critères validés...", duration: 3500 },
-  { label: "Je vérifie ta gestion des objections...", duration: 3000 },
-  { label: "Je calcule ton score...", duration: 2000 },
-  { label: "Je rédige ton débrief...", duration: 3000 },
+  { label: "Lecture du transcript...", duration: 2500 },
+  { label: "Comptage des critères validés...", duration: 3500 },
+  { label: "Analyse de la gestion des objections...", duration: 3000 },
+  { label: "Calcul du score...", duration: 2000 },
+  { label: "Rédaction du débrief...", duration: 3000 },
   { label: "Presque prêt...", duration: 4000 },
 ];
 
@@ -154,7 +154,7 @@ export function FeedbackEvaluator({ sessionId }: { sessionId: string }) {
               className="text-h2"
               style={{ color: "#FFFFFF", margin: "8px 0 6px", fontSize: "1.6rem" }}
             >
-              Quentin analyse ton appel.
+              L&apos;IA analyse votre appel.
             </h1>
             <p
               className="text-small"

@@ -98,10 +98,14 @@ export async function evaluateSession(input: EvaluationInput): Promise<Evaluatio
         ? "RÉSULTAT : Le commercial a mis fin à l'appel."
         : "RÉSULTAT : Appel terminé par expiration.";
 
+  // Docs client tronqués agressivement à 8000 chars (vs 20000 avant) pour
+  // limiter le temps d'ingestion Sonnet et éviter les 504 sur Vercel.
+  // L'évaluateur n'a pas besoin de toute la matrice pour noter : 8000 chars
+  // suffisent pour capter les objections types et la value prop.
   const docsBlock = input.client.synced_content
-    ? `\n# RÉFÉRENTIEL DE PROSPECTION DU CLIENT (matrice + boîte à outils)
+    ? `\n# RÉFÉRENTIEL DE PROSPECTION DU CLIENT (extrait)
 \`\`\`
-${truncate(input.client.synced_content, 20000)}
+${truncate(input.client.synced_content, 8000)}
 \`\`\`
 `
     : "";
@@ -278,12 +282,45 @@ ${transcript}
 
 Évalue les ${TOTAL_CRITERIA} critères. Réponds en JSON pur.`;
 
-  const response = await getAnthropic().messages.create({
-    model: EVALUATOR_MODEL,
-    max_tokens: 5500,
-    system,
-    messages: [{ role: "user", content: userMessage }],
-  });
+  // Stratégie anti-504 : on tente Sonnet 4.6 d'abord (qualité max) avec un
+  // timeout serré de 38s. Si Sonnet timeout ou échoue, on retombe sur
+  // Haiku 4.5 (5-10× plus rapide) sur le même prompt. Total budget ~55s,
+  // tient sous le maxDuration=60s de la route. Le commercial préfère un
+  // débrief Haiku qu'une erreur 504.
+  const SONNET_TIMEOUT_MS = 38000;
+  const HAIKU_TIMEOUT_MS = 18000;
+  const MAX_TOKENS = 4500;
+
+  let response;
+  let usedFallback = false;
+  try {
+    response = await getAnthropic().messages.create(
+      {
+        model: EVALUATOR_MODEL,
+        max_tokens: MAX_TOKENS,
+        system,
+        messages: [{ role: "user", content: userMessage }],
+      },
+      { timeout: SONNET_TIMEOUT_MS },
+    );
+  } catch (sonnetErr) {
+    console.warn(
+      `[evaluator] Sonnet a échoué (${(sonnetErr as Error).message}), fallback Haiku.`,
+    );
+    usedFallback = true;
+    response = await getAnthropic().messages.create(
+      {
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: MAX_TOKENS,
+        system,
+        messages: [{ role: "user", content: userMessage }],
+      },
+      { timeout: HAIKU_TIMEOUT_MS },
+    );
+  }
+  if (usedFallback) {
+    console.info("[evaluator] Débrief généré en mode Haiku (fallback).");
+  }
 
   const textBlock = response.content.find((b) => b.type === "text");
   if (!textBlock || textBlock.type !== "text") {
