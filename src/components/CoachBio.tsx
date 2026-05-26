@@ -1,6 +1,6 @@
 import { CoachMascot } from "./CamilleMascot";
 
-// Carte de présentation de Quentin Pasquier, le coach derrière CallLab.
+// Carte de présentation de Quentin Pasquier, le coach derrière CALLAB.
 // Sert à donner du contexte et de la crédibilité au coaching que l'outil
 // distribue. Variant "compact" pour les pages internes, variant "full" pour
 // le login et les pages de présentation.
@@ -86,7 +86,7 @@ export function CoachBio({
           className="text-small mt-5"
           style={{ color: "rgba(255, 255, 255, 0.65)", lineHeight: 1.5 }}
         >
-          CallLab est branché sur la prod Noxias. Ce que tu travailles ici
+          CALLAB est branché sur la prod Noxias. Ce que tu travailles ici
           est exactement ce qui marche en vrai, calibré avec ce qu'on observe
           sur des milliers d'appels en production.
         </p>
