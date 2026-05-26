@@ -1,7 +1,7 @@
 import type { SessionRow } from "./supabase/types";
 
 // =============================================================================
-// Système de RANGS BIFFCOACH : 6 tiers × 4 niveaux = 24 rangs.
+// Système de RANGS CallLab : 6 tiers × 4 niveaux = 24 rangs.
 // Basé sur des Practis Points (PPN) qui peuvent MONTER ou DESCENDRE.
 //
 // Une bonne perf augmente les PPN. Une mauvaise les fait descendre.

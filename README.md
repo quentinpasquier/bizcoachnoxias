@@ -1,4 +1,4 @@
-# BIFFCOACH
+# CallLab
 
 > Le coach commercial signé Noxias. Construit par Quentin Pasquier (10 ans de
 > commercial, 7 ans de management, fondateur de l'agence Noxias) à partir de
