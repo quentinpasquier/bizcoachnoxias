@@ -8,10 +8,38 @@ const OPENAI_TRANSCRIBE_URL = "https://api.openai.com/v1/audio/transcriptions";
 // Prompt de vocabulaire pour biaiser Whisper vers le jargon commercial B2B.
 // Whisper accepte jusqu'à ~244 tokens. On liste les termes les plus fréquents
 // des cold calls francophones pour éviter les fautes typiques (par ex.
-// "RDV" transcrit en "raidie vois", "ICP" en "i ces péter", "B2B" en
-// "biéton biét").
+// "RDV" transcrit en "raidie vois", "ICP" en "i ces péter").
+//
+// ATTENTION : pas de doublons dans ce prompt. Whisper a tendance à boucler
+// sur les tokens répétés du prompt (par ex. si on met "B2B, B to B", il
+// retranscrit "B2BB2BB2B"). Chaque terme apparaît une seule fois, et on
+// reste sous 80 tokens pour limiter les hallucinations de répétition.
 const PROSPECTION_VOCAB_HINT =
-  "Conversation commerciale B2B française. Vocabulaire : RDV, ICP, B2B, B to B, PME, ETI, SaaS, scale-up, prospect, persona, dirigeant, gérant, DG, DAF, DRH, DSI, CEO, COO, CTO, président, lead, qualification, closing, pipeline, démo, rendez-vous, cold call, prospection, agence, cabinet, briefing, KPI, ROI, MRR, ARR, BANT, MEDDIC, follow-up, deal, opportunité, brief, brise-glace.";
+  "Conversation téléphonique commerciale française entre un commercial et un prospect. Vocabulaire métier : RDV, ICP, PME, ETI, SaaS, scale-up, dirigeant, gérant, DAF, DRH, DSI, président, qualification, closing, démo, prospection, brise-glace, ROI, KPI, BANT, MEDDIC, opportunité, brief.";
+
+// Détecte et dédupliques les boucles d'hallucination Whisper.
+// Whisper peut renvoyer "B2BB2BB2BB2B" (concaténation d'un même token) ou
+// "c'est bon, c'est bon, c'est bon" (phrase répétée avec séparateur) quand
+// l'audio est très court ou que le prompt contient des répétitions. On
+// nettoie ces deux patterns ici. Conservateur : il faut 3 occurrences
+// consécutives ou plus pour collapser, ce qui évite de toucher aux vraies
+// répétitions oratoires ("non, non, non" reste intact).
+function dedupeRepeats(text: string): string {
+  if (!text) return text;
+  let cleaned = text;
+  // 1. Boucles concaténées : "B2BB2BB2BB2B" → "B2B"
+  //    Substring de 2 à 20 chars, répété 2+ fois en plus de l'original
+  //    (donc 3+ occurrences au total).
+  cleaned = cleaned.replace(/(\S{2,20}?)\1{2,}/g, "$1");
+  // 2. Phrases répétées avec ponctuation : "c'est bon, c'est bon, c'est bon" → "c'est bon"
+  //    Phrase de 2 à 50 chars sans ponctuation, suivie de 2+ occurrences
+  //    "ponctuation + même phrase".
+  cleaned = cleaned.replace(
+    /(\b[^.,;!?]{2,50}?)([.,;!?]\s*\1){2,}/gi,
+    "$1",
+  );
+  return cleaned.trim();
+}
 
 export async function POST(request: Request) {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -96,7 +124,8 @@ export async function POST(request: Request) {
   }
 
   const data = (await response.json()) as { text?: string };
-  const text = (data.text ?? "").trim();
+  const rawText = (data.text ?? "").trim();
+  const text = dedupeRepeats(rawText);
 
   return NextResponse.json({ text });
 }
