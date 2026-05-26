@@ -10,7 +10,7 @@ import type {
 const SCENARIO_MODEL = "claude-sonnet-4-6";
 
 // =====================================================================
-// DIVERSITY POOLS — utilisés pour casser le mode collapse de Claude.
+// DIVERSITY POOLS : utilisés pour casser le mode collapse de Claude.
 // À chaque génération, on tire au sort 1 élément par dimension pour le
 // pré-cabler dans le prompt. Sans ce mécanisme, Claude retombe sur ses
 // patterns favoris (Pierre Martin DAF d'une PME lyonnaise, etc.).
@@ -207,11 +207,11 @@ function buildDiversitySeed(gender: Gender): string {
   const speechStyle = pickRandom(SPEECH_STYLES);
   const companySize = pickRandom(COMPANY_SIZE_BUCKETS);
 
-  return `# AXES DE DIVERSITÉ — utilise CES éléments précis pour générer le scénario
+  return `# AXES DE DIVERSITÉ : utilise CES éléments précis pour générer le scénario
 
 Pour éviter le mode collapse (toujours Pierre Martin DAF d'une PME lyonnaise), 10 dimensions ont été pré-tirées au sort pour CETTE session. Tu DOIS les intégrer.
 
-1. PRÉNOM CIBLE : ${firstName} (utilise-le tel quel, ou un proche immédiat — JAMAIS Pierre, Marie, Jean, Sophie, Thomas, Laure, Nicolas qui sont saturés)
+1. PRÉNOM CIBLE : ${firstName} (utilise-le tel quel, ou un proche immédiat. JAMAIS Pierre, Marie, Jean, Sophie, Thomas, Laure, Nicolas qui sont saturés)
 2. NOM DE FAMILLE CIBLE : ${familyName}
 3. LIEU : ${location}
 4. TRANCHE D'ÂGE : ${age}
@@ -235,7 +235,7 @@ function buildRecentScenariosBlock(
         `${i + 1}. ${s.persona_name} (${s.persona_role}) chez ${s.company_name}`,
     )
     .join("\n");
-  return `\n# SCÉNARIOS DÉJÀ JOUÉS RÉCEMMENT — À ÉVITER
+  return `\n# SCÉNARIOS DÉJÀ JOUÉS RÉCEMMENT (à éviter)
 
 Voici les ${recentScenarios.length} dernier(s) scénario(s) joué(s) par ce commercial sur ce client. INTERDICTION d'utiliser les mêmes prénoms, noms, ou noms d'entreprises. Varie franchement :
 
@@ -280,7 +280,7 @@ export async function generateScenario(args: {
 Brief de préparation (déjà rédigé) :
 ${profile.prep_briefing}
 
-Tu DOIS coller à ce profil sur le FOND (douleurs, KPIs, signaux de décision). Le scénario que tu génères doit hériter de ces caractéristiques tout en variant CRADICALEMENT les détails (nom, ville, situation actuelle, style de parole) — voir AXES DE DIVERSITÉ ci-dessous.
+Tu DOIS coller à ce profil sur le FOND (douleurs, KPIs, signaux de décision). Le scénario que tu génères doit hériter de ces caractéristiques tout en variant RADICALEMENT les détails (nom, ville, situation actuelle, style de parole). Voir AXES DE DIVERSITÉ ci-dessous.
 `
     : "";
 

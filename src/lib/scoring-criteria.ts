@@ -170,7 +170,7 @@ export const SCORING_CATEGORIES: ScoringCategory[] = [
         id: "closing_verrouillage",
         label: "Verrouille / take-away",
         description:
-          "Verrouille le RDV verbalement obtenu par un mail de CONFIRMATION calendrier (invitation Outlook/Google sur le créneau accepté à l'oral), OU, en cas de refus, propose un rappel daté avec jour + heure précis. ATTENTION : accepter d'« envoyer une plaquette / de la doc / des infos par mail / une présentation » SANS avoir d'abord obtenu un oui verbal sur un créneau n'est PAS un verrouillage, c'est une capitulation déguisée — critère à 0 dans ce cas.",
+          "Verrouille le RDV verbalement obtenu par un e-mail de CONFIRMATION calendrier (invitation Outlook/Google sur le créneau accepté à l'oral), OU, en cas de refus, propose un rappel daté avec jour et heure précis. ATTENTION : accepter d'« envoyer une plaquette, de la documentation, des informations par e-mail ou une présentation » SANS avoir d'abord obtenu un oui verbal sur un créneau n'est PAS un verrouillage, c'est une capitulation déguisée : critère à 0 dans ce cas.",
       },
     ],
   },
