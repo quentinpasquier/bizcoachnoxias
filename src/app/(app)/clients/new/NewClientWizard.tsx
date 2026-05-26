@@ -220,7 +220,7 @@ export function NewClientWizard({ initial }: NewClientWizardProps = {}) {
     if (s === 0) {
       if (!payload.name.trim()) return "Donne un nom à ton offre.";
       if (!payload.value_prop_one_liner.trim() && !payload.product_pitch.trim())
-        return "Renseigne au moins la promesse ou le pitch produit.";
+        return "Renseigne au moins la promesse ou l'argumentaire produit.";
     }
     if (s === 2) {
       if (payload.personas.length === 0)
@@ -257,7 +257,7 @@ export function NewClientWizard({ initial }: NewClientWizardProps = {}) {
   async function handleSuggestPersonas() {
     if (!payload.value_prop_one_liner.trim() && !payload.product_pitch.trim()) {
       setError(
-        "Remplis d'abord la promesse ou le pitch produit (étape 1-2) pour que le cerveau IA puisse suggérer.",
+        "Remplis d'abord la promesse ou l'argumentaire produit (étape 1-2) pour que le cerveau IA puisse suggérer.",
       );
       return;
     }
@@ -307,7 +307,7 @@ export function NewClientWizard({ initial }: NewClientWizardProps = {}) {
   async function handleSuggestHook() {
     if (!payload.value_prop_one_liner.trim() && !payload.product_pitch.trim()) {
       setError(
-        "Remplis d'abord la promesse ou le pitch produit pour que le cerveau IA puisse suggérer.",
+        "Remplis d'abord la promesse ou l'argumentaire produit pour que le cerveau IA puisse suggérer.",
       );
       return;
     }
@@ -351,7 +351,7 @@ export function NewClientWizard({ initial }: NewClientWizardProps = {}) {
   async function handleSuggestObjections() {
     if (!payload.value_prop_one_liner.trim() && !payload.product_pitch.trim()) {
       setError(
-        "Remplis d'abord la promesse ou le pitch produit pour que le cerveau IA puisse suggérer.",
+        "Remplis d'abord la promesse ou l'argumentaire produit pour que le cerveau IA puisse suggérer.",
       );
       return;
     }
@@ -721,7 +721,7 @@ function StepValueProp({
   return (
     <div className="space-y-5">
       <StepIntro
-        title="Le pitch et la valeur livrée"
+        title="L'argumentaire et la valeur livrée"
         subtitle="Ce que le commercial doit vendre, et la preuve concrète qu'il peut avancer."
       />
       <CoachTip>
@@ -730,9 +730,9 @@ function StepValueProp({
           &quot;plus c&apos;est court, mieux c&apos;est&quot;
         </strong>
         . Faux. Les data sur 300M d&apos;appels analysés (Gong) montrent que
-        les pitchs qui décrochent un RDV durent en moyenne{" "}
+        les argumentaires qui décrochent un RDV durent en moyenne{" "}
         <strong style={{ color: "#FFFFFF" }}>53 secondes, pas 25</strong>. Un
-        pitch trop court signale du vide. Ce que je cherche dans un pitch :{" "}
+        argumentaire trop court signale du vide. Ce que je cherche dans un argumentaire :{" "}
         <strong style={{ color: "#FFFFFF" }}>un chiffre</strong>,{" "}
         <strong style={{ color: "#FFFFFF" }}>une preuve concrète</strong> (cas
         client, livrable),{" "}
@@ -752,7 +752,7 @@ function StepValueProp({
         id="product_pitch"
         label="Pitch produit"
         placeholder="Ex : Refonte de site orientée image, SEO et conversion, livrée en 6 semaines, avec identité visuelle et expérience de marque sur-mesure."
-        hint="2 à 3 phrases. Le pitch que tu attendrais d'un commercial qui ne connaît pas encore l'offre."
+        hint="2 à 3 phrases. L'argumentaire que tu attendrais d'un commercial qui ne connaît pas encore l'offre."
         rows={3}
         value={payload.product_pitch}
         onChange={(e) => patch({ product_pitch: e.target.value })}
@@ -832,20 +832,21 @@ function StepPersonas({
         , et un{" "}
         <strong style={{ color: "#FFFFFF" }}>événement déclencheur</strong> qui
         rend le moment opportun. Gartner documente que la décision B2B implique
-        6 à 10 stakeholders. Tu n&apos;as pas besoin de tous les avoir, mais tu
-        dois savoir lequel tu pitches.
+        6 à 10 décideurs et influenceurs. Tu n&apos;as pas besoin de tous les
+        avoir, mais tu dois savoir lequel tu cibles.
       </CoachTip>
       <CoachTip variant="compact">
-        Un ICP solide se construit en 4 couches :{" "}
-        <strong style={{ color: "#FFFFFF" }}>firmographique</strong> (taille,
-        secteur, géo),{" "}
-        <strong style={{ color: "#FFFFFF" }}>technographique</strong> (stack en
+        Un profil client idéal (ICP) solide se construit en 4 couches :{" "}
+        <strong style={{ color: "#FFFFFF" }}>structurelle</strong> (taille,
+        secteur, géographie),{" "}
+        <strong style={{ color: "#FFFFFF" }}>technologique</strong> (outils en
         place, concurrents installés),{" "}
         <strong style={{ color: "#FFFFFF" }}>comportementale</strong>{" "}
-        (recrutement, contenu consommé), et{" "}
-        <strong style={{ color: "#FFFFFF" }}>trigger events</strong> (levée,
-        expansion, leadership). Si tu maîtrises 2-3 couches, c&apos;est assez,
-        l&apos;IA peut combler les autres.
+        (recrutement en cours, contenus consommés), et{" "}
+        <strong style={{ color: "#FFFFFF" }}>événements déclencheurs</strong>{" "}
+        (levée de fonds, expansion à l&apos;étranger, changement de direction).
+        Si tu maîtrises 2 ou 3 couches, c&apos;est assez, l&apos;IA peut combler
+        les autres.
       </CoachTip>
 
       <Textarea
@@ -1025,9 +1026,9 @@ function PersonaCard({
             <strong style={{ color: "#FFFFFF" }}>
               hiérarchisées par fréquence ET intensité
             </strong>
-            . Si tu mets 5 pains génériques, ton commercial pitchera dans le
-            vide. Cible{" "}
-            <strong style={{ color: "#FFFFFF" }}>2 pains MAX</strong> qui font
+            . Si tu mets 5 douleurs génériques, ton commercial argumentera dans
+            le vide. Cible{" "}
+            <strong style={{ color: "#FFFFFF" }}>2 douleurs MAX</strong> qui font
             mal <em>maintenant</em>. Le test : si le prospect dit &quot;oui,
             c&apos;est exactement ça&quot; en l&apos;écoutant, t&apos;as gagné.
             Sinon c&apos;est du remplissage.
@@ -1136,11 +1137,11 @@ function StepObjections({
       <CoachTip>
         À retenir :{" "}
         <strong style={{ color: "#FFFFFF" }}>
-          50% des objections en cold call sont des brush-offs réflexes
+          50% des objections en appel à froid sont des réflexes de défense
         </strong>
         , pas de vraies objections. &quot;Pas le temps&quot;, &quot;envoyez un
         mail&quot;, &quot;pas intéressé&quot; dans les 10 premières secondes =
-        mécanisme défensif, pas avis raisonné. Un cold call qui décroche traite
+        mécanisme défensif, pas avis raisonné. Un appel à froid qui décroche traite
         en moyenne <strong>3 à 4 objections</strong>. La question n&apos;est pas
         de les éviter, c&apos;est de les <em>creuser</em>.
       </CoachTip>
@@ -1217,25 +1218,26 @@ function StepObjections({
       </div>
 
       <CoachTip variant="compact">
-        Framework de base : LAER (Listen-Acknowledge-Explore-Respond). Version
-        pro que j&apos;utilise :{" "}
-        <strong style={{ color: "#FFFFFF" }}>mirroring + labeling</strong> de
-        Chris Voss. Tu répètes les 3 derniers mots du prospect (&quot;déjà un
-        prestataire ?&quot;) ou tu nommes l&apos;émotion (&quot;on dirait que ce
-        sujet vous fatigue&quot;). Ça pousse à élaborer : c&apos;est là que tu
-        trouves la vraie objection cachée derrière la phrase réflexe.
+        Méthode de base : LAER (Écouter, Acquitter, Explorer, Répondre).
+        Version pro que j&apos;utilise :{" "}
+        <strong style={{ color: "#FFFFFF" }}>effet miroir + étiquetage</strong>{" "}
+        de Chris Voss (ancien négociateur du FBI). Tu répètes les 3 derniers
+        mots du prospect (&quot;déjà un prestataire ?&quot;) ou tu nommes
+        l&apos;émotion (&quot;on dirait que ce sujet vous fatigue&quot;). Ça
+        pousse à élaborer : c&apos;est là que tu trouves la vraie objection
+        cachée derrière la phrase réflexe.
       </CoachTip>
 
       <CoachTip variant="compact" accent="green">
         Pour récolter les objections spécifiques de ton offre :{" "}
         <strong style={{ color: "#FFFFFF" }}>
-          relis tes 10 derniers deals perdus
+          relis tes 10 dernières affaires perdues
         </strong>{" "}
         et les comptes-rendus. Les objections génériques (budget, timing), tu
         les connais déjà. Cherche les phrases EXACTES que tes prospects
         sortaient (&quot;on a essayé X y&apos;a 2 ans et ça a foiré&quot;,
         &quot;mon DAF refuse les abonnements SaaS&quot;). C&apos;est l&apos;or,
-        ce qui distingue tes commerciaux d&apos;un commercial random.
+        ce qui distingue tes commerciaux d&apos;un commercial lambda.
       </CoachTip>
 
       <div
@@ -1306,17 +1308,17 @@ function StepHook({
         subtitle="La porte d'entrée d'un appel et les phrases qui font mouche. Optionnel mais ça enrichit l'entraînement."
       />
       <CoachTip>
-        Un opener ≠ un pitch. L&apos;opener c&apos;est les{" "}
+        Une accroche ≠ un argumentaire. L&apos;accroche c&apos;est les{" "}
         <strong style={{ color: "#FFFFFF" }}>10-15 premières secondes</strong>{" "}
-        pour passer le réflexe de raccrochage. Le pitch vient APRÈS. Data Gong
+        pour passer le réflexe de raccrochage. L&apos;argumentaire vient APRÈS. Data Gong
         sur 300M de calls :{" "}
         <strong style={{ color: "#FFFFFF" }}>
           &quot;Comment ça va depuis la dernière fois ?&quot; = 10% de succès
         </strong>{" "}
-        (vs baseline industrie 1,5%). Pattern interrupt : le cerveau croit
+        (vs référence du marché 1,5%). Rupture de schéma : le cerveau croit
         reconnaître un familier. À l&apos;inverse :{" "}
         <strong style={{ color: "#FFFFFF" }}>
-          &quot;Did I catch you at a bad time&quot; = −40% de RDV
+          &quot;Je tombe au mauvais moment ?&quot; = -40% de RDV
         </strong>
         , c&apos;est grillé. Trop répandu.
       </CoachTip>
@@ -1352,7 +1354,7 @@ function StepHook({
       </div>
 
       <CoachTip variant="compact">
-        L&apos;opener qui décroche le mieux selon Gong :{" "}
+        L&apos;accroche qui décroche le mieux selon Gong :{" "}
         <strong style={{ color: "#FFFFFF" }}>demande 27 secondes</strong>{" "}
         d&apos;attention upfront. Pas une permission floue (&quot;vous avez 5
         min ?&quot; = −40%), un CONTRAT de temps précis. Phrase testée : « Je
@@ -1374,11 +1376,12 @@ function StepHook({
         onChange={(e) => patch({ hook: e.target.value })}
       />
       <CoachTip variant="compact" accent="green">
-        Mes 3 armes en closing d&apos;objection, signature Chris Voss :{" "}
-        <strong style={{ color: "#FFFFFF" }}>mirroring</strong> (répéter les 3
-        derniers mots avec curiosité, fait élaborer),{" "}
-        <strong style={{ color: "#FFFFFF" }}>labeling</strong> (&quot;on dirait
-        que...&quot; désamorce l&apos;émotion),{" "}
+        Mes 3 armes en gestion d&apos;objection, signature Chris Voss (ancien
+        négociateur du FBI) :{" "}
+        <strong style={{ color: "#FFFFFF" }}>effet miroir</strong> (répéter les
+        3 derniers mots avec curiosité, fait élaborer),{" "}
+        <strong style={{ color: "#FFFFFF" }}>étiquetage émotionnel</strong>{" "}
+        (&quot;on dirait que...&quot; désamorce l&apos;émotion),{" "}
         <strong style={{ color: "#FFFFFF" }}>inversion du oui</strong>{" "}
         (&quot;est-ce une mauvaise idée qu&apos;on se voie 15 min ?&quot; : le
         NON est plus sécurisant que le OUI pour un prospect). Liste ici les
@@ -1388,7 +1391,7 @@ function StepHook({
         id="killer_arguments"
         label="Arguments massue (1 par ligne)"
         placeholder={"Ex :\nVotre site ne doit pas seulement exister, il doit prouver votre sérieux.\nDans un océan de sites IA standardisés, le vôtre doit être celui qu'on retient.\nVotre bouche-à-oreille a bâti une réputation, votre site doit la confirmer."}
-        hint="Les phrases choc qui retournent une objection ou ferment un closing."
+        hint="Les phrases choc qui retournent une objection ou verrouillent un RDV."
         rows={6}
         value={payload.killer_arguments}
         onChange={(e) => patch({ killer_arguments: e.target.value })}
