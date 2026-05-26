@@ -376,12 +376,16 @@ export function ChatRoom({ session, initialMessages }: Props) {
   }
 
   // Construit un prompt de contexte pour Whisper à partir du client + persona
-  // de la session. Aide à transcrire les noms propres et le vocabulaire métier.
+  // de la session. CRITIQUE : doit être une PHRASE NATURELLE et non une liste
+  // de termes. Une liste type "Noxias, Dirigeant PME" ressemble à une
+  // transcription possible et Whisper la recrache parfois telle quelle
+  // dans la sortie (bug bien documenté de prompt bleed). Une phrase prose
+  // contextualisée force Whisper à comprendre que c'est un échantillon de
+  // style, pas du contenu à reproduire.
   function buildWhisperPrompt(): string {
-    const parts: string[] = [];
-    if (session.client_name_snapshot) parts.push(session.client_name_snapshot);
-    if (session.persona_label) parts.push(session.persona_label);
-    return parts.join(", ");
+    if (!session.client_name_snapshot) return "";
+    const persona = session.persona_label?.toLowerCase() ?? "dirigeant";
+    return `Conversation entre un commercial qui prospecte pour ${session.client_name_snapshot} et un ${persona} en France.`;
   }
 
   async function startListening() {

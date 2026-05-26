@@ -5,17 +5,58 @@ export const maxDuration = 30;
 
 const OPENAI_TRANSCRIBE_URL = "https://api.openai.com/v1/audio/transcriptions";
 
-// Prompt de vocabulaire pour biaiser Whisper vers le jargon commercial B2B.
-// Whisper accepte jusqu'à ~244 tokens. On liste les termes les plus fréquents
-// des cold calls francophones pour éviter les fautes typiques (par ex.
-// "RDV" transcrit en "raidie vois", "ICP" en "i ces péter").
-//
-// ATTENTION : pas de doublons dans ce prompt. Whisper a tendance à boucler
-// sur les tokens répétés du prompt (par ex. si on met "B2B, B to B", il
-// retranscrit "B2BB2BB2B"). Chaque terme apparaît une seule fois, et on
-// reste sous 80 tokens pour limiter les hallucinations de répétition.
+// Prompt vocabulaire pour biaiser Whisper vers le jargon commercial B2B.
+// Whisper accepte jusqu'à ~244 tokens. CRITIQUE : ce prompt doit être une
+// PHRASE NATURELLE et non une liste de termes séparés par virgules. Une
+// liste type "RDV, ICP, B2B, PME" ressemble à une transcription possible
+// et Whisper la recrache parfois telle quelle dans la sortie (bug bien
+// documenté de prompt bleed). Une phrase prose contextualisée force
+// Whisper à comprendre que c'est un échantillon de style, pas du contenu
+// à reproduire.
 const PROSPECTION_VOCAB_HINT =
-  "Conversation téléphonique commerciale française entre un commercial et un prospect. Vocabulaire métier : RDV, ICP, PME, ETI, SaaS, scale-up, dirigeant, gérant, DAF, DRH, DSI, président, qualification, closing, démo, prospection, brise-glace, ROI, KPI, BANT, MEDDIC, opportunité, brief.";
+  "Voici un exemple typique d'appel commercial B2B francophone. Le commercial appelle un dirigeant de PME ou d'ETI pour proposer un rendez-vous de quelques minutes. Il parle de prospection téléphonique, de qualification de contacts, de retour sur investissement, d'indicateurs de performance. Le dirigeant peut être DAF, DRH, DSI ou président. On évoque parfois des méthodes comme BANT ou MEDDIC.";
+
+// Liste des hallucinations Whisper francophones bien documentées. Quand
+// Whisper rencontre un silence ou un audio incompréhensible, il émet
+// régulièrement des phrases issues de ses données d'entraînement (génériques
+// de fin de vidéo YouTube, doublages, sous-titres communautaires). On les
+// détecte et on rejette la transcription pour qu'elle ne soit pas envoyée
+// au bot. Le client retombe alors sur le texte Web Speech.
+const WHISPER_HALLUCINATIONS = [
+  /sous-titr(?:age|es)\s*[:.]?\s*amara/i,
+  /voix\s+(?:de\s+l['']interprète|off)/i,
+  /merci\s+(?:à\s+tous\s+)?d['']avoir\s+regardé/i,
+  /bienvenue\s+dans\s+cette\s+(?:nouvelle\s+)?vidéo/i,
+  /abonnez-vous\s+(?:à\s+la\s+chaîne|à\s+ma\s+chaîne)/i,
+  /(?:à\s+)?très\s+bientôt\s+sur\s+la\s+chaîne/i,
+  /communauté\s+d['']amara/i,
+  /n['']oubliez\s+pas\s+de\s+(?:liker|vous\s+abonner|cliquer)/i,
+  /merci\s+pour\s+l['']attention/i,
+  /merci\s+d['']avoir\s+suivi/i,
+];
+
+function isHallucination(text: string): boolean {
+  return WHISPER_HALLUCINATIONS.some((re) => re.test(text));
+}
+
+// Détecte si la sortie Whisper est un écho du prompt (prompt bleed).
+// Si plus de 70 % des mots significatifs de la sortie viennent du prompt,
+// c'est qu'il n'y a pas eu de transcription réelle, juste du bleed.
+function isPromptEcho(text: string, prompt: string): boolean {
+  const toWords = (s: string) =>
+    s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length > 2);
+
+  const promptWords = new Set(toWords(prompt));
+  const textWords = toWords(text);
+  if (textWords.length === 0 || textWords.length > 30) return false;
+  const matches = textWords.filter((w) => promptWords.has(w)).length;
+  return matches / textWords.length > 0.7;
+}
 
 // Détecte et déduplique les boucles d'hallucination Whisper.
 // Whisper peut renvoyer "B2BB2B" (acronyme métier répété), "B2BB2B2B2B2B"
@@ -141,8 +182,21 @@ export async function POST(request: Request) {
 
   const data = (await response.json()) as { text?: string };
   const rawText = (data.text ?? "").trim();
-  const text = dedupeRepeats(rawText);
 
+  // Filtres anti-hallucination en cascade :
+  // 1. Hallucinations connues (sous-titres Amara, voix de l'interprète...)
+  // 2. Écho du prompt (Whisper a recraché le vocabulaire métier au lieu
+  //    de transcrire le commercial)
+  if (isHallucination(rawText)) {
+    console.warn(`[transcribe] Hallucination Whisper rejetée : "${rawText.slice(0, 80)}"`);
+    return NextResponse.json({ text: "" });
+  }
+  if (isPromptEcho(rawText, prompt)) {
+    console.warn(`[transcribe] Prompt echo Whisper rejeté : "${rawText.slice(0, 80)}"`);
+    return NextResponse.json({ text: "" });
+  }
+
+  const text = dedupeRepeats(rawText);
   return NextResponse.json({ text });
 }
 
