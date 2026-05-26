@@ -253,7 +253,24 @@ Générez 4 à 6 \`quote_rewrites\` qui respectent :
 
 Si la session est très courte ou très réussie, générez au minimum 3 \`quote_rewrites\` portant sur ce qui peut encore être affiné.`;
 
-  const userMessage = `# CONTEXTE DE LA SESSION
+  // Découpage pour le prompt caching Anthropic :
+  // - cacheableClientBlock : client + docs, identique pour toutes les
+  //   sessions du même client → cache hit immédiat dès la 2e session
+  // - dynamicSessionBlock : scénario + outcome + transcript, varie à chaque
+  //   session par définition
+  // Le système est aussi caché (identique pour TOUTES les sessions, tous
+  // clients confondus). Ensemble, ces 2 caches couvrent ~80% des tokens
+  // d'entrée et économisent 5-10s par appel sur les sessions cachées.
+
+  const cacheableClientBlock = `# CONTEXTE CLIENT NOXIAS
+
+Client : ${input.client.name}${input.client.sector ? ` (${input.client.sector})` : ""}
+Pitch que le commercial est censé porter : ${input.client.product_pitch}
+${input.client.value_proposition ? `Value prop : ${input.client.value_proposition}` : ""}
+
+${docsBlock}`;
+
+  const dynamicSessionBlock = `# CONTEXTE DE LA SESSION
 
 Niveau : ${cfg.label}
 
@@ -266,12 +283,6 @@ Persona joué :
 - KPIs surveillés : ${input.scenario.kpis_to_probe.join(" ; ")}
 - Critères de décision RDV : ${input.scenario.decision_criteria}
 
-Client Noxias : ${input.client.name}${input.client.sector ? ` (${input.client.sector})` : ""}
-Pitch que le commercial était censé porter : ${input.client.product_pitch}
-${input.client.value_proposition ? `Value prop : ${input.client.value_proposition}` : ""}
-
-${docsBlock}
-
 ${outcomeLine}
 
 # TRANSCRIPT DE L'APPEL
@@ -280,27 +291,56 @@ ${transcript}
 
 # TA TÂCHE
 
-Évalue les ${TOTAL_CRITERIA} critères. Réponds en JSON pur.`;
+Évaluez les ${TOTAL_CRITERIA} critères. Répondez en JSON pur.`;
 
-  // Stratégie anti-504 : on tente Sonnet 4.6 d'abord (qualité max) avec un
-  // timeout serré de 38s. Si Sonnet timeout ou échoue, on retombe sur
-  // Haiku 4.5 (5-10× plus rapide) sur le même prompt. Total budget ~55s,
-  // tient sous le maxDuration=60s de la route. Le commercial préfère un
-  // débrief Haiku qu'une erreur 504.
+  // Stratégie anti-504 : Sonnet 4.6 d'abord (qualité max) avec timeout
+  // serré 38s. Si Sonnet timeout, fallback Haiku 4.5 (5-10× plus rapide).
+  // Total budget ~55s, tient sous maxDuration=60s. Avec prompt caching,
+  // les sessions répétées sur le même client sont 30-50% plus rapides.
   const SONNET_TIMEOUT_MS = 38000;
   const HAIKU_TIMEOUT_MS = 18000;
-  const MAX_TOKENS = 4500;
+  const MAX_TOKENS = 3500;
+
+  // Helper pour construire le payload avec cache control. Anthropic cache
+  // le préfixe jusqu'au dernier marqueur cache_control. Ici on a 2 marqueurs :
+  // (1) système, (2) bloc client/docs. Le bloc dynamique n'est pas caché
+  // car il change à chaque session.
+  function buildPayload(model: string) {
+    return {
+      model,
+      max_tokens: MAX_TOKENS,
+      temperature: 0,
+      system: [
+        {
+          type: "text" as const,
+          text: system,
+          cache_control: { type: "ephemeral" as const },
+        },
+      ],
+      messages: [
+        {
+          role: "user" as const,
+          content: [
+            {
+              type: "text" as const,
+              text: cacheableClientBlock,
+              cache_control: { type: "ephemeral" as const },
+            },
+            {
+              type: "text" as const,
+              text: dynamicSessionBlock,
+            },
+          ],
+        },
+      ],
+    };
+  }
 
   let response;
   let usedFallback = false;
   try {
     response = await getAnthropic().messages.create(
-      {
-        model: EVALUATOR_MODEL,
-        max_tokens: MAX_TOKENS,
-        system,
-        messages: [{ role: "user", content: userMessage }],
-      },
+      buildPayload(EVALUATOR_MODEL),
       { timeout: SONNET_TIMEOUT_MS },
     );
   } catch (sonnetErr) {
@@ -309,17 +349,23 @@ ${transcript}
     );
     usedFallback = true;
     response = await getAnthropic().messages.create(
-      {
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: MAX_TOKENS,
-        system,
-        messages: [{ role: "user", content: userMessage }],
-      },
+      buildPayload("claude-haiku-4-5-20251001"),
       { timeout: HAIKU_TIMEOUT_MS },
     );
   }
   if (usedFallback) {
     console.info("[evaluator] Débrief généré en mode Haiku (fallback).");
+  }
+  // Log cache hits pour suivre l'efficacité du prompt caching en prod.
+  const usage = response.usage as
+    | { cache_creation_input_tokens?: number; cache_read_input_tokens?: number; input_tokens: number; output_tokens: number }
+    | undefined;
+  if (usage) {
+    const cacheRead = usage.cache_read_input_tokens ?? 0;
+    const cacheWrite = usage.cache_creation_input_tokens ?? 0;
+    console.info(
+      `[evaluator] tokens · in=${usage.input_tokens} cached_read=${cacheRead} cached_write=${cacheWrite} out=${usage.output_tokens}`,
+    );
   }
 
   const textBlock = response.content.find((b) => b.type === "text");
