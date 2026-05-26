@@ -3,7 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { evaluateSession } from "@/lib/evaluator";
 import type { Client, Difficulty, Scenario, SessionRow } from "@/lib/supabase/types";
 
-export const maxDuration = 60;
+// 180s : Sonnet sur cache froid + long transcript peut dépasser 60s.
+// Vercel Pro autorise jusqu'à 300s sur les Serverless Functions, on prend
+// 180s qui donne 3× de marge sur le temps réel observé (~30-45s typique).
+export const maxDuration = 180;
 export const runtime = "nodejs";
 
 export async function POST(

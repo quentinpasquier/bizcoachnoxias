@@ -160,7 +160,7 @@ export function FeedbackEvaluator({ sessionId }: { sessionId: string }) {
               className="text-small"
               style={{ color: "rgba(255, 255, 255, 0.6)" }}
             >
-              Habituellement 5 à 12 secondes.
+              Habituellement 10 à 30 secondes, jusqu&apos;à 1 minute sur un transcript long.
               {attempt > 1 && (
                 <span
                   style={{
