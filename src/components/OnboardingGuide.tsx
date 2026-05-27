@@ -20,7 +20,7 @@ function buildSteps(isNoxiasOrg: boolean): Step[] {
   const coachIntro: Step = {
     eyebrow: "Étape 1",
     title: "Bonjour, moi c'est Quentin Pasquier",
-    body: `Fondateur de Noxias, agence et équipe commerciale externalisée. ${QUENTIN_CREDENTIALS.yearsCommercial} ans sur le terrain, ${QUENTIN_CREDENTIALS.yearsManagement} ans de management commercial, et j'ai analysé plus de ${NUMBER_FR.format(QUENTIN_CREDENTIALS.callsAnalyzed)} calls en production. CALLAB, c'est ce qui marche concrètement, distillé dans un outil pour toi.`,
+    body: `Fondateur de Noxias, agence et équipe commerciale externalisée. ${QUENTIN_CREDENTIALS.yearsCommercial} ans sur le terrain, ${QUENTIN_CREDENTIALS.yearsManagement} ans de management commercial, et j'ai analysé plus de ${NUMBER_FR.format(QUENTIN_CREDENTIALS.callsAnalyzed)} calls en production. Call-Lab, c'est ce qui marche concrètement, distillé dans un outil pour toi.`,
     accent: "#9d6bff",
     emoji: "👋",
   };

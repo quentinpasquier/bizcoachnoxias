@@ -1,4 +1,4 @@
-# Déploiement — CALLAB
+# Déploiement — Call-Lab
 
 Pas à pas pour mettre en production sur **Vercel** + **Supabase** + **Anthropic**.
 
