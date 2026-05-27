@@ -162,20 +162,25 @@ const OBJECTION_BIASES = [
   "l'INTERNE (on a une équipe interne, pas besoin d'externalisation)",
 ];
 
+// Styles de parole calibrés pour rester PROFESSIONNELS quoi qu'il arrive.
+// Tous ces styles vouvoient le commercial et utilisent des marques d'oralité
+// sobres ("écoutez", "voyez", "bon", "alors") plutôt que familières
+// ("ah ouais", "ben", "tu vois", "franchement"). Le ton sympathique reste
+// possible (cabinet, indépendant) mais jamais relâché.
 const SPEECH_STYLES = [
-  "ton sec et minéral, phrases courtes, pas d'enrobage",
-  "ton onctueux mais évasif, beaucoup de 'on verra' et 'pourquoi pas'",
-  "ton familier, beaucoup de 'tu vois', 'franchement', 'en gros'",
-  "ton corporate, jargon CAC40 (EBITDA, COMEX, KPI, ROI, sponsor C-level)",
-  "ton terrain, vocabulaire de chantier ou atelier, expressions imagées",
-  "ton hésitant, beaucoup de 'euh', 'alors', 'je sais pas trop si'",
-  "ton percutant, phrases bouclées, professionnel rodé média-trained",
-  "ton un peu désabusé, soupirs et silences travaillés",
-  "ton enthousiaste mais sans engagement réel ('super idée, je note')",
-  "ton de cadre supérieur qui se demande pourquoi il prend l'appel",
-  "ton bourru mais juste, du genre 'tu m'as appelé pour ça ?'",
-  "ton chaleureux avec accent régional marqué (Sud-Ouest, Marseille, Nord)",
-  "ton mesuré et juridique, comme un notaire (DAF/juriste type)",
+  "ton sec et minéral, phrases courtes, pas d'enrobage, fréquence des 'écoutez', 'voyez'",
+  "ton mesuré mais évasif, 'on verra', 'pourquoi pas', 'je vous reviens là-dessus'",
+  "ton accessible et chaleureux (typique TPE / cabinet) : marques d'oralité sobres comme 'écoutez', 'bon', 'd'accord', sans jamais tomber dans le familier",
+  "ton corporate, vocabulaire grand groupe (indicateurs, méthodes, sponsors, instances), articulation soignée",
+  "ton terrain professionnel : vocabulaire métier précis (atelier, chantier, production) sans relâchement de langage",
+  "ton hésitant mesuré : 'alors...', 'voyons...', 'attendez un instant', jamais des chapelets de 'euh'",
+  "ton percutant, phrases bouclées, professionnel rodé media-trained",
+  "ton un peu désabusé mais articulé, avec des silences travaillés et des soupirs sobres",
+  "ton enthousiaste de façade ('très intéressant', 'je note'), sans engagement réel",
+  "ton de cadre supérieur poli qui s'interroge sur la pertinence de l'appel",
+  "ton direct et tranchant ('Quel est l'objet précis de votre appel ?'), poli mais sans complaisance",
+  "ton chaleureux avec très léger accent régional (Sud-Ouest, Marseille, Nord), reste pro",
+  "ton mesuré et juridique, comme un notaire ou DAF : tournures précises, vocabulaire technique",
 ];
 
 const COMPANY_SIZE_BUCKETS = [
@@ -302,8 +307,12 @@ ${SCHEMA}
 - Adapté au genre : nom et style cohérents.
 
 # RÈGLES D'AUTHENTICITÉ ORALE (crucial pour l'immersion)
-- Les available_objections doivent être formulées EXACTEMENT comme un dirigeant les dirait à l'oral, en 1ère personne, courtes (1 phrase max). Pas de "le prospect dira que...", écris la phrase brute. Ex : "Écoutez, je vais être franc, c'est pas le moment."
-- Les speech_quirks doivent être des tics RÉELS du persona, observables à chaque réplique. Pas "il utilise des anglicismes" mais "dit 'OK' au lieu de 'oui'" ou "termine ses phrases par 'voilà'".
+- Les available_objections doivent être formulées EXACTEMENT comme un dirigeant les dirait à l'oral, en 1ère personne, courtes (1 phrase max), TOUJOURS en VOUVOIANT le commercial. Pas de "le prospect dira que...", écris la phrase brute. Ex : "Écoutez, je vais être franc avec vous, ce n'est pas le moment."
+- Les speech_quirks doivent être des tics RÉELS du persona, observables à chaque réplique, et SOBRES (registre professionnel). Pas "il utilise des anglicismes" mais "dit 'effectivement' à chaque acquittement" ou "termine ses phrases par 'voilà'". INTERDITS dans les tics : "ah ouais", "ben", "et ben", "carrément", "trop", "ouf", "tu vois en chapelet".
+- TON adapté à la TAILLE de l'entreprise du persona :
+  • TPE / cabinet / indépendant : ton accessible et chaleureux possible, vocabulaire courant, peu de jargon. JAMAIS familier au point de "ah ouais".
+  • PME / ETI / filiale de grand groupe : ton corporate, méthodique, vocabulaire métier précis, phrases construites.
+  Dans tous les cas : VOUVOIEMENT strict du commercial.
 - Le voice_notes doit donner une vraie texture vocale (rapidité, accent régional éventuel, niveau d'énergie).`;
 
   const user = `# CLIENT NOXIAS
@@ -377,7 +386,7 @@ const SCHEMA = `{
   "hidden_pain_points": ["<3 douleurs spécifiques qu'il ne révélera pas spontanément>", "...", "..."],
   "kpis_to_probe": ["<2-3 KPI/métriques que ce prospect surveille>", "...", "..."],
   "available_objections": ["<5-7 objections concrètes formulées comme à l'oral, en 1ère personne, COURTES (1 phrase max)>", "...", "..."],
-  "speech_quirks": ["<3-4 tics de langage RÉCURRENTS pour ce persona : ex 'franchement', 'en gros', 'tu vois ce que je veux dire', 'voilà', 'bon ben'. C'est crucial pour le réalisme oral.>", "...", "..."],
+  "speech_quirks": ["<3-4 tics de langage PROFESSIONNELS et SOBRES, à utiliser parcimonieusement : ex 'écoutez', 'voyez', 'effectivement', 'd'accord', 'tout à fait', 'je vous l'accorde', 'pour être franc', 'concrètement'. PAS de 'ah ouais', 'ben', 'et ben', 'tu vois', 'franchement' en chapelet. Le prospect est un adulte au travail.>", "...", "..."],
   "decision_criteria": "<1-2 phrases : ce qui le ferait dire OUI à un RDV>",
-  "voice_notes": "<2-3 phrases : tutoiement/vouvoiement, vocabulaire (technique/grand public), rythme (rapide/posé), niveau d'énergie, accent ou région éventuels.>"
+  "voice_notes": "<2-3 phrases : VOUVOIEMENT obligatoire (jamais 'tu'). Niveau de vocabulaire (courant pour TPE/indépendant, technique métier pour PME/ETI/grand groupe), rythme (rapide/posé), niveau d'énergie, accent ou région éventuels. Le ton reste TOUJOURS professionnel quelle que soit la taille de l'entreprise.>"
 }`;
