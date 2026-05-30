@@ -359,34 +359,36 @@ export default async function ManagerDashboardPage() {
         )}
       </section>
 
-      {/* 4. Tableau commerciaux avec diagnostic individuel */}
+      {/* 4. Trombinoscope commerciaux : cartes profil compactes, toute
+          la carte est un Link vers la fiche détaillée /history/[userId]
+          où se trouvent le diagnostic agrégé et le scan IA approfondi. */}
       <section className="space-y-3">
         <div>
-          <h2 className="text-h3">Diagnostic par commercial</h2>
+          <h2 className="text-h3">Ton équipe</h2>
           <p
             className="text-small mt-1"
             style={{ color: "rgba(255,255,255,0.6)" }}
           >
-            Top défauts détectés sur les sessions récentes + recommandation
-            d&apos;entraînement ciblé pour que chacun se concentre sur SON
-            point faible.
+            Clique sur un commercial pour accéder à sa fiche complète :
+            diagnostic, scan IA, historique des sessions.
           </p>
         </div>
-        <div className="space-y-3">
-          {commercials.map((c) => (
-            <CommercialDiagnosticCard key={c.userId} stat={c} />
-          ))}
-          {commercials.length === 0 && (
-            <Card>
-              <p
-                className="text-small"
-                style={{ color: "rgba(255,255,255,0.55)" }}
-              >
-                Aucun commercial dans ton équipe pour l&apos;instant.
-              </p>
-            </Card>
-          )}
-        </div>
+        {commercials.length === 0 ? (
+          <Card>
+            <p
+              className="text-small"
+              style={{ color: "rgba(255,255,255,0.55)" }}
+            >
+              Aucun commercial dans ton équipe pour l&apos;instant.
+            </p>
+          </Card>
+        ) : (
+          <div className="manager-team-grid">
+            {commercials.map((c) => (
+              <CommercialMiniCard key={c.userId} stat={c} />
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
@@ -501,7 +503,11 @@ function ModeBreakdownChart({
   );
 }
 
-function CommercialDiagnosticCard({
+// Mini-carte profil compacte cliquable. Toute la carte est un Link
+// vers la fiche détaillée /history/[userId]. Pas de diagnostic affiché
+// ici (réservé à la fiche individuelle). Objectif : "trombinoscope"
+// rapide à parcourir pour entrer dans le profil qui intéresse.
+function CommercialMiniCard({
   stat,
 }: {
   stat: {
@@ -519,117 +525,75 @@ function CommercialDiagnosticCard({
   };
 }) {
   return (
-    <Card>
-      <div className="manager-commercial-row">
-        {/* Identité + rang */}
-        <div className="manager-commercial-identity">
-          <Avatar src={stat.avatarUrl} name={stat.fullName} size={44} />
-          <div>
-            <Link
-              href={`/history/${stat.userId}`}
-              className="manager-commercial-name"
-            >
-              {stat.fullName}
-            </Link>
-            <div className="manager-commercial-meta">
-              {stat.rank.tierLabel}
-              {stat.lastSession && (
-                <>
-                  {" · "}
-                  Vu {formatRelativeFr(stat.lastSession.started_at)}
-                </>
-              )}
-            </div>
+    <Link href={`/history/${stat.userId}`} className="manager-mini-card">
+      <div className="manager-mini-card-header">
+        <Avatar src={stat.avatarUrl} name={stat.fullName} size={44} />
+        <div className="manager-mini-card-identity">
+          <div className="manager-mini-card-name">{stat.fullName}</div>
+          <div className="manager-mini-card-meta">
+            {stat.rank.tierLabel}
+            {stat.lastSession && (
+              <>
+                {" · "}
+                Vu {formatRelativeFr(stat.lastSession.started_at)}
+              </>
+            )}
           </div>
         </div>
-
-        {/* Stats semaine */}
-        <div className="manager-commercial-stats">
-          <Stat label="Sessions sem." value={stat.sessionsThisWeek} />
-          <Stat label="RDV" value={stat.rdvCount} />
-          <Stat
-            label="Score moy."
-            value={stat.avgScore ?? "—"}
-            trend={stat.avgScoreTrend}
-          />
-        </div>
+        <span className="manager-mini-card-arrow" aria-hidden="true">
+          →
+        </span>
       </div>
 
-      {/* Diagnostic IA */}
-      {stat.diagnostic.hasEnoughData ? (
-        <div className="manager-diagnostic">
-          {stat.diagnostic.topDefects.length > 0 ? (
-            <>
-              <div className="manager-diagnostic-defects">
-                <span className="manager-diagnostic-eyebrow">
-                  Top défauts
-                </span>
-                <div className="manager-diagnostic-defects-list">
-                  {stat.diagnostic.topDefects.map((d) => (
-                    <span key={d.category} className="manager-defect-chip">
-                      {d.label}
-                      <span className="manager-defect-chip-count">
-                        ×{d.count}
-                      </span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-              {stat.diagnostic.recommendation && (
-                <div className="manager-recommendation">
-                  <div className="manager-recommendation-headline">
-                    <span aria-hidden="true">→</span>{" "}
-                    {stat.diagnostic.recommendation.headline}
-                  </div>
-                  <p className="manager-recommendation-reason">
-                    {stat.diagnostic.recommendation.reason}
-                  </p>
-                </div>
-              )}
-            </>
-          ) : (
-            stat.diagnostic.recommendation && (
-              <div className="manager-recommendation manager-recommendation-positive">
-                <div className="manager-recommendation-headline">
-                  <span aria-hidden="true">✓</span>{" "}
-                  {stat.diagnostic.recommendation.headline}
-                </div>
-                <p className="manager-recommendation-reason">
-                  {stat.diagnostic.recommendation.reason}
-                </p>
-              </div>
-            )
-          )}
-        </div>
-      ) : (
-        <p className="manager-diagnostic-empty">
-          Pas assez de données pour un diagnostic fiable (3 sessions minimum).
-        </p>
-      )}
+      <div className="manager-mini-card-stats">
+        <MiniStat label="Sessions sem." value={stat.sessionsThisWeek} />
+        <MiniStat label="RDV" value={stat.rdvCount} />
+        <MiniStat
+          label="Score"
+          value={stat.avgScore ?? "—"}
+          trend={stat.avgScoreTrend}
+        />
+      </div>
 
-      {/* Mini-vignette de la dernière session avec son mode */}
       {stat.lastSession && (
-        <div className="manager-last-session">
-          <span className="manager-last-session-label">Dernière session :</span>
+        <div className="manager-mini-card-last">
           <TrainingModeBadge
             mode={stat.lastSession.training_mode}
             blockTarget={stat.lastSession.block_target}
             embeddedBlocksCount={stat.lastSession.embedded_blocks_count}
             compact
           />
-          <span className="manager-last-session-meta">
+          <span className="manager-mini-card-last-meta">
             {stat.lastSession.persona_label}
             {stat.lastSession.appointment_secured && " · ✓ RDV"}
           </span>
-          <Link
-            href={`/history/${stat.userId}`}
-            className="manager-view-profile"
-          >
-            Voir la fiche complète →
-          </Link>
         </div>
       )}
-    </Card>
+    </Link>
+  );
+}
+
+function MiniStat({
+  label,
+  value,
+  trend,
+}: {
+  label: string;
+  value: number | string;
+  trend?: "up" | "down" | "flat" | null;
+}) {
+  return (
+    <div className="manager-mini-stat">
+      <div className="manager-mini-stat-label">{label}</div>
+      <div className="manager-mini-stat-value">
+        {value}
+        {trend && trend !== "flat" && (
+          <span className={`manager-mini-stat-trend manager-mini-stat-trend-${trend}`}>
+            {trend === "up" ? "↑" : "↓"}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 
