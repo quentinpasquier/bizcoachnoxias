@@ -2955,6 +2955,130 @@
   text-decoration: underline;
 }
 
+/* Trombinoscope équipe : grille de mini-cartes profil cliquables.
+   Chaque carte est un <Link> qui mène à /history/[userId]. Toute
+   l'info détaillée (diagnostic, scan IA, historique) est sur la
+   fiche individuelle, pas ici. */
+.manager-team-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 720px) {
+  .manager-team-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1100px) {
+  .manager-team-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.manager-mini-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease,
+    background 0.15s ease;
+}
+.manager-mini-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(60, 200, 121, 0.45);
+  background: rgba(60, 200, 121, 0.04);
+}
+.manager-mini-card:hover .manager-mini-card-arrow {
+  transform: translateX(3px);
+  color: var(--color-green);
+}
+
+.manager-mini-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.manager-mini-card-identity {
+  flex: 1;
+  min-width: 0;
+}
+.manager-mini-card-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.manager-mini-card-meta {
+  margin-top: 2px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+.manager-mini-card-arrow {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.4);
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.manager-mini-card-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.manager-mini-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+.manager-mini-stat-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+}
+.manager-mini-stat-value {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+.manager-mini-stat-trend {
+  font-size: 0.78rem;
+}
+.manager-mini-stat-trend-up { color: var(--color-green); }
+.manager-mini-stat-trend-down { color: var(--color-red); }
+
+.manager-mini-card-last {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.manager-mini-card-last-meta {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
 /* ============================================================
    Scan IA panel (CommercialScanPanel sur /history/[userId])
    ============================================================ */
