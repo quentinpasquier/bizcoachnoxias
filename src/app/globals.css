@@ -2739,6 +2739,28 @@
   border-left: 3px solid transparent;
 }
 
+/* Input de recherche client sur le sélecteur d'offres (Étape 1).
+   Apparaît uniquement à partir de 5+ clients pour ne pas encombrer
+   les petites listes. Filtre case-insensitive nom + secteur. */
+.client-search-input {
+  width: 100%;
+  padding: 11px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: #FFFFFF;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.client-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+.client-search-input:focus {
+  border-color: rgba(157, 107, 255, 0.55);
+  background: rgba(255, 255, 255, 0.06);
+}
+
 /* Panneau du Coach embarqué (Mode 2). Apparaît au-dessus de la zone
    de saisie quand le coach évalue, bloque ou donne la formulation
    modèle. Distinct visuellement du chat pour qu'on voit immédiatement
