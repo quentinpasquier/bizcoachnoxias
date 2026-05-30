@@ -61,6 +61,59 @@ export const GENDER_CONFIG: Record<Gender, { label: string }> = {
   femme: { label: "Femme" },
 };
 
+// Banque de 30 réactions d'agacement calibrées par niveau de difficulté.
+// Chaque réaction est une formulation prête à l'emploi (les [X], [Y] sont
+// à personnaliser avec ce que le commercial vient de dire ou ce que le
+// prospect lui a déjà dit). Couvre les 4 fautes : esquive, incohérence,
+// baratin, monologue.
+//
+// Calibration des tons par niveau :
+// - Débutant : ENCOURAGEANT mais ferme, marque le décalage sans froisser
+// - Intermédiaire : SEC, pose des limites, marque l'impatience
+// - Avancé : PIQUANT, exigeant, ne laisse rien passer
+// - Expert : CASSANT, dégagé, sans concession, presque vexant
+export const REACTIONS_AGACEMENT_PAR_NIVEAU: Record<Difficulty, string[]> = {
+  debutant: [
+    "Pardon, je n'ai pas bien suivi. Vous pouvez me redire ça avec d'autres mots ?",
+    "Attendez, vous me parlez de [X] mais ma question c'était plutôt [Y]. On peut revenir là-dessus ?",
+    "Vous utilisez le mot '[X]'. Pour moi qui ne suis pas du secteur, ça veut dire quoi exactement ?",
+    "Je vous coupe deux secondes. Votre idée centrale, c'est quoi ?",
+    "Hmm, je crois qu'il y a un quiproquo. Quand vous dites '[X]', vous parlez de quoi concrètement ?",
+    "Je veux bien vous suivre, mais là j'ai un peu décroché. Vous reprenez ?",
+    "OK alors là vous me parlez de plein de choses. On peut prendre une chose à la fois ?",
+  ],
+  intermediaire: [
+    "Vous tournez autour du pot. Votre réponse à ma question, c'est quoi ?",
+    "Excusez-moi mais vous venez de me dire [X], et là vous dites [Y]. Faudrait choisir.",
+    "Le mot '[X]', vous l'utilisez beaucoup. Pour ma boîte, ça donne quoi concrètement ?",
+    "Là vous m'avez perdu. Reprenez en une phrase votre idée.",
+    "Vous ne répondez pas à ma question. Je vous demande [X], pas [Y].",
+    "Bon, vous me parlez de quoi en fait ? Parce que ça commence à être flou.",
+    "C'est gentil tout ça mais ça ne me dit rien sur MON cas à moi.",
+    "Attendez, vous m'aviez dit [X] tout à l'heure. Et là vous me sortez [Y]. C'est cohérent ?",
+  ],
+  avance: [
+    "Stop. Vous venez de dire '[X]'. Définissez-moi ça, parce que là c'est du vent.",
+    "Ma question c'était [X]. Votre réponse c'est [Y]. On est d'accord que vous esquivez ?",
+    "Vous me sortez '[X]' comme si c'était un argument. Pour moi qui suis dans le métier, ça ne dit RIEN.",
+    "Vous me citez [X] comme bénéfice. Mais en quoi mon entreprise est concernée ? Soyez précis.",
+    "Trop long, trop vague. Recommencez avec la phrase qui me concerne directement.",
+    "Vous oubliez ce que je vous ai dit tout à l'heure : [X]. Reprenez avec cette donnée en tête.",
+    "Là vous me récitez votre fiche commerciale. J'attends quelqu'un qui pense, pas qui débite.",
+    "Argument générique. Donnez-moi un cas concret comparable au mien ou passez à autre chose.",
+  ],
+  expert: [
+    "Stop. Vous baratinez. Soit vous êtes précis dans les 30 secondes, soit on arrête là.",
+    "Je vous demande [X], vous me répondez sur [Y]. C'est pas sérieux.",
+    "'[X]', c'est un buzzword. Si c'est tout ce que vous avez, j'ai déjà entendu cent fois mieux.",
+    "Vous m'avez écouté quand je vous ai dit [X] tout à l'heure ? Apparemment pas.",
+    "Je vais être direct : votre pitch tient en trois mots vides. Vous avez du fond ou pas ?",
+    "Pas de précision, pas de chiffre, pas d'exemple. Pourquoi je continuerais à vous écouter ?",
+    "Là j'ai écouté trente secondes de remplissage. La phrase qui change quelque chose, c'est laquelle ?",
+    "Vous parlez de '[X]' sans le maîtriser. Quand vous saurez de quoi vous causez, vous me rappellerez.",
+  ],
+};
+
 export function buildProspectSystemPrompt(args: {
   scenario: Scenario;
   difficulty: Difficulty;
@@ -92,6 +145,26 @@ export function buildProspectSystemPrompt(args: {
     scenario.speech_quirks && scenario.speech_quirks.length > 0
       ? `\n\n# TES TICS DE LANGAGE (à utiliser naturellement, 1-2 par réponse max)\n${scenario.speech_quirks.map((q) => `- "${q}"`).join("\n")}`
       : "";
+
+  // Banque de réactions d'agacement calibrées sur le niveau actif.
+  // Injectée dans la règle 4 pour donner à Claude des formulations
+  // humaines variées (~8 par niveau), avec le ton qui correspond.
+  // Le prompt étant caché côté Anthropic, ça ne coûte rien en latence
+  // après le 1er appel d'une session.
+  const reactionsList = REACTIONS_AGACEMENT_PAR_NIVEAU[difficulty]
+    .map((r) => `- ${r}`)
+    .join("\n");
+  const tonCalibration: Record<Difficulty, string> = {
+    debutant:
+      "ENCOURAGEANT mais ferme sur la précision. Tu marques le décalage sans froisser, tu aides le commercial à se reformuler.",
+    intermediaire:
+      "SEC, tu poses des limites, tu marques l'impatience. Tu ne déroules pas un tapis rouge, le commercial doit faire l'effort.",
+    avance:
+      "PIQUANT, exigeant, tu ne laisses RIEN passer. Tu pointes la faiblesse de chaque argument. Tu n'es pas méchant, juste rigoureux.",
+    expert:
+      "CASSANT, dégagé, sans concession, presque vexant. Tu n'as pas de temps à perdre. Si le commercial baratine, tu le lui dis franchement.",
+  };
+  const reactionsBlock = `\n\n# BANQUE DE RÉACTIONS D'AGACEMENT (calibrées pour ton niveau)\n\nQuand tu réagis à une esquive, une incohérence, un mot flou ou un monologue (cf règle 4), voici des formulations adaptées à TON NIVEAU. Tu peux les UTILISER TELLES QUELLES en remplaçant [X] et [Y] par ce que le commercial vient de dire / ta question initiale / une info que tu lui as déjà donnée. Ou tu peux CRÉER UNE VARIANTE dans le même esprit.\n\n## Ton calibré pour ${cfg.label.toUpperCase()} :\n${tonCalibration[difficulty]}\n\n## Réactions disponibles :\n${reactionsList}\n\nUtilise CES réactions avec PARCIMONIE (pas toutes les phrases, environ 1 réplique sur 3 quand le commercial mérite d'être recadré). Et VARIE : ne ressors pas deux fois la même formulation dans une session.`;
 
   return `Tu joues le rôle d'un PROSPECT qui reçoit un appel commercial NON SOLLICITÉ. Tu ne connais pas le commercial. Tu n'as rien demandé. Ce n'est PAS un jeu de rôle classique : c'est une vraie conversation téléphonique avec toutes ses imperfections.
 
@@ -223,7 +296,7 @@ OBLIGATIONS pour ces réactions :
 - Aucune réaction de complaisance type "intéressant, continuez".
 - Ce type de réaction déclenche obligatoirement [DELTA:-].
 
-C'est précisément ce qui te rend utile comme outil d'entraînement : sans toi, les commerciaux pensent que leur baratin passe. Avec toi, ils sont obligés d'être précis, de répondre vraiment aux questions, et d'éviter les mots vides.
+C'est précisément ce qui te rend utile comme outil d'entraînement : sans toi, les commerciaux pensent que leur baratin passe. Avec toi, ils sont obligés d'être précis, de répondre vraiment aux questions, et d'éviter les mots vides.${reactionsBlock}
 
 **5. Pas de mode narration (CRITIQUE, règle vocale absolue)**
 Tu N'ES JAMAIS narrateur. UNIQUEMENT tes répliques de prospect parlées à voix haute. Le texte que tu produis est lu par une voix de synthèse : tout ce que tu écris est PRONONCÉ.
