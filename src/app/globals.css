@@ -2927,6 +2927,268 @@
   color: var(--mode-accent);
 }
 
+/* ============================================================
+   Tableau de bord manager (/manager).
+   ============================================================ */
+
+.manager-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.manager-kpi-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+}
+.manager-kpi-value {
+  font-size: 1.95rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  line-height: 1;
+}
+.manager-kpi-suffix {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-left: 4px;
+  font-weight: 600;
+}
+.manager-kpi-trend {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.manager-kpi-trend-up { color: var(--color-green); }
+.manager-kpi-trend-down { color: var(--color-red); }
+.manager-kpi-trend-flat { color: rgba(255, 255, 255, 0.45); }
+
+/* Barre de répartition par mode */
+.manager-mode-bar {
+  display: flex;
+  height: 14px;
+  width: 100%;
+  border-radius: 7px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+.manager-mode-bar-seg {
+  height: 100%;
+  min-width: 2px;
+}
+.manager-mode-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.manager-mode-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+}
+.manager-mode-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+.manager-mode-legend-label {
+  flex: 1;
+  color: rgba(255, 255, 255, 0.82);
+}
+.manager-mode-legend-count {
+  font-weight: 600;
+  color: #FFFFFF;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Alertes */
+.manager-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.manager-alert-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.manager-alert-dot-inactive { background: var(--color-warning); }
+.manager-alert-dot-score_drop { background: var(--color-red); }
+.manager-alert-dot-no_rdv { background: var(--color-red); }
+.manager-alert-text {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  text-decoration: none;
+  flex-wrap: wrap;
+}
+.manager-alert-text:hover {
+  text-decoration: underline;
+}
+.manager-alert-name {
+  font-weight: 700;
+  color: #FFFFFF;
+  font-size: 0.9rem;
+}
+.manager-alert-detail {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.82rem;
+}
+
+/* Carte commercial avec diagnostic */
+.manager-commercial-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.manager-commercial-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.manager-commercial-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  text-decoration: none;
+}
+.manager-commercial-name:hover {
+  color: var(--color-green);
+}
+.manager-commercial-meta {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 2px;
+}
+.manager-commercial-stats {
+  display: flex;
+  gap: 18px;
+}
+.manager-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.manager-stat-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.manager-stat-label {
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.manager-stat-trend {
+  font-size: 0.85rem;
+}
+.manager-stat-trend-up { color: var(--color-green); }
+.manager-stat-trend-down { color: var(--color-red); }
+
+/* Bloc diagnostic dans la carte commercial */
+.manager-diagnostic {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.manager-diagnostic-eyebrow {
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: rgba(255, 180, 180, 0.85);
+}
+.manager-diagnostic-defects-list {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.manager-defect-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(233, 75, 75, 0.12);
+  border: 1px solid rgba(233, 75, 75, 0.32);
+  color: #FFFFFF;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.manager-defect-chip-count {
+  opacity: 0.75;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.manager-recommendation {
+  padding: 12px 14px;
+  background: rgba(60, 200, 121, 0.10);
+  border: 1px solid rgba(60, 200, 121, 0.32);
+  border-radius: 10px;
+}
+.manager-recommendation-positive {
+  background: rgba(157, 107, 255, 0.10);
+  border-color: rgba(157, 107, 255, 0.35);
+}
+.manager-recommendation-headline {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.manager-recommendation-reason {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.4;
+  margin: 6px 0 0;
+}
+.manager-diagnostic-empty {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+/* Dernière session du commercial */
+.manager-last-session {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+.manager-last-session-label {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+}
+.manager-last-session-meta {
+  color: rgba(255, 255, 255, 0.6);
+}
+
 /* Mini-badge d'identification du mode d'entraînement (utilisé sur les
    listes d'historique : HistoryBoard, TeamLeaderboard, dashboard feed).
    Couleurs cohérentes avec le thème du tunnel (vert/orange/violet). */

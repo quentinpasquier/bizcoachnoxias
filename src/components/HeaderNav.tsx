@@ -23,6 +23,18 @@ export function HeaderNav({
   const configItems = [
     { href: "/clients", label: isNoxiasOrg ? "Clients" : "Offres" },
   ];
+  // Item "Manager" visible uniquement pour les rôles manager / org_admin
+  // / platform_admin, pour aller au tableau de bord équipe avec
+  // diagnostic par commercial.
+  const gamingItems = isManager
+    ? [
+        GAMING_ITEMS[0]!,
+        GAMING_ITEMS[1]!,
+        GAMING_ITEMS[2]!,
+        GAMING_ITEMS[3]!,
+        { href: "/manager", label: "Équipe" },
+      ]
+    : GAMING_ITEMS;
 
   function isActive(href: string): boolean {
     return (
@@ -36,7 +48,7 @@ export function HeaderNav({
     <nav className="hidden md:flex items-center gap-3 flex-1 ml-6">
       {/* Section GAMING (violet) : la plus importante */}
       <div className="nav-section nav-section-gaming">
-        {GAMING_ITEMS.map((item) => {
+        {gamingItems.map((item) => {
           const active = isActive(item.href);
           const isHistory = item.href === "/history";
           return (
