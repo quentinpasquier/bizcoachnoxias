@@ -167,6 +167,14 @@ export interface Scenario {
   speech_quirks?: string[]; // tics de langage du persona
 }
 
+export type TrainingMode = "full" | "block" | "embedded";
+export type BlockTarget =
+  | "brise_glace"
+  | "decouverte"
+  | "pitch"
+  | "objections"
+  | "closing";
+
 export interface SessionRow {
   id: string;
   user_id: string;
@@ -187,6 +195,9 @@ export interface SessionRow {
   scenario_data: Scenario | null;
   started_at: string;
   ended_at: string | null;
+  training_mode: TrainingMode;
+  block_target: BlockTarget | null;
+  embedded_blocks_count: number | null;
 }
 
 export interface MessageRow {
