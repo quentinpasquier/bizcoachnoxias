@@ -2739,6 +2739,75 @@
   border-left: 3px solid transparent;
 }
 
+/* Sélecteur de mode d'entraînement (page /sessions/new).
+   3 cartes en grille responsive. La carte active est highlightée vert,
+   les cartes désactivées sont grisées avec un badge "Bientôt". */
+.training-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+.training-mode-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px 22px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.training-mode-card-active {
+  background: linear-gradient(
+    135deg,
+    rgba(60, 200, 121, 0.12) 0%,
+    rgba(60, 200, 121, 0.04) 100%
+  );
+  border-color: rgba(60, 200, 121, 0.45);
+  box-shadow: 0 8px 32px rgba(60, 200, 121, 0.18);
+}
+.training-mode-card-active:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-green);
+}
+.training-mode-card-disabled {
+  opacity: 0.5;
+  filter: grayscale(0.3);
+}
+.training-mode-card-badge {
+  align-self: flex-start;
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.training-mode-card-badge-active {
+  background: var(--color-green);
+  color: #0A1F12;
+}
+.training-mode-card-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+.training-mode-card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+}
+.training-mode-card-desc {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.72);
+  margin: 0;
+}
+
 /* Outcome summary en 5 bullets standardisés. Affiché en haut du débrief
    pour que le commercial comprenne en 10 secondes ce qui s'est passé,
    sans lire un pavé de consultant. */

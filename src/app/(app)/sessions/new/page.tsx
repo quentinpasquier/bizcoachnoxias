@@ -83,7 +83,7 @@ export default async function NewSessionPage({
       <div className="container-noxias py-10 max-w-2xl">
         <div className="mb-8">
           <span className="divider-green block mb-3" />
-          <h1 className="text-h2">Nouvelle session</h1>
+          <h1 className="text-h2">Nouvel entraînement</h1>
         </div>
         <Card variant="lavender" className="text-center py-12">
           <h3 className="text-h3 mb-2">
@@ -130,17 +130,66 @@ export default async function NewSessionPage({
           }}
         >
           <span>Lance </span>
-          <span style={{ color: "var(--color-green)" }}>ta prochaine</span>{" "}
-          <span>mission.</span>
+          <span style={{ color: "var(--color-green)" }}>ton</span>{" "}
+          <span>entraînement.</span>
         </h1>
         <p
           className="text-body-l"
           style={{ color: "rgba(255,255,255,0.7)", maxWidth: "56ch" }}
         >
-          Un clic dans le Quick Launch, ou configure précisément ton scénario
-          plus bas pour la progression.
+          Trois modes pour progresser : ciblé sur un bloc, embarqué avec un
+          coach IA en direct, ou appel complet sans filet.
         </p>
       </header>
+
+      {/* Sélecteur de mode d'entraînement.
+          PR A : seul le mode "Appel complet" est activé. Les 2 autres
+          affichent "Bientôt disponible" en attendant les PR B et C. */}
+      <section className="space-y-4">
+        <div className="eyebrow-green">Choisis ton mode</div>
+        <div className="training-mode-grid">
+          <article className="training-mode-card training-mode-card-disabled">
+            <div className="training-mode-card-badge">Bientôt</div>
+            <div className="training-mode-card-icon" aria-hidden="true">
+              🎯
+            </div>
+            <h3 className="training-mode-card-title">Coaching ciblé</h3>
+            <p className="training-mode-card-desc">
+              Entraîne-toi sur UN bloc en 2-3 minutes : brise-glace,
+              découverte, pitch, objections ou closing. Idéal pour bosser un
+              point faible identifié.
+            </p>
+          </article>
+
+          <article className="training-mode-card training-mode-card-disabled">
+            <div className="training-mode-card-badge">Bientôt</div>
+            <div className="training-mode-card-icon" aria-hidden="true">
+              🧑‍🏫
+            </div>
+            <h3 className="training-mode-card-title">Coaching embarqué</h3>
+            <p className="training-mode-card-desc">
+              Appel complet avec un coach IA qui te corrige en direct. Il te
+              bloque si ta réponse ne fait pas avancer, et t&apos;explique
+              quoi reformuler.
+            </p>
+          </article>
+
+          <article className="training-mode-card training-mode-card-active">
+            <div className="training-mode-card-badge training-mode-card-badge-active">
+              Actif
+            </div>
+            <div className="training-mode-card-icon" aria-hidden="true">
+              📞
+            </div>
+            <h3 className="training-mode-card-title">Appel complet</h3>
+            <p className="training-mode-card-desc">
+              Le cold call de bout en bout, sans filet, comme dans la vraie
+              vie. Débrief à la fin avec note sur 100 et reformulations
+              concrètes.
+            </p>
+          </article>
+        </div>
+      </section>
 
       {/* Quick Launch en haut : 1 clic pour démarrer */}
       <section className="space-y-4">

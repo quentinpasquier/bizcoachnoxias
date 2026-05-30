@@ -20,6 +20,8 @@ export async function POST(request: Request) {
     difficulty?: string;
     gender?: string;
     personaLabel?: string;
+    trainingMode?: string;
+    blockTarget?: string;
   };
   try {
     body = await request.json();
@@ -40,6 +42,42 @@ export async function POST(request: Request) {
   }
   if (!personaLabel || personaLabel.trim().length === 0) {
     return NextResponse.json({ error: "Persona manquant" }, { status: 400 });
+  }
+
+  // Mode d'entraînement : 'full' par défaut (compatibilité historique).
+  // 'block' nécessite un blockTarget. 'embedded' arrive en PR ultérieure
+  // mais le validateur l'accepte déjà pour ne pas avoir à modifier la route
+  // quand on l'activera côté UI.
+  const trainingMode = (body.trainingMode ?? "full") as "full" | "block" | "embedded";
+  if (!["full", "block", "embedded"].includes(trainingMode)) {
+    return NextResponse.json(
+      { error: "Mode d'entraînement invalide (full | block | embedded)." },
+      { status: 400 },
+    );
+  }
+  const VALID_BLOCKS = [
+    "brise_glace",
+    "decouverte",
+    "pitch",
+    "objections",
+    "closing",
+  ] as const;
+  let blockTarget: (typeof VALID_BLOCKS)[number] | null = null;
+  if (trainingMode === "block") {
+    const candidate = body.blockTarget;
+    if (
+      !candidate ||
+      !VALID_BLOCKS.includes(candidate as (typeof VALID_BLOCKS)[number])
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "blockTarget requis pour le mode 'block' (brise_glace | decouverte | pitch | objections | closing).",
+        },
+        { status: 400 },
+      );
+    }
+    blockTarget = candidate as (typeof VALID_BLOCKS)[number];
   }
 
   const { data: clientData, error: clientErr } = await supabase
@@ -106,6 +144,9 @@ export async function POST(request: Request) {
       product_pitch: client.product_pitch,
       objective: "rdv",
       scenario_data: scenario,
+      training_mode: trainingMode,
+      block_target: blockTarget,
+      embedded_blocks_count: trainingMode === "embedded" ? 0 : null,
     })
     .select("id")
     .single();

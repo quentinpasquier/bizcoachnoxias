@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const GAMING_ITEMS = [
   { href: "/dashboard", label: "Tableau de bord" },
-  { href: "/sessions/new", label: "Nouvelle session", primary: true },
+  { href: "/sessions/new", label: "Nouvel entraînement", primary: true },
   { href: "/progress", label: "Ma progression" },
   { href: "/history", label: "Historique" },
 ];
