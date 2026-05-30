@@ -99,6 +99,13 @@ export async function POST(
     content: (m as { role: string; content: string }).content,
   }));
 
+  // En mode 'block', le prompt persona démarre directement au bloc cible
+  // au lieu de jouer le brise-glace. blockTarget est null sinon (mode 'full').
+  const blockTarget =
+    session.training_mode === "block" && session.block_target
+      ? session.block_target
+      : null;
+
   let reply;
   try {
     reply = await generateProspectReply({
@@ -107,6 +114,7 @@ export async function POST(
       client,
       scenario,
       history: turns,
+      blockTarget,
     });
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });

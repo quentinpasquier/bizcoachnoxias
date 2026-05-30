@@ -18,9 +18,15 @@ export const dynamic = "force-dynamic";
 export default async function NewSessionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ client?: string; persona?: string }>;
+  searchParams: Promise<{
+    client?: string;
+    persona?: string;
+    mode?: "full" | "block";
+  }>;
 }) {
   const params = await searchParams;
+  const trainingMode: "full" | "block" =
+    params.mode === "block" ? "block" : "full";
   const supabase = await createClient();
   const configured = isSupabaseConfigured();
 
@@ -142,14 +148,26 @@ export default async function NewSessionPage({
         </p>
       </header>
 
-      {/* Sélecteur de mode d'entraînement.
-          PR A : seul le mode "Appel complet" est activé. Les 2 autres
-          affichent "Bientôt disponible" en attendant les PR B et C. */}
+      {/* Sélecteur de mode d'entraînement. Activé : Coaching ciblé (PR B)
+          et Appel complet (PR A). Désactivé : Coaching embarqué (PR C). */}
       <section className="space-y-4">
         <div className="eyebrow-green">Choisis ton mode</div>
         <div className="training-mode-grid">
-          <article className="training-mode-card training-mode-card-disabled">
-            <div className="training-mode-card-badge">Bientôt</div>
+          <Link
+            href="/sessions/new?mode=block"
+            className={`training-mode-card training-mode-card-link ${
+              trainingMode === "block" ? "training-mode-card-active" : ""
+            }`}
+          >
+            <div
+              className={`training-mode-card-badge ${
+                trainingMode === "block"
+                  ? "training-mode-card-badge-active"
+                  : ""
+              }`}
+            >
+              {trainingMode === "block" ? "Actif" : "Disponible"}
+            </div>
             <div className="training-mode-card-icon" aria-hidden="true">
               🎯
             </div>
@@ -159,7 +177,7 @@ export default async function NewSessionPage({
               découverte, pitch, objections ou closing. Idéal pour bosser un
               point faible identifié.
             </p>
-          </article>
+          </Link>
 
           <article className="training-mode-card training-mode-card-disabled">
             <div className="training-mode-card-badge">Bientôt</div>
@@ -174,9 +192,18 @@ export default async function NewSessionPage({
             </p>
           </article>
 
-          <article className="training-mode-card training-mode-card-active">
-            <div className="training-mode-card-badge training-mode-card-badge-active">
-              Actif
+          <Link
+            href="/sessions/new"
+            className={`training-mode-card training-mode-card-link ${
+              trainingMode === "full" ? "training-mode-card-active" : ""
+            }`}
+          >
+            <div
+              className={`training-mode-card-badge ${
+                trainingMode === "full" ? "training-mode-card-badge-active" : ""
+              }`}
+            >
+              {trainingMode === "full" ? "Actif" : "Disponible"}
             </div>
             <div className="training-mode-card-icon" aria-hidden="true">
               📞
@@ -187,51 +214,62 @@ export default async function NewSessionPage({
               vie. Débrief à la fin avec note sur 100 et reformulations
               concrètes.
             </p>
-          </article>
+          </Link>
         </div>
       </section>
 
-      {/* Quick Launch en haut : 1 clic pour démarrer */}
-      <section className="space-y-4">
-        <div className="flex items-end justify-between gap-3 flex-wrap">
-          <div>
-            <div className="eyebrow-green">Quick Launch · 1 clic</div>
-            <h2 className="text-h3 mt-1">Démarre en 5 secondes.</h2>
+      {/* Quick Launch : disponible uniquement en mode "full" (appel
+          complet). Le mode "block" exige de choisir un bloc précis,
+          le Quick Launch n'a pas de sens. */}
+      {trainingMode === "full" && (
+        <section className="space-y-4">
+          <div className="flex items-end justify-between gap-3 flex-wrap">
+            <div>
+              <div className="eyebrow-green">Quick Launch · 1 clic</div>
+              <h2 className="text-h3 mt-1">Démarre en 5 secondes.</h2>
+            </div>
+            <span
+              className="text-meta"
+              style={{ color: "rgba(255,255,255,0.55)" }}
+            >
+              Briefing généré en 5-10 s
+            </span>
           </div>
-          <span
-            className="text-meta"
-            style={{ color: "rgba(255,255,255,0.55)" }}
-          >
-            Briefing généré en 5-10 s
-          </span>
-        </div>
-        <QuickLaunch
-          clients={formattedClients.map((c) => ({
-            id: c.id,
-            name: c.name,
-            sector: c.sector,
-            has_docs: c.has_docs,
-            target_personas: c.target_personas,
-            persona_profiles: c.persona_profiles,
-          }))}
-          lastConfig={lastConfig}
-          compact
-        />
-      </section>
+          <QuickLaunch
+            clients={formattedClients.map((c) => ({
+              id: c.id,
+              name: c.name,
+              sector: c.sector,
+              has_docs: c.has_docs,
+              target_personas: c.target_personas,
+              persona_profiles: c.persona_profiles,
+            }))}
+            lastConfig={lastConfig}
+            compact
+          />
+        </section>
+      )}
 
       {/* Configuration sur mesure : la plus puissante */}
       <section className="space-y-5">
         <div>
           <div className="eyebrow" style={{ color: "#b495ff" }}>
-            Configuration sur mesure
+            {trainingMode === "block"
+              ? "Configuration du coaching ciblé"
+              : "Configuration sur mesure"}
           </div>
-          <h2 className="text-h3 mt-1">Choisis chaque paramètre.</h2>
+          <h2 className="text-h3 mt-1">
+            {trainingMode === "block"
+              ? "Choisis ton client et ton bloc à travailler."
+              : "Choisis chaque paramètre."}
+          </h2>
           <p
             className="text-small mt-1"
             style={{ color: "rgba(255,255,255,0.6)" }}
           >
-            Le meilleur outil pour cibler ta progression : client précis,
-            persona précis, niveau précis, voix précise.
+            {trainingMode === "block"
+              ? "Tu vas démarrer DIRECTEMENT au bloc choisi. Le scoring final se concentre sur les critères de ce bloc, pas sur l'appel entier."
+              : "Le meilleur outil pour cibler ta progression : client précis, persona précis, niveau précis, voix précise."}
           </p>
         </div>
         <NewSessionForm
@@ -243,6 +281,7 @@ export default async function NewSessionPage({
             label: cfg.label,
             description: cfg.description,
           }))}
+          trainingMode={trainingMode}
         />
       </section>
     </div>

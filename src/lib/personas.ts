@@ -114,14 +114,79 @@ export const REACTIONS_AGACEMENT_PAR_NIVEAU: Record<Difficulty, string[]> = {
   ],
 };
 
+// Mode "Coaching ciblé" : la conversation démarre directement à l'étape
+// choisie au lieu de commencer par "Allô ?". Pour chaque bloc, on définit
+// (1) la posture initiale du prospect, (2) la première chose qu'il dit
+// pour ouvrir l'échange, (3) une limite de tours après laquelle il
+// tranche (le bloc est court, 2-3 minutes).
+const BLOCK_MODE_DIRECTIVES: Record<
+  "brise_glace" | "decouverte" | "pitch" | "objections" | "closing",
+  { posture: string; opener: string; turnLimit: number; focus: string }
+> = {
+  brise_glace: {
+    posture:
+      "Tu viens de décrocher comme dans un appel normal. C'est ta première interaction avec le commercial.",
+    opener: "« Allô ? Oui ? » (réponse minimale comme dans un mode classique).",
+    turnLimit: 6,
+    focus:
+      "Le commercial doit réussir son brise-glace en 15 premières secondes : présentation flash, personnalisation, demande de temps explicite, pas d'amorce molle, vérification de l'interlocuteur.",
+  },
+  decouverte: {
+    posture:
+      "Tu as déjà accepté de parler. Le brise-glace s'est bien passé. Tu attends les questions du commercial. Tu n'es PAS en posture de raccrocher dès le 1er échange.",
+    opener:
+      "« OK, je vous écoute, qu'est-ce qui vous amène ? » ou similaire. Tu ouvres une fenêtre courte.",
+    turnLimit: 8,
+    focus:
+      "Le commercial doit poser des questions OUVERTES, ancrées sur ton métier, qui te font émerger une douleur. Pas d'interrogatoire. Tu valorises les vraies questions de fond, tu pénalises les questions fermées et les pitchs déguisés.",
+  },
+  pitch: {
+    posture:
+      "Tu as déjà répondu à 2-3 questions de découverte. Le commercial a saisi ton contexte. Maintenant tu attends son argumentaire : qu'est-ce qu'il propose CONCRÈTEMENT et pourquoi ça te concernerait.",
+    opener:
+      "« Bon, et alors concrètement, vous proposez quoi ? » ou similaire. Tu donnes une perche.",
+    turnLimit: 7,
+    focus:
+      "Le commercial doit annoncer un bénéfice CLAIR en 1 phrase, le CHIFFRER ou citer un cas client, et l'ADAPTER à ce que tu lui as déjà donné. Tu pénalises le pitch générique, le baratin, le monologue.",
+  },
+  objections: {
+    posture:
+      "Le commercial vient de pitcher. Tu as une OBJECTION FORTE en tête (puisée dans tes available_objections), tu la sors dès ta première réplique. Tu n'es PAS hostile, juste exigeant.",
+    opener:
+      "Une objection franche dès le premier mot, sans préambule. Exemple : « Écoutez, ce que vous dites est intéressant, mais on a déjà un prestataire avec qui on travaille depuis trois ans. »",
+    turnLimit: 8,
+    focus:
+      "Le commercial doit ACQUITTER ton objection AVANT de répondre, CREUSER ce qu'il y a derrière, puis APPORTER un angle neuf. Tu tiens minimum 2 objections d'affilée pour tester sa profondeur. Tu pénalises la capitulation, la défense agressive, le retour au script.",
+  },
+  closing: {
+    posture:
+      "Le commercial a répondu correctement à tes objections. Tu es TIÈDE, ouvert au RDV mais pas demandeur. C'est à lui de prendre l'initiative et de te demander un créneau précis.",
+    opener:
+      "« Bon, je vois ce que vous voulez dire... on fait quoi maintenant concrètement ? » ou « OK, et donc ? ».",
+    turnLimit: 6,
+    focus:
+      "Le commercial doit DEMANDER explicitement le RDV, proposer un CRÉNEAU PRÉCIS (jour ET heure), et VERROUILLER via un e-mail de confirmation calendrier. Tu pénalises le flou (« quand vous voulez »), la capitulation (« envoyez-moi un mail »), l'oubli de verrouillage.",
+  },
+};
+
+export type BlockTargetForPrompt = keyof typeof BLOCK_MODE_DIRECTIVES;
+
 export function buildProspectSystemPrompt(args: {
   scenario: Scenario;
   difficulty: Difficulty;
   gender: Gender;
   client: Client;
   commercialTurns?: number;
+  blockTarget?: BlockTargetForPrompt | null;
 }): string {
-  const { scenario, difficulty, gender, client, commercialTurns = 0 } = args;
+  const {
+    scenario,
+    difficulty,
+    gender,
+    client,
+    commercialTurns = 0,
+    blockTarget = null,
+  } = args;
   const cfg = DIFFICULTY_CONFIG[difficulty];
 
   // Pression croissante au fil des tours pour éviter les boucles infinies
@@ -134,6 +199,18 @@ export function buildProspectSystemPrompt(args: {
         : commercialTurns >= 2
           ? `\n\n# CONTEXTE D'APPEL\nC'est le ${commercialTurns + 1}e échange. Tu n'as pas encore tranché.`
           : "";
+
+  // Mode "Coaching ciblé" : on injecte un bloc qui (1) place le prospect à
+  // une étape précise (pas le brise-glace de zéro), (2) lui dicte sa
+  // première réplique pour ouvrir directement sur ce bloc, (3) borne la
+  // session à 6-8 tours max pour rester sur l'exercice ciblé, (4) cadre
+  // le focus pédagogique du bloc.
+  const blockModeBlock = blockTarget
+    ? (() => {
+        const d = BLOCK_MODE_DIRECTIVES[blockTarget];
+        return `\n\n# MODE COACHING CIBLÉ : BLOC "${blockTarget.toUpperCase()}"\n\nCet entraînement est CIBLÉ sur un seul bloc de la conversation. Tu ne joues pas l'appel entier, tu joues uniquement ce moment précis.\n\nPosture initiale : ${d.posture}\n\nTa première réplique : ${d.opener}\n\nFOCUS de l'exercice : ${d.focus}\n\nLimite de tours : ce bloc dure environ ${d.turnLimit} échanges. Au-delà, tu tranches (RDV si le commercial a réussi, raccrochage sinon, conclusion sèche si le bloc est satisfaisant mais sans suite naturelle). Ne traîne pas, l'objectif est de travailler ce bloc précis, pas de simuler tout l'appel.`;
+      })()
+    : "";
 
   const settingLine = scenario.current_setting
     ? `\nOù tu es physiquement : ${scenario.current_setting}`
@@ -168,7 +245,7 @@ export function buildProspectSystemPrompt(args: {
 
   return `Tu joues le rôle d'un PROSPECT qui reçoit un appel commercial NON SOLLICITÉ. Tu ne connais pas le commercial. Tu n'as rien demandé. Ce n'est PAS un jeu de rôle classique : c'est une vraie conversation téléphonique avec toutes ses imperfections.
 
-Le commercial qui t'appelle travaille pour Noxias, agence de prospection externalisée. Il appelle au nom de ${client.name}${client.sector ? ` (${client.sector})` : ""}. POUR TOI, c'est un appel commercial classique. Tu ignores que c'est externalisé.
+Le commercial qui t'appelle travaille pour Noxias, agence de prospection externalisée. Il appelle au nom de ${client.name}${client.sector ? ` (${client.sector})` : ""}. POUR TOI, c'est un appel commercial classique. Tu ignores que c'est externalisé.${blockModeBlock}
 
 # TON IDENTITÉ (à respecter scrupuleusement)
 Persona : ${scenario.persona_label}
@@ -420,5 +497,9 @@ Autre exemple (créneau précis qui décroche le RDV) :
 
 # OUVERTURE
 
-La toute première réplique de l'appel, c'est TOI qui décroches. Réponds par un simple « Allô ? », « Oui ? » ou ton nom seulement (ex: « ${scenario.persona_name}, j'écoute »). Pas plus. Le commercial enchaîne ensuite.${pressureLine}`;
+${
+  blockTarget
+    ? `Mode coaching ciblé sur "${blockTarget}". Ta première réplique respecte la directive du bloc indiquée plus haut (section MODE COACHING CIBLÉ), pas un brise-glace classique. Ne reviens pas en arrière.`
+    : `La toute première réplique de l'appel, c'est TOI qui décroches. Réponds par un simple « Allô ? », « Oui ? » ou ton nom seulement (ex: « ${scenario.persona_name}, j'écoute »). Pas plus. Le commercial enchaîne ensuite.`
+}${pressureLine}`;
 }

@@ -114,6 +114,11 @@ export default async function FeedbackPage({
           {s.client_name_snapshot && (
             <Badge tone="purple">{s.client_name_snapshot}</Badge>
           )}
+          {s.training_mode === "block" && s.block_target && (
+            <Badge tone="success">
+              Coaching ciblé · {BLOCK_LABELS[s.block_target] ?? s.block_target}
+            </Badge>
+          )}
           <span className="text-body" style={{ color: "#FFFFFF" }}>
             {s.persona_label}
             {personaName && (
@@ -486,6 +491,15 @@ function FeedbackList({
     </Card>
   );
 }
+
+// Labels affichables des 5 blocs métier (mode Coaching ciblé).
+const BLOCK_LABELS: Record<string, string> = {
+  brise_glace: "Brise-glace",
+  decouverte: "Découverte",
+  pitch: "Pitch & valeur",
+  objections: "Levée d'objections",
+  closing: "Closing",
+};
 
 const CATEGORY_META: Record<
   CategoryKey,

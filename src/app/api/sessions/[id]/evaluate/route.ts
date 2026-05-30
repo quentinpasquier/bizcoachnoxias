@@ -143,6 +143,8 @@ export async function POST(
       endedBy: (session.ended_by ?? "user") as "user" | "prospect" | "timeout",
       appointmentSecured: session.appointment_secured,
       hangupReason,
+      trainingMode: session.training_mode,
+      blockTarget: session.block_target,
     });
 
     await supabase
