@@ -2739,6 +2739,39 @@
   border-left: 3px solid transparent;
 }
 
+/* Outcome summary en 5 bullets standardisés. Affiché en haut du débrief
+   pour que le commercial comprenne en 10 secondes ce qui s'est passé,
+   sans lire un pavé de consultant. */
+.outcome-summary-bullets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.outcome-summary-bullets li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 2px solid rgba(157, 107, 255, 0.5);
+  border-radius: 8px;
+}
+.outcome-summary-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-green);
+}
+.outcome-summary-body {
+  color: #FFFFFF;
+  font-size: 0.98rem;
+  line-height: 1.45;
+}
+
 /* Bubbles de transcript */
 .chat-bubble-user {
   background: linear-gradient(135deg, #3CC879 0%, #1F8A4F 100%);
