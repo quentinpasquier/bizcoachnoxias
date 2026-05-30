@@ -2927,6 +2927,115 @@
   color: var(--mode-accent);
 }
 
+/* Stepper du tunnel d'entraînement : 4 étapes Mode → Config → Briefing
+   → Mission. Affiché en haut des 3 premières pages, hidden sur la
+   mission (plein focus). L'étape active hérite de la couleur du mode
+   via var(--mode-accent). Étapes précédentes cliquables (Link), étapes
+   futures non cliquables. */
+.training-stepper {
+  margin-bottom: 24px;
+}
+.training-stepper-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.training-stepper-step {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+.training-stepper-step:last-child {
+  flex: 0 0 auto;
+}
+.training-stepper-step-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+a.training-stepper-step-link:hover {
+  transform: translateX(-1px);
+  opacity: 0.85;
+}
+.training-stepper-dot {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.training-stepper-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.1;
+}
+.training-stepper-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+}
+.training-stepper-sub {
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+}
+.training-stepper-connector {
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.12),
+    rgba(255, 255, 255, 0.04)
+  );
+  margin: 0 12px;
+  border-radius: 2px;
+}
+
+/* État "done" : trait plein dans la couleur du mode + ✓ */
+.training-stepper-step-done .training-stepper-dot {
+  background: rgba(var(--mode-accent-rgb), 0.18);
+  border-color: rgba(var(--mode-accent-rgb), 0.4);
+  color: var(--mode-accent);
+}
+.training-stepper-step-done .training-stepper-label {
+  color: rgba(255, 255, 255, 0.78);
+}
+.training-stepper-step-done .training-stepper-connector {
+  background: rgba(var(--mode-accent-rgb), 0.45);
+}
+
+/* État "current" : dot plein avec halo, texte en blanc */
+.training-stepper-step-current .training-stepper-dot {
+  background: var(--mode-accent);
+  border-color: var(--mode-accent);
+  color: #0A1F12;
+  box-shadow: 0 0 0 4px rgba(var(--mode-accent-rgb), 0.16);
+}
+.training-stepper-step-current .training-stepper-label {
+  color: #FFFFFF;
+}
+.training-stepper-step-current .training-stepper-sub {
+  color: var(--mode-accent);
+}
+
 /* Liseré subtil 2px en haut de la ChatRoom pour rappeler le mode actif
    pendant l'appel, sans distraire (placé hors zone de focus). */
 .training-mode-rim {

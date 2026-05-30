@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CamilleMascot } from "@/components/CamilleMascot";
+import { TrainingStepper } from "@/components/TrainingStepper";
 import type {
   Client,
   PersonaProfile,
@@ -89,6 +90,12 @@ export function BriefingScreen({
       <div className="briefing-blob briefing-blob-2" aria-hidden="true" />
 
       <div className="container-noxias relative z-10 py-8 lg:py-12 space-y-8">
+        {/* Stepper du tunnel d'entraînement (étape 3/4 : Briefing). */}
+        <TrainingStepper
+          currentStep="briefing"
+          trainingMode={session.training_mode ?? "full"}
+        />
+
         {/* En-tête CLASSIFIED */}
         <header className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3 flex-wrap">
