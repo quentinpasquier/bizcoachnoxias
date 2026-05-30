@@ -4,10 +4,18 @@ import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { isManagerOrAbove } from "@/lib/auth-helpers";
 import { HistoryBoard } from "../HistoryBoard";
+import { CommercialScanPanel } from "@/app/(app)/manager/CommercialScanPanel";
+import { diagnoseCommercial } from "@/lib/coach-diagnostic";
 import { computeStats } from "@/lib/badges";
 import { rankFromPpn, totalPpn } from "@/lib/ranks";
-import type { Client, SessionRow, UserRole } from "@/lib/supabase/types";
+import type {
+  Client,
+  MessageRow,
+  SessionRow,
+  UserRole,
+} from "@/lib/supabase/types";
 
 export const dynamic = "force-dynamic";
 
@@ -34,9 +42,13 @@ export default async function PlayerHistoryPage({
     .single();
   const myRole = ((myProfile as { role?: UserRole } | null)?.role ??
     "commercial") as UserRole;
-  if (myRole !== "manager" && user.id !== userId) {
+  // Accès autorisé pour : le user lui-même OU n'importe quel rôle manager
+  // (manager, org_admin, platform_admin). Sinon redirige vers son propre
+  // historique.
+  if (!isManagerOrAbove(myRole) && user.id !== userId) {
     redirect("/history");
   }
+  const viewerIsManager = isManagerOrAbove(myRole);
 
   const [
     { data: targetProfile },
@@ -87,15 +99,33 @@ export default async function PlayerHistoryPage({
   const stats = computeStats(sessions);
   const ppn = totalPpn(sessions);
   const rank = rankFromPpn(ppn);
+  const completedSessions = sessions.filter((s) => s.status === "completed");
+
+  // Diagnostic rapide (déterministe) basé sur les delta_category stockés
+  // dans les messages des sessions complétées. Donne au manager une vue
+  // immédiate AVANT même de lancer le scan IA.
+  let diagnostic: ReturnType<typeof diagnoseCommercial> | null = null;
+  if (viewerIsManager && completedSessions.length >= 3) {
+    const completedIds = completedSessions.map((s) => s.id);
+    const { data: msgData } = await supabase
+      .from("messages")
+      .select("metadata")
+      .in("session_id", completedIds)
+      .eq("role", "prospect");
+    diagnostic = diagnoseCommercial(
+      completedSessions,
+      (msgData ?? []) as Pick<MessageRow, "metadata">[],
+    );
+  }
 
   return (
-    <div className="container-noxias py-10 space-y-8">
+    <div className="container-noxias py-10 max-w-5xl space-y-8">
       <Link
-        href="/history"
+        href={viewerIsManager ? "/manager" : "/history"}
         className="text-small inline-flex items-center gap-1.5"
         style={{ color: "rgba(255, 255, 255, 0.65)" }}
       >
-        ← Retour à l&apos;historique équipe
+        ← {viewerIsManager ? "Retour au tableau de bord équipe" : "Retour à l’historique"}
       </Link>
 
       <header className="flex items-center gap-5 flex-wrap">
@@ -170,6 +200,102 @@ export default async function PlayerHistoryPage({
           accent="#4A8FE7"
         />
       </section>
+
+      {/* Section manager : diagnostic rapide + scan IA. Cachée si on
+          regarde sa propre fiche (ce sont des outils de coaching). */}
+      {viewerIsManager && (
+        <>
+          {diagnostic && diagnostic.hasEnoughData && (
+            <section className="space-y-3">
+              <div>
+                <h2 className="text-h3" style={{ color: "#FFFFFF" }}>
+                  Diagnostic rapide
+                </h2>
+                <p
+                  className="text-small mt-1"
+                  style={{ color: "rgba(255,255,255,0.6)" }}
+                >
+                  Patterns détectés sur les {completedSessions.length}{" "}
+                  sessions complétées. Calcul instantané basé sur les signaux
+                  de l&apos;appel. Pour une analyse approfondie avec
+                  citations, lance le scan IA ci-dessous.
+                </p>
+              </div>
+              <Card>
+                {diagnostic.topDefects.length > 0 ? (
+                  <div className="space-y-3">
+                    <div>
+                      <div className="manager-diagnostic-eyebrow">
+                        Top défauts
+                      </div>
+                      <div className="manager-diagnostic-defects-list">
+                        {diagnostic.topDefects.map((d) => (
+                          <span
+                            key={d.category}
+                            className="manager-defect-chip"
+                          >
+                            {d.label}
+                            <span className="manager-defect-chip-count">
+                              ×{d.count}
+                            </span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    {diagnostic.recommendation && (
+                      <div className="manager-recommendation">
+                        <div className="manager-recommendation-headline">
+                          <span aria-hidden="true">→</span>{" "}
+                          {diagnostic.recommendation.headline}
+                        </div>
+                        <p className="manager-recommendation-reason">
+                          {diagnostic.recommendation.reason}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  diagnostic.recommendation && (
+                    <div className="manager-recommendation manager-recommendation-positive">
+                      <div className="manager-recommendation-headline">
+                        <span aria-hidden="true">✓</span>{" "}
+                        {diagnostic.recommendation.headline}
+                      </div>
+                      <p className="manager-recommendation-reason">
+                        {diagnostic.recommendation.reason}
+                      </p>
+                    </div>
+                  )
+                )}
+              </Card>
+            </section>
+          )}
+
+          <section className="space-y-3">
+            <div>
+              <h2 className="text-h3" style={{ color: "#FFFFFF" }}>
+                Scan IA approfondi
+              </h2>
+              <p
+                className="text-small mt-1"
+                style={{ color: "rgba(255,255,255,0.6)" }}
+              >
+                Lance une analyse Claude des 5 dernières sessions complètes
+                pour obtenir : défauts récurrents avec citations exactes,
+                axes de travail prioritaires, plan recommandé. Résultat mis
+                en cache 24h.
+              </p>
+            </div>
+            <Card>
+              <CommercialScanPanel
+                userId={userId}
+                fullName={profile.full_name ?? "Anonyme"}
+                totalCompletedSessions={completedSessions.length}
+              />
+            </Card>
+          </section>
+        </>
+      )}
 
       <section>
         <h2 className="text-h3" style={{ color: "#FFFFFF" }}>

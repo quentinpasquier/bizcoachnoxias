@@ -141,6 +141,8 @@ export default async function ManagerDashboardPage() {
     fullName: string;
     avatarUrl: string | null;
     sessionsThisWeek: number;
+    /** Total des sessions complétées sur la fenêtre 30j, pour le scan IA. */
+    totalCompleted: number;
     rdvCount: number;
     avgScore: number | null;
     avgScoreTrend: "up" | "down" | "flat" | null;
@@ -205,6 +207,7 @@ export default async function ManagerDashboardPage() {
       fullName: profile.full_name,
       avatarUrl: profile.avatar_url,
       sessionsThisWeek: thisWeekCompleted.length,
+      totalCompleted: completed.length,
       rdvCount: completed.filter((s) => s.appointment_secured).length,
       avgScore,
       avgScoreTrend,
@@ -262,7 +265,7 @@ export default async function ManagerDashboardPage() {
   }
 
   return (
-    <div className="container-noxias py-10 max-w-6xl space-y-8">
+    <div className="container-noxias py-10 max-w-5xl space-y-8 manager-dashboard">
       <header className="space-y-2">
         <div className="eyebrow-green">Tableau de bord manager</div>
         <h1
@@ -506,6 +509,7 @@ function CommercialDiagnosticCard({
     fullName: string;
     avatarUrl: string | null;
     sessionsThisWeek: number;
+    totalCompleted: number;
     rdvCount: number;
     avgScore: number | null;
     avgScoreTrend: "up" | "down" | "flat" | null;
@@ -617,6 +621,12 @@ function CommercialDiagnosticCard({
             {stat.lastSession.persona_label}
             {stat.lastSession.appointment_secured && " · ✓ RDV"}
           </span>
+          <Link
+            href={`/history/${stat.userId}`}
+            className="manager-view-profile"
+          >
+            Voir la fiche complète →
+          </Link>
         </div>
       )}
     </Card>
