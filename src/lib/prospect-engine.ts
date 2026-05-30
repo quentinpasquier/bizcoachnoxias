@@ -1,6 +1,12 @@
 import { getAnthropic, PROSPECT_MODEL } from "./anthropic";
 import { buildProspectSystemPrompt } from "./personas";
-import type { Client, Difficulty, Gender, Scenario } from "./supabase/types";
+import type {
+  BlockTarget,
+  Client,
+  Difficulty,
+  Gender,
+  Scenario,
+} from "./supabase/types";
 
 export interface ConversationTurn {
   role: "user" | "prospect";
@@ -167,6 +173,7 @@ export async function generateProspectReply(args: {
   client: Client;
   scenario: Scenario;
   history: ConversationTurn[];
+  blockTarget?: BlockTarget | null;
 }): Promise<ProspectReply> {
   const commercialTurns = args.history.filter((t) => t.role === "user").length;
 
@@ -176,6 +183,7 @@ export async function generateProspectReply(args: {
     gender: args.gender,
     client: args.client,
     commercialTurns,
+    blockTarget: args.blockTarget ?? null,
   });
 
   const messages = args.history.map((turn) => ({

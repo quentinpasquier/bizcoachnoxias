@@ -1,17 +1,20 @@
 import { getAnthropic, EVALUATOR_MODEL } from "./anthropic";
 import { DIFFICULTY_CONFIG } from "./personas";
 import {
+  BLOCK_TO_CATEGORY,
   SCORING_CATEGORIES,
   TOTAL_CRITERIA,
   getCategoryByKey,
 } from "./scoring-criteria";
 import type {
+  BlockTarget,
   CategoryKey,
   CategoryResult,
   Client,
   Difficulty,
   Evaluation,
   Scenario,
+  TrainingMode,
 } from "./supabase/types";
 
 export interface EvaluationInput {
@@ -22,6 +25,8 @@ export interface EvaluationInput {
   endedBy: "user" | "prospect" | "timeout";
   appointmentSecured: boolean;
   hangupReason?: string;
+  trainingMode?: TrainingMode;
+  blockTarget?: BlockTarget | null;
 }
 
 function truncate(s: string, n: number): string {
@@ -232,6 +237,22 @@ ${truncate(input.client.synced_content, 8000)}
 
   const criteriaList = buildCriteriaListForPrompt();
 
+  // Mode "Coaching ciblé" : restreint l'évaluation aux critères du bloc
+  // travaillé. Les critères hors bloc sont marqués passed:false avec un
+  // comment "Hors périmètre de cet exercice ciblé" et exclus du calcul
+  // du overall_score (qui passe sur le pourcentage des critères du bloc).
+  const focusedCategory =
+    input.trainingMode === "block" && input.blockTarget
+      ? BLOCK_TO_CATEGORY[input.blockTarget]
+      : null;
+  const focusedCategoryLabel = focusedCategory
+    ? getCategoryByKey(focusedCategory)?.label ?? focusedCategory
+    : null;
+  const focusedBlock =
+    focusedCategory && focusedCategoryLabel
+      ? `\n\n# MODE COACHING CIBLÉ : exercice sur le bloc "${focusedCategoryLabel}"\n\nCet appel est un exercice CIBLÉ sur UN bloc uniquement. La conversation a démarré directement à cette étape et dure 2-3 minutes (6-8 échanges). Le commercial N'A PAS joué les autres blocs.\n\nConséquence sur votre évaluation :\n- Vous évaluez SÉRIEUSEMENT uniquement les critères de la catégorie "${focusedCategoryLabel}".\n- Les critères des AUTRES catégories : marquez passed:false avec comment="Hors périmètre de cet exercice ciblé sur ${focusedCategoryLabel}." et NE LES PRENEZ PAS en compte dans votre diagnostic global.\n- L'outcome_summary, les strengths/improvements/next_steps et les quote_rewrites se concentrent UNIQUEMENT sur ce bloc.\n- Le commercial sait qu'il a fait un exercice court. Pas de reproche du genre "vous n'avez pas closé" si le bloc n'est pas closing.\n- Tonalité : encourageante mais exigeante sur le bloc spécifique.`
+      : "";
+
   const system = `Vous êtes consultant senior en prospection B2B téléphonique chez Noxias, agence externalisée d'appels à froid. Vous avez débriefé des milliers d'appels à froid en France pour des PME, ETI et indépendants. Vous évaluez les commerciaux Noxias avec une exigence chirurgicale et un respect absolu de leur statut professionnel. Style : direct, factuel, vocabulaire de consultant senior, dirigeant à dirigeant. Pas de flagornerie, pas de complaisance, pas de dureté gratuite. Vous vous adressez à un commercial qui sera lui-même face à des dirigeants : votre niveau de langage doit refléter ce contexte.
 
 # RÈGLES DE LANGAGE ABSOLUES (NON NÉGOCIABLES)
@@ -405,7 +426,7 @@ Générez 4 à 6 \`quote_rewrites\` qui respectent :
 
 - Pour les objections, le patron à valoriser est : ACQUITTEMENT bref + ÉTIQUETTE (reformulation tactique courte, parfois introduite par "on dirait que...") + RELANCE par question ouverte calibrée qui propose deux hypothèses fermées ("c'est le timing ou la priorité ?", "c'est l'outil ou la méthode ?").
 
-Si la session est très courte ou très réussie, générez au minimum 3 \`quote_rewrites\` portant sur ce qui peut encore être affiné.`;
+Si la session est très courte ou très réussie, générez au minimum 3 \`quote_rewrites\` portant sur ce qui peut encore être affiné.${focusedBlock}`;
 
   // Découpage pour le prompt caching Anthropic :
   // - cacheableClientBlock : client + docs, identique pour toutes les
@@ -592,17 +613,42 @@ ${transcript}
     };
   });
 
-  let overall_score = Math.round((totalPassed / TOTAL_CRITERIA) * 100);
-  // Cold call : décrocher un RDV vaut au minimum 50/100, peu importe le reste
-  // de l'exécution. C'est la métrique reine du métier.
-  if (input.appointmentSecured && overall_score < 50) {
+  // Calcul du overall_score :
+  // - Mode "full" : sur les 20 critères, comme avant.
+  // - Mode "block" : uniquement sur les critères de la catégorie ciblée.
+  //   Les autres sont marqués hors périmètre par l'IA et ne doivent pas
+  //   pénaliser le commercial qui n'a pas joué ces blocs.
+  let overall_score: number;
+  let criteria_total_for_display: number;
+  let criteria_max_for_display: number;
+  if (focusedCategory) {
+    const focusedCat = categories.find((c) => c.key === focusedCategory);
+    const focusedPassed = focusedCat?.score ?? 0;
+    const focusedMax = focusedCat?.max ?? 0;
+    overall_score =
+      focusedMax > 0 ? Math.round((focusedPassed / focusedMax) * 100) : 0;
+    criteria_total_for_display = focusedPassed;
+    criteria_max_for_display = focusedMax;
+  } else {
+    overall_score = Math.round((totalPassed / TOTAL_CRITERIA) * 100);
+    criteria_total_for_display = totalPassed;
+    criteria_max_for_display = TOTAL_CRITERIA;
+  }
+  // Cold call complet : décrocher un RDV vaut au minimum 50/100, peu importe
+  // le reste. Pas applicable en mode bloc où le RDV n'est pas l'objectif
+  // sur 4 blocs sur 5.
+  if (
+    !focusedCategory &&
+    input.appointmentSecured &&
+    overall_score < 50
+  ) {
     overall_score = 50;
   }
 
   return {
     overall_score,
-    criteria_total: totalPassed,
-    criteria_max: TOTAL_CRITERIA,
+    criteria_total: criteria_total_for_display,
+    criteria_max: criteria_max_for_display,
     categories,
     strengths: Array.isArray(raw.strengths)
       ? raw.strengths.slice(0, 5).map(String)

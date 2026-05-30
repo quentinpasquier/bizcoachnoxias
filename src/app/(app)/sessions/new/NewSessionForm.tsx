@@ -7,7 +7,43 @@ import { Button } from "@/components/ui/Button";
 import { VoiceOrb } from "@/components/VoiceOrb";
 import { CoachTip } from "@/components/CoachTip";
 import { getPersonaBullets } from "@/lib/briefing";
-import type { Difficulty, Gender, PersonaProfile } from "@/lib/supabase/types";
+import type {
+  BlockTarget,
+  Difficulty,
+  Gender,
+  PersonaProfile,
+} from "@/lib/supabase/types";
+
+// 5 blocs métier proposés en mode "Coaching ciblé" (training_mode='block').
+// Chaque bloc démarre la conversation à une étape précise et concentre le
+// scoring sur les critères du bloc, en ~2-3 minutes.
+const BLOCK_OPTIONS: { key: BlockTarget; label: string; desc: string }[] = [
+  {
+    key: "brise_glace",
+    label: "Brise-glace",
+    desc: "Décrochage et 15 premières secondes : présentation flash, ton, personnalisation.",
+  },
+  {
+    key: "decouverte",
+    label: "Découverte",
+    desc: "Le prospect a accepté de parler. À toi de poser les bonnes questions ouvertes.",
+  },
+  {
+    key: "pitch",
+    label: "Pitch & valeur",
+    desc: "Le prospect attend : bénéfice clair, chiffré, adapté à son contexte.",
+  },
+  {
+    key: "objections",
+    label: "Levée d'objections",
+    desc: "Le prospect te sort une objection d'entrée. Acquittement, reformulation, angle neuf.",
+  },
+  {
+    key: "closing",
+    label: "Closing",
+    desc: "Le prospect est tiède. À toi de demander le RDV, proposer un créneau, verrouiller.",
+  },
+];
 
 interface ClientOption {
   id: string;
@@ -38,6 +74,7 @@ interface Props {
   preselectedClientId: string;
   preselectedPersonaLabel: string;
   difficulties: DifficultyOption[];
+  trainingMode?: "full" | "block";
 }
 
 export function NewSessionForm({
@@ -45,6 +82,7 @@ export function NewSessionForm({
   preselectedClientId,
   preselectedPersonaLabel,
   difficulties,
+  trainingMode = "full",
 }: Props) {
   const router = useRouter();
 
@@ -69,6 +107,7 @@ export function NewSessionForm({
 
   const [gender, setGender] = useState<Gender>("homme");
   const [difficulty, setDifficulty] = useState<Difficulty>("debutant");
+  const [blockTarget, setBlockTarget] = useState<BlockTarget>("brise_glace");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -123,6 +162,8 @@ export function NewSessionForm({
         difficulty,
         gender,
         personaLabel: personaLabel.trim(),
+        trainingMode,
+        ...(trainingMode === "block" ? { blockTarget } : {}),
       }),
     });
 
@@ -299,6 +340,35 @@ export function NewSessionForm({
               ))}
             </div>
           </StepSection>
+
+          {/* Étape 5 (Coaching ciblé uniquement) : choix du bloc à
+              travailler. La session démarrera directement à ce bloc
+              avec un scoring concentré sur ses critères. */}
+          {trainingMode === "block" && (
+            <StepSection
+              number="05"
+              title="Quel bloc veux-tu travailler ?"
+              subtitle="La conversation démarre directement ici, 2-3 minutes"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {BLOCK_OPTIONS.map((b) => (
+                  <SelectableCard
+                    key={b.key}
+                    selected={blockTarget === b.key}
+                    onClick={() => setBlockTarget(b.key)}
+                  >
+                    <div className="text-h4">{b.label}</div>
+                    <div
+                      className="text-small mt-1"
+                      style={{ color: "rgba(255, 255, 255, 0.65)" }}
+                    >
+                      {b.desc}
+                    </div>
+                  </SelectableCard>
+                ))}
+              </div>
+            </StepSection>
+          )}
         </div>
 
         {/* SIDEBAR : avatar du prospect en cours de composition */}

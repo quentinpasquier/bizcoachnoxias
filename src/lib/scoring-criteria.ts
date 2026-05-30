@@ -188,3 +188,17 @@ export function getAllCriteria(): ScoringCriterion[] {
 export function getCategoryByKey(key: CategoryKey): ScoringCategory | undefined {
   return SCORING_CATEGORIES.find((c) => c.key === key);
 }
+
+// Mapping bloc d'entraînement → catégorie de scoring concernée.
+// Utilisé en mode "Coaching ciblé" pour restreindre l'évaluation aux
+// critères du bloc travaillé.
+export const BLOCK_TO_CATEGORY: Record<
+  "brise_glace" | "decouverte" | "pitch" | "objections" | "closing",
+  CategoryKey
+> = {
+  brise_glace: "accroche",
+  decouverte: "decouverte",
+  pitch: "valeur",
+  objections: "objections",
+  closing: "closing",
+};
