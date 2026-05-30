@@ -74,7 +74,7 @@ interface Props {
   preselectedClientId: string;
   preselectedPersonaLabel: string;
   difficulties: DifficultyOption[];
-  trainingMode?: "full" | "block";
+  trainingMode?: "full" | "block" | "embedded";
 }
 
 export function NewSessionForm({
