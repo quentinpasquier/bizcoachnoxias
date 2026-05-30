@@ -781,11 +781,17 @@ export function ChatRoom({ session, initialMessages }: Props) {
 
   const useVoice = voiceMode && voiceSupported.tts && voiceSupported.stt;
 
+  // Classe de thème : propage la couleur du mode actif dans toute la
+  // ChatRoom. Un liseré 2px en haut de l'écran rappelle visuellement le
+  // mode sans distraire pendant l'appel (hors zone de focus).
+  const themeClass = `training-theme-${session.training_mode ?? "full"}`;
+
   return (
     <div
-      className="flex flex-col chatroom"
+      className={`flex flex-col chatroom ${themeClass}`}
       style={{ minHeight: "calc(100vh - 4rem)" }}
     >
+      <div className="training-mode-rim" aria-hidden="true" />
       {/* TOP BAR */}
       <div
         className="border-b chatroom-topbar"

@@ -8,6 +8,14 @@
   --color-green: #3CC879;
   --color-green-soft: #E8F5ED;
   --color-green-tint: rgba(60, 200, 121, 0.12);
+
+  /* Couleur d'accent du mode d'entraînement actif. Défaut : vert Noxias.
+     Surchargée par les classes .training-theme-block / -embedded / -full
+     posées sur le container racine de la page selon le mode actif.
+     Sert à teinter le breadcrumb, l'eyebrow, les liserés et l'accent du
+     ChatRoom pour donner une continuité visuelle du choix à la mission. */
+  --mode-accent: var(--color-green);
+  --mode-accent-rgb: 60, 200, 121;
   --color-lavender: #F4F1F8;
   --color-lavender-soft: #FAF8FC;
   --color-gray: #8B7FA3;
@@ -2860,6 +2868,77 @@
 @keyframes coachPanelFade {
   0% { opacity: 0; transform: translateY(-6px); }
   100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   Thématisation par mode d'entraînement.
+   Pose une classe .training-theme-X sur le container racine d'une
+   page pour propager la couleur d'accent du mode sur tous les
+   enfants qui utilisent var(--mode-accent) / var(--mode-accent-rgb).
+   ============================================================ */
+.training-theme-block {
+  --mode-accent: var(--color-green);
+  --mode-accent-rgb: 60, 200, 121;
+}
+.training-theme-embedded {
+  --mode-accent: var(--color-warning);
+  --mode-accent-rgb: 245, 165, 36;
+}
+.training-theme-full {
+  --mode-accent: #b495ff;
+  --mode-accent-rgb: 180, 149, 255;
+}
+
+/* Header de configuration tinté : bordure gauche colorée + breadcrumb
+   à la couleur du mode. Indique en permanence dans quel mode on est. */
+.training-config-header {
+  position: relative;
+  padding-left: 18px;
+}
+.training-config-header::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--mode-accent);
+}
+.training-mode-breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--mode-accent);
+  text-decoration: none;
+  padding: 4px 0;
+  transition: opacity 0.15s ease;
+}
+.training-mode-breadcrumb:hover {
+  opacity: 0.78;
+}
+.training-mode-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mode-accent);
+}
+
+/* Liseré subtil 2px en haut de la ChatRoom pour rappeler le mode actif
+   pendant l'appel, sans distraire (placé hors zone de focus). */
+.training-mode-rim {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--mode-accent);
+  z-index: 50;
+  opacity: 0.85;
+  pointer-events: none;
 }
 
 /* ============================================================
