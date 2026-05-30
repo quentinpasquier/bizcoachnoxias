@@ -94,13 +94,24 @@ export async function POST(request: Request) {
     );
   }
 
-  const audioBuffer = await response.arrayBuffer();
-  return new Response(audioBuffer, {
+  // Streaming passe-plat : on relaie directement le ReadableStream OpenAI
+  // au client sans accumuler en arrayBuffer. Le client (via MediaSource
+  // Extensions) commence à jouer dès le premier chunk MP3, ce qui économise
+  // ~1-1.5s de latence perçue par rapport au mode buffered (où l'on
+  // attendait que tout l'audio soit téléchargé avant la lecture).
+  if (!response.body) {
+    return NextResponse.json(
+      { error: "OpenAI TTS : pas de corps de réponse" },
+      { status: 502 },
+    );
+  }
+  return new Response(response.body, {
     status: 200,
     headers: {
       "Content-Type": "audio/mpeg",
       "Cache-Control": "no-store",
       "X-Voice": voice,
+      // Pas de Content-Length : Transfer-Encoding chunked automatique.
     },
   });
 }

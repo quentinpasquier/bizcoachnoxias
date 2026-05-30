@@ -250,8 +250,15 @@ export function clearTtsCache(): void {
 
 let currentAudio: HTMLAudioElement | null = null;
 let currentObjectUrl: string | null = null;
+let currentAbortController: AbortController | null = null;
 
 function stopOpenAIAudio() {
+  if (currentAbortController) {
+    try {
+      currentAbortController.abort();
+    } catch {}
+    currentAbortController = null;
+  }
   if (currentAudio) {
     try {
       currentAudio.pause();
@@ -267,7 +274,61 @@ function stopOpenAIAudio() {
   }
 }
 
-async function speakOpenAI(opts: SpeakOptions): Promise<boolean> {
+// Détecte si MediaSource Extensions est disponible pour audio/mpeg.
+// Supporté Chrome, Edge, Firefox, Safari récent (iOS 17+, macOS Big Sur+).
+// Sur les navigateurs trop anciens, on retombe sur le mode buffered.
+function supportsMediaSourceMp3(): boolean {
+  if (typeof window === "undefined") return false;
+  const MS =
+    (window as { MediaSource?: typeof MediaSource }).MediaSource ??
+    (window as unknown as { ManagedMediaSource?: typeof MediaSource })
+      .ManagedMediaSource;
+  if (!MS) return false;
+  try {
+    return MS.isTypeSupported("audio/mpeg");
+  } catch {
+    return false;
+  }
+}
+
+// Append d'un chunk dans le SourceBuffer en attendant updateend (les
+// appendBuffer doivent être sériels, on ne peut pas en avoir 2 en parallèle).
+function appendBufferAsync(
+  sb: SourceBuffer,
+  data: Uint8Array,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const cleanup = () => {
+      sb.removeEventListener("updateend", onUpdate);
+      sb.removeEventListener("error", onError);
+    };
+    const onUpdate = () => {
+      cleanup();
+      resolve();
+    };
+    const onError = () => {
+      cleanup();
+      reject(new Error("SourceBuffer error"));
+    };
+    sb.addEventListener("updateend", onUpdate);
+    sb.addEventListener("error", onError);
+    try {
+      sb.appendBuffer(data as BufferSource);
+    } catch (err) {
+      cleanup();
+      reject(err);
+    }
+  });
+}
+
+// Mode STREAMING : utilise MediaSource Extensions pour démarrer la lecture
+// dès le premier chunk MP3 reçu d'OpenAI. Gain ~1-1.5s de latence perçue.
+// Renvoie false en cas d'erreur ou de non-support → l'appelant retombe
+// sur speakOpenAIBuffered.
+async function speakOpenAIStreaming(opts: SpeakOptions): Promise<boolean> {
+  if (!supportsMediaSourceMp3()) return false;
+
+  const abort = new AbortController();
   try {
     const res = await fetch("/api/tts", {
       method: "POST",
@@ -277,6 +338,106 @@ async function speakOpenAI(opts: SpeakOptions): Promise<boolean> {
         gender: opts.gender,
         seed: opts.seed ?? "",
       }),
+      signal: abort.signal,
+    });
+    if (!res.ok || !res.body) return false;
+
+    const mediaSource = new MediaSource();
+    const url = URL.createObjectURL(mediaSource);
+
+    stopOpenAIAudio();
+    currentObjectUrl = url;
+    currentAbortController = abort;
+    const audio = new Audio(url);
+    currentAudio = audio;
+
+    let started = false;
+    audio.addEventListener("play", () => {
+      if (!started) {
+        started = true;
+        opts.onStart?.();
+      }
+    });
+    audio.addEventListener("ended", () => {
+      opts.onEnd?.();
+      stopOpenAIAudio();
+    });
+    audio.addEventListener("error", (e) => {
+      opts.onError?.(e as unknown as Event);
+      stopOpenAIAudio();
+    });
+
+    // sourceopen est déclenché quand MediaSource est prêt à recevoir
+    // un SourceBuffer. À partir de là on peut pousser les chunks MP3.
+    mediaSource.addEventListener("sourceopen", async () => {
+      let sourceBuffer: SourceBuffer | null = null;
+      try {
+        sourceBuffer = mediaSource.addSourceBuffer("audio/mpeg");
+      } catch (err) {
+        console.warn("[TTS streaming] addSourceBuffer failed", err);
+        try {
+          mediaSource.endOfStream("decode");
+        } catch {}
+        return;
+      }
+
+      const reader = res.body!.getReader();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value && value.byteLength > 0) {
+            await appendBufferAsync(sourceBuffer, value);
+          }
+        }
+        // Plus de données : on signale la fin du stream MP3 au lecteur.
+        // L'audio finira de jouer ce qui reste dans le tampon puis
+        // déclenchera l'événement "ended" sur l'élément Audio.
+        try {
+          if (mediaSource.readyState === "open") {
+            mediaSource.endOfStream();
+          }
+        } catch {}
+      } catch (err) {
+        // Erreur de stream (souvent : utilisateur a arrêté → abort →
+        // reader cassé). On ferme proprement.
+        if ((err as { name?: string }).name !== "AbortError") {
+          console.warn("[TTS streaming] reader error", err);
+        }
+        try {
+          if (mediaSource.readyState === "open") {
+            mediaSource.endOfStream("decode");
+          }
+        } catch {}
+      }
+    });
+
+    // play() résout dès que le navigateur estime qu'il y a assez de data
+    // pour commencer (typiquement après le 1er ou 2e chunk MP3).
+    await audio.play();
+    return true;
+  } catch (err) {
+    if ((err as { name?: string }).name === "AbortError") return false;
+    console.warn("[TTS streaming] init failed", err);
+    return false;
+  }
+}
+
+// Mode BUFFERED (fallback) : ancienne implémentation. On télécharge tout
+// l'audio puis on joue. Plus lent (~1-1.5s de latence supplémentaire) mais
+// fiable partout.
+async function speakOpenAIBuffered(opts: SpeakOptions): Promise<boolean> {
+  const abort = new AbortController();
+  try {
+    const res = await fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: opts.text,
+        gender: opts.gender,
+        seed: opts.seed ?? "",
+      }),
+      signal: abort.signal,
     });
     if (!res.ok) return false;
 
@@ -285,6 +446,7 @@ async function speakOpenAI(opts: SpeakOptions): Promise<boolean> {
 
     stopOpenAIAudio();
     currentObjectUrl = url;
+    currentAbortController = abort;
     const audio = new Audio(url);
     currentAudio = audio;
 
@@ -301,9 +463,17 @@ async function speakOpenAI(opts: SpeakOptions): Promise<boolean> {
     await audio.play();
     return true;
   } catch (err) {
+    if ((err as { name?: string }).name === "AbortError") return false;
     opts.onError?.(err as Event);
     return false;
   }
+}
+
+// Point d'entrée OpenAI : essaye streaming MSE d'abord, fallback buffered.
+async function speakOpenAI(opts: SpeakOptions): Promise<boolean> {
+  const streamed = await speakOpenAIStreaming(opts);
+  if (streamed) return true;
+  return speakOpenAIBuffered(opts);
 }
 
 export type TtsEngine = "openai" | "webspeech";

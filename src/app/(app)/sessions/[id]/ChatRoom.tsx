@@ -121,9 +121,10 @@ export function ChatRoom({ session, initialMessages }: Props) {
 
   // Délai de silence avant de considérer que le commercial a fini sa phrase.
   // L'auto-VAD natif du navigateur coupe vers 700-1000ms : trop court pour
-  // une vraie pause de réflexion. 1200ms = compromis entre fluidité (vrai
-  // tour de parole rapide) et tolérance aux micro-pauses du commercial.
-  const SILENCE_END_MS = 1200;
+  // une vraie pause de réflexion. 800ms = compromis serré pour un vrai
+  // ping-pong (gain de 400ms vs avant), tout en restant au-dessus du
+  // micro-silence naturel entre deux mots.
+  const SILENCE_END_MS = 800;
   // Délai après que le prospect a fini de parler avant de relancer le mic.
   // Laisse au commercial le temps de respirer, sans casser le rythme.
   const POST_PROSPECT_DELAY_MS = 400;
