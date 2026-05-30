@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { NewSessionForm } from "./NewSessionForm";
 import { QuickLaunch } from "./QuickLaunch";
 import { TrainingModeSelection } from "./TrainingModeSelection";
+import { TrainingStepper } from "@/components/TrainingStepper";
 import { DIFFICULTY_CONFIG } from "@/lib/personas";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -141,6 +142,13 @@ export default async function NewSessionPage({
 
   return (
     <div className={`container-noxias py-10 max-w-6xl space-y-10 ${themeClass}`}>
+      {/* Stepper du tunnel d'entraînement, affiché en haut.
+          Étape "mode" si pas encore choisi, sinon "config". */}
+      <TrainingStepper
+        currentStep={modeSelected ? "config" : "mode"}
+        trainingMode={modeSelected}
+      />
+
       {/* Mode NON choisi : page d'accueil entraînement avec 3 grandes
           cartes pédagogiques (Pourquoi / Quoi / Comment / Bénéfices). */}
       {!modeSelected && <TrainingModeSelection />}
