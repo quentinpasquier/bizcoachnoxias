@@ -47,11 +47,58 @@ export interface ScanRecommendation {
   next_3_sessions: string;
 }
 
+// Cartographie skill par catégorie : niveau atteint sur chacun des 5 blocs
+// du cold call. Utilisée pour visualiser où le commercial est fort et où
+// il est faible en un coup d'œil.
+export interface SkillMapEntry {
+  category: "accroche" | "decouverte" | "valeur" | "objections" | "closing";
+  /** Note 0-10 estimée sur cette catégorie à partir des sessions analysées. */
+  level: number;
+  /** Étiquette qualitative associée (fort / moyen / faible). */
+  qualifier: "fort" | "moyen" | "faible";
+  /** 1 phrase en mots simples qui justifie le niveau (max 25 mots). */
+  one_liner: string;
+}
+
+// Un moment précis dans une session où le commercial a fait perdre la
+// dynamique de l'appel. Plus granulaire que "défaut récurrent" : un
+// point perdu est un événement isolé qui a coûté cher.
+export interface LostPoint {
+  /** Contexte court : à quel moment de l'appel (max 12 mots). */
+  moment: string;
+  /** Citation EXACTE du commercial. */
+  quote: string;
+  /** Pourquoi ce moment fait perdre des points (1 phrase). */
+  why: string;
+  /** Combien de points environ sur 100 (estimation 1-15). */
+  estimated_cost: number;
+}
+
+// Une situation où le commercial reste figé / la conversation n'avance
+// plus / il ne sait pas quoi répondre. Différent d'un défaut : ici c'est
+// l'inaction ou l'hésitation qui pose problème.
+export interface Blocker {
+  /** Type de situation où il bloque (max 10 mots). */
+  situation: string;
+  /** Exemple concret : citation prospect + réaction commercial. */
+  example: string;
+  /** Pourquoi il bloque dans cette situation, mots simples. */
+  why_he_blocks: string;
+  /** La piste de déblocage à essayer (1 phrase actionnable). */
+  unlock_hint: string;
+}
+
 export interface CoachScanResult {
   /** Synthèse en 2-3 phrases de l'état actuel du commercial. */
   overall_diagnosis: string;
+  /** Cartographie skill sur les 5 catégories de l'appel cold call. */
+  skill_map: SkillMapEntry[];
   /** 3 défauts récurrents observés (triés du plus au moins fréquent). */
   recurring_defects: RecurringDefect[];
+  /** 3 moments précis où il a perdu des points sur ses dernières sessions. */
+  points_lost: LostPoint[];
+  /** 3 situations dans lesquelles il bloque, ne sait pas quoi faire. */
+  blockers: Blocker[];
   /** 3 axes de travail prioritaires. */
   action_axes: ActionAxis[];
   /** Plan recommandé pour les prochaines sessions. */
@@ -128,6 +175,20 @@ Format JSON STRICT (sans markdown, sans texte avant/après) :
 
 {
   "overall_diagnosis": "<2-3 phrases : où en est le commercial, son axe dominant à travailler, sa force principale s'il en a une. Mots simples.>",
+
+  "skill_map": [
+    {
+      "category": "accroche",
+      "level": <entier 0 à 10>,
+      "qualifier": "<'fort' (>=7) | 'moyen' (4-6) | 'faible' (0-3)>",
+      "one_liner": "<1 phrase mots simples qui justifie le niveau, max 25 mots>"
+    },
+    { "category": "decouverte", "level": 0-10, "qualifier": "...", "one_liner": "..." },
+    { "category": "valeur",     "level": 0-10, "qualifier": "...", "one_liner": "..." },
+    { "category": "objections", "level": 0-10, "qualifier": "...", "one_liner": "..." },
+    { "category": "closing",    "level": 0-10, "qualifier": "...", "one_liner": "..." }
+  ],
+
   "recurring_defects": [
     {
       "name": "<Nom du défaut, max 6 mots. Ex : 'Pitch déroulé sans question'>",
@@ -137,6 +198,27 @@ Format JSON STRICT (sans markdown, sans texte avant/après) :
     },
     // 3 défauts au total, triés du plus fréquent au moins fréquent
   ],
+
+  "points_lost": [
+    {
+      "moment": "<À quel moment de l'appel, max 12 mots. Ex : 'Sur la question du ROI, en milieu d'appel'>",
+      "quote": "<citation EXACTE du commercial qui a fait perdre des points, max 25 mots>",
+      "why": "<1 phrase mots simples qui explique pourquoi ce moment fait perdre>",
+      "estimated_cost": <entier 1-15, estimation des points perdus sur 100>
+    },
+    // 3 moments les plus coûteux observés
+  ],
+
+  "blockers": [
+    {
+      "situation": "<Type de situation où il bloque, max 10 mots. Ex : 'Quand le prospect demande un cas client précis'>",
+      "example": "<Exemple concret : ce que le prospect a dit + ce que le commercial a répondu (ou n'a pas su répondre), max 50 mots>",
+      "why_he_blocks": "<1 phrase mots simples, pourquoi il bloque dans cette situation>",
+      "unlock_hint": "<1 phrase actionnable pour débloquer, mots simples>"
+    },
+    // 3 blocages observés (différents des défauts : ici l'inaction ou l'hésitation)
+  ],
+
   "action_axes": [
     {
       "title": "<Titre court max 8 mots, ex : 'Acquitter avant de répondre'>",
@@ -145,24 +227,48 @@ Format JSON STRICT (sans markdown, sans texte avant/après) :
     },
     // 3 axes au total, triés par impact attendu
   ],
+
   "recommendation": {
     "mode": "<'full' | 'block' | 'embedded'>",
     "blockTarget": "<'brise_glace' | 'decouverte' | 'pitch' | 'objections' | 'closing' OU null si mode != 'block'>",
     "difficulty": "<'debutant' | 'intermediaire' | 'avance' | 'expert'>",
     "next_3_sessions": "<1 phrase qui dit EXACTEMENT quoi faire dans les 3 prochaines sessions, format directif vouvoyé, max 40 mots>"
   },
+
   "encouragement": "<1 phrase positive et concrète sur ce qui marche déjà, pour clôturer le rapport. Pas de flagornerie générique. Si rien de positif n'est observé, dites quel premier petit pas serait visible.>"
 }
 
 # RÈGLES D'ANALYSE
 
+## Sur les patterns récurrents
 - Vous lisez les ${sessions.length} sessions D'AFFILÉE et cherchez les patterns RÉCURRENTS (présents sur 2 sessions ou plus).
-- Un défaut qui n'apparaît qu'une fois ne mérite pas d'être listé : la valeur du scan c'est la régularité.
-- Les recurring_defects.occurrences DOIT correspondre au nombre RÉEL de sessions où le pattern est observé (compte honnête, pas inventé).
-- Si le commercial a obtenu plusieurs RDV : valoriser dans overall_diagnosis et encouragement.
+- Un défaut qui n'apparaît qu'une fois ne mérite pas d'être listé dans recurring_defects.
+- Les recurring_defects.occurrences DOIT correspondre au nombre RÉEL de sessions où le pattern est observé (compte honnête).
+
+## Sur la cartographie skill (skill_map)
+- Vous notez les 5 catégories OBLIGATOIREMENT, MÊME quand vous estimez sur peu de signaux : un manager veut voir où le commercial est fort et où il est faible en un coup d'œil.
+- La note 0-10 correspond au niveau OBSERVÉ sur les sessions analysées (pas un potentiel théorique).
+- Cohérence : qualifier='fort' si level>=7, 'moyen' si 4<=level<=6, 'faible' si level<=3.
+- Si la catégorie n'est pas observable (par exemple aucune objection émise par le prospect sur 5 sessions, donc on ne sait pas si le commercial sait gérer), mettez level=5 et one_liner précisant "Non observé sur ces sessions, niveau à confirmer".
+
+## Sur les points perdus (points_lost)
+- 3 moments PRÉCIS où le score baisse, pas une généralité. Chaque entrée DOIT contenir une citation exacte du commercial.
+- estimated_cost réaliste : pour 5 sessions notées sur 100, un moment qui fait perdre 5-10 points est déjà majeur.
+- Distinguez des recurring_defects : un point perdu est un événement précis qui a coûté, pas un pattern qui revient.
+
+## Sur les blocages (blockers)
+- 3 situations où le commercial reste figé, ne sait pas quoi dire, ou bafouille. C'est l'INACTION ou l'HÉSITATION, pas la mauvaise action.
+- L'exemple DOIT montrer concrètement la situation (citation prospect + ce que le commercial a fait/pas fait).
+- L'unlock_hint doit être ACTIONNABLE : pas "il faut être plus à l'aise" mais "Préparez un cas client chiffré à sortir d'office quand le prospect demande des références".
+
+## Sur la recommandation
 - Si le commercial accepte régulièrement le mail / la doc sans RDV : faute n°1 à pointer, mode 'block' bloc 'closing' en recommandation.
 - Si défauts variés sans dominante claire : recommandation mode 'embedded' (coach embarqué qui corrige en direct sur 4 axes).
 - Si aucun défaut majeur récurrent : recommandation mode 'full' + difficulty supérieure pour challenger.
+
+## Encouragement
+- Si le commercial a obtenu plusieurs RDV : le valoriser dans encouragement.
+- Sinon, pointer la première amélioration objectivement observable possible.
 
 VOUS DÉVERROUILLEZ LA VALEUR DU SCAN : un manager paye pour avoir une vue claire de OÙ ENTRAÎNER. Soyez exigeant et précis.`;
 
@@ -216,6 +322,9 @@ Analysez ces ${sessions.length} sessions, identifiez les patterns récurrents, e
   // Garde-fous minimal sur la structure attendue.
   if (!Array.isArray(raw.recurring_defects)) raw.recurring_defects = [];
   if (!Array.isArray(raw.action_axes)) raw.action_axes = [];
+  if (!Array.isArray(raw.skill_map)) raw.skill_map = [];
+  if (!Array.isArray(raw.points_lost)) raw.points_lost = [];
+  if (!Array.isArray(raw.blockers)) raw.blockers = [];
   if (!raw.recommendation) {
     raw.recommendation = {
       mode: "full",

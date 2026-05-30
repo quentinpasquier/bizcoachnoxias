@@ -3261,6 +3261,176 @@
   margin: 0;
 }
 
+/* Cartographie skill : 5 catégories en barres horizontales */
+.scan-skill-map {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.scan-skill-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.scan-skill-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.scan-skill-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+.scan-skill-qualifier {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 10px;
+  border-radius: 999px;
+  text-transform: capitalize;
+}
+.scan-skill-qualifier-fort {
+  background: rgba(60, 200, 121, 0.18);
+  color: var(--color-green);
+}
+.scan-skill-qualifier-moyen {
+  background: rgba(245, 165, 36, 0.18);
+  color: var(--color-warning);
+}
+.scan-skill-qualifier-faible {
+  background: rgba(233, 75, 75, 0.18);
+  color: #FFB4B4;
+}
+.scan-skill-bar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.scan-skill-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+.scan-skill-bar-fill-fort { background: var(--color-green); }
+.scan-skill-bar-fill-moyen { background: var(--color-warning); }
+.scan-skill-bar-fill-faible { background: #E94B4B; }
+.scan-skill-line {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.66);
+  line-height: 1.4;
+}
+
+/* Points perdus : moments précis avec coût estimé */
+.scan-lost {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.scan-lost-item {
+  padding: 14px 16px;
+  background: rgba(233, 75, 75, 0.05);
+  border: 1px solid rgba(233, 75, 75, 0.18);
+  border-radius: 10px;
+}
+.scan-lost-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.scan-lost-moment {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+.scan-lost-cost {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #FFB4B4;
+  background: rgba(233, 75, 75, 0.20);
+  padding: 3px 11px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.scan-lost-quote {
+  margin: 8px 0;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.22);
+  border-left: 2px solid rgba(233, 75, 75, 0.5);
+  border-radius: 6px;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+.scan-lost-why {
+  margin: 6px 0 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.45;
+}
+
+/* Blocages : situations où il reste figé, avec piste de déblocage */
+.scan-blockers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.scan-blocker {
+  padding: 14px 16px;
+  background: rgba(245, 165, 36, 0.06);
+  border: 1px solid rgba(245, 165, 36, 0.24);
+  border-radius: 10px;
+}
+.scan-blocker-situation {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 6px;
+}
+.scan-blocker-example {
+  margin: 6px 0;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.22);
+  border-left: 2px solid rgba(245, 165, 36, 0.5);
+  border-radius: 6px;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+.scan-blocker-why {
+  margin: 6px 0 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.45;
+}
+.scan-blocker-hint {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: rgba(245, 165, 36, 0.10);
+  border-radius: 6px;
+  font-size: 0.86rem;
+  color: #FFFFFF;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
 /* Liste des défauts récurrents */
 .scan-defects {
   list-style: none;
