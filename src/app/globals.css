@@ -2676,13 +2676,26 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   font-weight: 800;
-  font-size: 0.8rem;
-  padding: 3px 8px;
+  font-size: 0.78rem;
+  padding: 4px 10px;
   border-radius: 999px;
   white-space: nowrap;
   animation: pipelinePop 4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   font-variant-numeric: tabular-nums;
+}
+.call-pipeline-pop-sign {
+  font-weight: 800;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+.call-pipeline-pop-label {
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  text-transform: none;
 }
 .call-pipeline-pop-plus {
   background: var(--color-green);
@@ -2700,6 +2713,30 @@
   20% { transform: translateX(0) scale(1); opacity: 1; }
   85% { transform: translateX(0) scale(1); opacity: 1; }
   100% { transform: translateX(40px) scale(0.7); opacity: 0; }
+}
+
+/* Teinte de fond subtile selon le solde +/- accumulé sur cette étape.
+   3 paliers (positif / neutre / négatif) qui survivent à l'effacement
+   des pops éphémères, pour donner une vue d'ensemble en un coup d'œil
+   de où ça a marché et où ça a coincé pendant l'appel. */
+.call-pipeline-step-tone-positive {
+  border-left: 3px solid var(--color-green);
+  background: linear-gradient(
+    90deg,
+    rgba(60, 200, 121, 0.08) 0%,
+    transparent 65%
+  );
+}
+.call-pipeline-step-tone-negative {
+  border-left: 3px solid rgba(233, 75, 75, 0.85);
+  background: linear-gradient(
+    90deg,
+    rgba(233, 75, 75, 0.08) 0%,
+    transparent 65%
+  );
+}
+.call-pipeline-step-tone-neutral {
+  border-left: 3px solid transparent;
 }
 
 /* Bubbles de transcript */

@@ -25,16 +25,53 @@ export type CallStage =
   | "objections"
   | "action";
 
+// Catégories de delta émises par le bot persona pour qualifier la nature
+// du geste du commercial. 6 positives + 6 négatives. Sert à afficher un
+// label court "+1 · Bonne question" / "-1 · Pitch déroulé" sur la barre
+// CallPipeline et à enrichir le débrief de fin de session.
+export type DeltaCategory =
+  | "bonne-question"
+  | "acquittement"
+  | "benefice-chiffre"
+  | "reformulation"
+  | "creneau-precis"
+  | "relance-tenue"
+  | "pitch-deroule"
+  | "question-fermee"
+  | "capitulation"
+  | "baratin"
+  | "esquive"
+  | "agressivite";
+
+const VALID_DELTA_CATEGORIES: ReadonlySet<DeltaCategory> = new Set<DeltaCategory>([
+  "bonne-question",
+  "acquittement",
+  "benefice-chiffre",
+  "reformulation",
+  "creneau-precis",
+  "relance-tenue",
+  "pitch-deroule",
+  "question-fermee",
+  "capitulation",
+  "baratin",
+  "esquive",
+  "agressivite",
+]);
+
 export interface ProgressTags {
   stage?: CallStage;
   delta?: "+" | "-";
+  deltaCategory?: DeltaCategory;
 }
 
 const SIGNAL_REGEX =
   /\[(HANGUP|APPOINTMENT|CONTINUE)(?::([^\]]+))?\]/i;
 const STAGE_REGEX =
   /\[STAGE:\s*(brise_glace|presentation|ouverture|objections|action)\s*\]/i;
-const DELTA_REGEX = /\[DELTA:\s*([+-])\s*\]/i;
+// Catégorie optionnelle après le signe : [DELTA:+:bonne-question]
+// Si Claude ne respecte pas le format avec catégorie, on accepte aussi le
+// format historique [DELTA:+] pour ne pas régresser sur les anciens prompts.
+const DELTA_REGEX = /\[DELTA:\s*([+-])\s*(?::\s*([a-z-]+)\s*)?\]/i;
 
 // Patterns de narration que Claude émet parfois malgré l'interdiction.
 // La prospect doit JOUER le silence ou la pause, pas l'annoncer.
@@ -77,6 +114,10 @@ function parseSignal(raw: string): {
   const deltaMatch = working.match(DELTA_REGEX);
   if (deltaMatch) {
     progress.delta = deltaMatch[1] as "+" | "-";
+    const rawCategory = deltaMatch[2]?.toLowerCase() as DeltaCategory | undefined;
+    if (rawCategory && VALID_DELTA_CATEGORIES.has(rawCategory)) {
+      progress.deltaCategory = rawCategory;
+    }
     working = working.replace(deltaMatch[0], "");
   }
 
