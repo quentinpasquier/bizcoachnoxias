@@ -2931,6 +2931,387 @@
    Tableau de bord manager (/manager).
    ============================================================ */
 
+/* Le container racine du dashboard manager doit éviter tout débordement
+   horizontal : sur grands écrans on a souvent des sous-blocs (stats,
+   chips) qui voudraient s'étaler. min-width:0 sur les enfants flex
+   force le wrap au lieu de pousser la page hors écran. */
+.manager-dashboard {
+  overflow-x: hidden;
+}
+.manager-dashboard > * {
+  min-width: 0;
+}
+
+/* Lien "Voir la fiche complète" en bas de chaque carte commercial */
+.manager-view-profile {
+  margin-left: auto;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-green);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.manager-view-profile:hover {
+  text-decoration: underline;
+}
+
+/* ============================================================
+   Scan IA panel (CommercialScanPanel sur /history/[userId])
+   ============================================================ */
+
+.scan-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.scan-panel-loading-cache {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+.scan-panel-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-top-color: var(--color-green);
+  border-radius: 999px;
+  animation: scanSpin 0.7s linear infinite;
+}
+@keyframes scanSpin {
+  to { transform: rotate(360deg); }
+}
+
+.scan-panel-cta-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.scan-panel-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  background: var(--color-green);
+  color: #0A1F12;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 6px 22px rgba(60, 200, 121, 0.32);
+}
+.scan-panel-cta:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 28px rgba(60, 200, 121, 0.42);
+}
+.scan-panel-cta:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.scan-panel-cta-hint {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+  max-width: 60ch;
+}
+.scan-panel-error {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(233, 75, 75, 0.10);
+  border: 1px solid rgba(233, 75, 75, 0.32);
+  color: #FFB4B4;
+  font-size: 0.85rem;
+}
+
+/* Loading view pendant le scan IA */
+.scan-running {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(157, 107, 255, 0.08);
+  border: 1px solid rgba(157, 107, 255, 0.25);
+  border-radius: 12px;
+}
+.scan-running-spinner {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  position: relative;
+}
+.scan-running-spinner-ring {
+  position: absolute;
+  inset: 0;
+  border: 3px solid rgba(157, 107, 255, 0.2);
+  border-top-color: #b495ff;
+  border-radius: 999px;
+  animation: scanSpin 0.9s linear infinite;
+}
+.scan-running-text {
+  flex: 1;
+  min-width: 0;
+}
+.scan-running-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+.scan-running-sub {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+}
+.scan-running-elapsed {
+  margin-top: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #b495ff;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Résultat du scan */
+.scan-result {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.scan-result-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.scan-result-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-green);
+}
+.scan-result-time {
+  margin-top: 3px;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+.scan-result-refresh {
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.scan-result-refresh:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.scan-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.scan-section-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+.scan-section-text {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+/* Liste des défauts récurrents */
+.scan-defects {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.scan-defect {
+  padding: 14px 16px;
+  background: rgba(233, 75, 75, 0.06);
+  border: 1px solid rgba(233, 75, 75, 0.22);
+  border-radius: 10px;
+}
+.scan-defect-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.scan-defect-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+.scan-defect-occ {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #FFB4B4;
+  padding: 2px 10px;
+  background: rgba(233, 75, 75, 0.18);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.scan-defect-quote {
+  margin: 8px 0;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border-left: 2px solid rgba(233, 75, 75, 0.5);
+  border-radius: 6px;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+.scan-defect-why {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.45;
+}
+
+/* Liste des axes de travail */
+.scan-axes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.scan-axis {
+  padding: 14px 16px;
+  background: rgba(60, 200, 121, 0.06);
+  border: 1px solid rgba(60, 200, 121, 0.22);
+  border-radius: 10px;
+}
+.scan-axis-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.scan-axis-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--color-green);
+  color: #0A1F12;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.scan-axis-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+.scan-axis-desc {
+  margin: 4px 0 8px;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.5;
+}
+.scan-axis-example {
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.20);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+.scan-axis-example-label {
+  font-weight: 700;
+  color: var(--color-green);
+}
+.scan-axis-example-text {
+  color: #FFFFFF;
+  font-style: italic;
+}
+
+/* Recommandation finale */
+.scan-recommendation-box {
+  padding: 16px 18px;
+  background: linear-gradient(
+    135deg,
+    rgba(180, 149, 255, 0.12) 0%,
+    rgba(157, 107, 255, 0.06) 100%
+  );
+  border: 1px solid rgba(180, 149, 255, 0.4);
+  border-radius: 12px;
+}
+.scan-recommendation-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #c4abff;
+  margin-bottom: 6px;
+}
+.scan-recommendation-headline {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 8px;
+}
+.scan-recommendation-text {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.5;
+}
+.scan-recommendation-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #b495ff;
+  color: #1B0F35;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: transform 0.15s ease;
+}
+.scan-recommendation-cta:hover {
+  transform: translateX(2px);
+}
+
+/* Encouragement de clôture */
+.scan-encouragement {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid var(--color-green);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #FFFFFF;
+  font-style: italic;
+  line-height: 1.45;
+}
+
 .manager-kpi {
   display: flex;
   flex-direction: column;
@@ -3070,6 +3451,20 @@
 .manager-commercial-stats {
   display: flex;
   gap: 18px;
+  flex-wrap: wrap;
+}
+@media (max-width: 640px) {
+  .manager-commercial-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .manager-commercial-stats {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .manager-stat {
+    align-items: flex-start;
+  }
 }
 .manager-stat {
   display: flex;
