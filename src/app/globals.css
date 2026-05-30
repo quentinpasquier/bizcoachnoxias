@@ -2739,6 +2739,69 @@
   border-left: 3px solid transparent;
 }
 
+/* Panneau du Coach embarqué (Mode 2). Apparaît au-dessus de la zone
+   de saisie quand le coach évalue, bloque ou donne la formulation
+   modèle. Distinct visuellement du chat pour qu'on voit immédiatement
+   que c'est un signal du coach, pas du prospect. */
+.coach-panel {
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 12px;
+  border: 1px solid transparent;
+  animation: coachPanelFade 0.3s ease-out;
+}
+.coach-panel-thinking {
+  background: rgba(157, 107, 255, 0.10);
+  border-color: rgba(157, 107, 255, 0.3);
+}
+.coach-panel-blocked {
+  background: rgba(245, 165, 36, 0.10);
+  border-color: rgba(245, 165, 36, 0.45);
+}
+.coach-panel-model {
+  background: rgba(60, 200, 121, 0.10);
+  border-color: rgba(60, 200, 121, 0.45);
+}
+.coach-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.coach-panel-eyebrow {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+}
+.coach-panel-attempts {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-warning);
+  background: rgba(245, 165, 36, 0.18);
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+.coach-panel-reason {
+  color: #FFFFFF;
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 4px 0 0;
+}
+.coach-panel-help {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  margin: 8px 0 0;
+}
+@keyframes coachPanelFade {
+  0% { opacity: 0; transform: translateY(-6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
 /* Sélecteur de mode d'entraînement (page /sessions/new).
    3 cartes en grille responsive. La carte active est highlightée vert,
    les cartes désactivées sont grisées avec un badge "Bientôt". */

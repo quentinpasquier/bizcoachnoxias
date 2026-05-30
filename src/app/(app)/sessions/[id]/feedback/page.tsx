@@ -119,6 +119,16 @@ export default async function FeedbackPage({
               Coaching ciblé · {BLOCK_LABELS[s.block_target] ?? s.block_target}
             </Badge>
           )}
+          {s.training_mode === "embedded" && (
+            <Badge tone="warning">
+              Coaching embarqué
+              {typeof s.embedded_blocks_count === "number"
+                ? ` · ${s.embedded_blocks_count} reformulation${
+                    s.embedded_blocks_count > 1 ? "s" : ""
+                  }`
+                : ""}
+            </Badge>
+          )}
           <span className="text-body" style={{ color: "#FFFFFF" }}>
             {s.persona_label}
             {personaName && (

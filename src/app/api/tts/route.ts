@@ -41,7 +41,12 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { text?: string; gender?: string; seed?: string };
+  let body: {
+    text?: string;
+    gender?: string;
+    seed?: string;
+    role?: "prospect" | "coach";
+  };
   try {
     body = await request.json();
   } catch {
@@ -51,6 +56,7 @@ export async function POST(request: Request) {
   const text = (body.text ?? "").trim();
   const gender = (body.gender ?? "homme") as Gender;
   const seed = body.seed ?? "";
+  const role = body.role === "coach" ? "coach" : "prospect";
 
   if (!text) {
     return NextResponse.json({ error: "Texte vide" }, { status: 400 });
@@ -59,16 +65,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Texte trop long (max 4000 caractères)" }, { status: 400 });
   }
 
-  const voice = pickVoice(gender, seed);
+  // Le coach embarqué (Mode 2) utilise une voix FIXE différente du prospect
+  // pour que le commercial entende immédiatement la différence : c'est le
+  // coach qui intervient, pas le prospect. Voix Onyx (homme grave, posé),
+  // avec instructions de ton pédagogique au lieu du ton dirigeant pressé.
+  const voice = role === "coach" ? "onyx" : pickVoice(gender, seed);
 
-  // gpt-4o-mini-tts (mars 2025) : modèle de voix steerable qui accepte un
-  // champ `instructions`. Plus naturel que tts-1-hd pour le français et
-  // surtout : on peut imposer un accent spécifique (français de France) et
-  // un ton (dynamique, professionnel pressé) au lieu de subir la prononciation
-  // anglo-saxonne par défaut. Cout : ~$0.015 / minute audio, vs $0.030/1K
-  // characters pour tts-1-hd — similaire en pratique pour des replies courtes.
   const instructions =
-    "Parle en français de France métropolitain, accent neutre parisien (jamais québécois, jamais belge, jamais suisse). Ton : professionnel mais dynamique, légèrement pressé comme un dirigeant qui vient de prendre un appel imprévu de prospection commerciale. Articule naturellement, sans exagérer. Les hésitations courtes (\"euh\", \"hum\") sont permises si elles sont dans le texte, mais ne les ajoute pas. Rythme : conversationnel, pas posé comme une lecture.";
+    role === "coach"
+      ? "Parle en français de France métropolitain, accent neutre. Ton : COACH commercial pédagogique, calme, posé, BIENVEILLANT mais ferme sur la précision. Tu n'es PAS pressé. Tu articules clairement, tu prends le temps. C'est l'inverse du prospect : tu rassures et tu guides. Légère gravité dans la voix, autorité naturelle d'un mentor."
+      : "Parle en français de France métropolitain, accent neutre parisien (jamais québécois, jamais belge, jamais suisse). Ton : professionnel mais dynamique, légèrement pressé comme un dirigeant qui vient de prendre un appel imprévu de prospection commerciale. Articule naturellement, sans exagérer. Les hésitations courtes (\"euh\", \"hum\") sont permises si elles sont dans le texte, mais ne les ajoute pas. Rythme : conversationnel, pas posé comme une lecture.";
 
   const response = await fetch(OPENAI_TTS_URL, {
     method: "POST",

@@ -21,12 +21,16 @@ export default async function NewSessionPage({
   searchParams: Promise<{
     client?: string;
     persona?: string;
-    mode?: "full" | "block";
+    mode?: "full" | "block" | "embedded";
   }>;
 }) {
   const params = await searchParams;
-  const trainingMode: "full" | "block" =
-    params.mode === "block" ? "block" : "full";
+  const trainingMode: "full" | "block" | "embedded" =
+    params.mode === "block"
+      ? "block"
+      : params.mode === "embedded"
+        ? "embedded"
+        : "full";
   const supabase = await createClient();
   const configured = isSupabaseConfigured();
 
@@ -179,8 +183,21 @@ export default async function NewSessionPage({
             </p>
           </Link>
 
-          <article className="training-mode-card training-mode-card-disabled">
-            <div className="training-mode-card-badge">Bientôt</div>
+          <Link
+            href="/sessions/new?mode=embedded"
+            className={`training-mode-card training-mode-card-link ${
+              trainingMode === "embedded" ? "training-mode-card-active" : ""
+            }`}
+          >
+            <div
+              className={`training-mode-card-badge ${
+                trainingMode === "embedded"
+                  ? "training-mode-card-badge-active"
+                  : ""
+              }`}
+            >
+              {trainingMode === "embedded" ? "Actif" : "Disponible"}
+            </div>
             <div className="training-mode-card-icon" aria-hidden="true">
               🧑‍🏫
             </div>
@@ -190,7 +207,7 @@ export default async function NewSessionPage({
               bloque si ta réponse ne fait pas avancer, et t&apos;explique
               quoi reformuler.
             </p>
-          </article>
+          </Link>
 
           <Link
             href="/sessions/new"
@@ -219,8 +236,8 @@ export default async function NewSessionPage({
       </section>
 
       {/* Quick Launch : disponible uniquement en mode "full" (appel
-          complet). Le mode "block" exige de choisir un bloc précis,
-          le Quick Launch n'a pas de sens. */}
+          complet). Les modes ciblés/embarqués exigent une configuration
+          précise donc on cache. */}
       {trainingMode === "full" && (
         <section className="space-y-4">
           <div className="flex items-end justify-between gap-3 flex-wrap">
@@ -256,12 +273,16 @@ export default async function NewSessionPage({
           <div className="eyebrow" style={{ color: "#b495ff" }}>
             {trainingMode === "block"
               ? "Configuration du coaching ciblé"
-              : "Configuration sur mesure"}
+              : trainingMode === "embedded"
+                ? "Configuration du coaching embarqué"
+                : "Configuration sur mesure"}
           </div>
           <h2 className="text-h3 mt-1">
             {trainingMode === "block"
               ? "Choisis ton client et ton bloc à travailler."
-              : "Choisis chaque paramètre."}
+              : trainingMode === "embedded"
+                ? "Choisis ton client. Le coach IA fera le reste."
+                : "Choisis chaque paramètre."}
           </h2>
           <p
             className="text-small mt-1"
@@ -269,7 +290,9 @@ export default async function NewSessionPage({
           >
             {trainingMode === "block"
               ? "Tu vas démarrer DIRECTEMENT au bloc choisi. Le scoring final se concentre sur les critères de ce bloc, pas sur l'appel entier."
-              : "Le meilleur outil pour cibler ta progression : client précis, persona précis, niveau précis, voix précise."}
+              : trainingMode === "embedded"
+                ? "L'appel se déroule normalement, mais à chaque réponse, un coach IA évalue si tu fais avancer la conversation. Si ce n'est pas le cas, il te bloque, t'explique pourquoi et te demande de reformuler. 3 essais max par réplique, puis il te donne la formulation modèle."
+                : "Le meilleur outil pour cibler ta progression : client précis, persona précis, niveau précis, voix précise."}
           </p>
         </div>
         <NewSessionForm

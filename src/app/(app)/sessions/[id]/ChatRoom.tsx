@@ -113,6 +113,19 @@ export function ChatRoom({ session, initialMessages }: Props) {
   });
   const [ttsEngine, setTtsEngine] = useState<"openai" | "webspeech" | null>(null);
 
+  // États du Mode 2 "Coaching embarqué". coachAttempts compte les
+  // reformulations sur LA réplique en cours (reset après chaque envoi
+  // accepté). coachState porte le panneau d'explication affiché quand
+  // bloqué. coachThinking : true pendant l'appel à /coach-check.
+  const [coachAttempts, setCoachAttempts] = useState(0);
+  const [coachThinking, setCoachThinking] = useState(false);
+  const [coachState, setCoachState] = useState<{
+    blocked: boolean;
+    reason: string;
+    suggestion: string;
+    lastBlockedText: string | null;
+  }>({ blocked: false, reason: "", suggestion: "", lastBlockedText: null });
+
   const transcriptRef = useRef<HTMLDivElement>(null);
   const hasOpenedRef = useRef(false);
   const recognitionRef = useRef<MinimalSpeechRecognition | null>(null);
@@ -320,6 +333,132 @@ export function ChatRoom({ session, initialMessages }: Props) {
     }
   }
 
+  // Mode 2 "Coaching embarqué" : avant d'envoyer la réponse au prospect,
+  // on la fait évaluer par le coach IA. Si verdict='block', on bloque
+  // l'envoi, on fait jouer une explication audio par le coach (voix Onyx),
+  // et on demande au commercial de reformuler. Après 3 reformulations
+  // sans succès, le coach donne la formulation modèle et on débloque.
+  async function runCoachCheck(text: string): Promise<{
+    proceed: boolean;
+    showModel: boolean;
+    reason: string;
+    suggestion: string;
+  }> {
+    try {
+      const res = await fetch(`/api/sessions/${session.id}/coach-check`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userText: text,
+          attemptsOnThisReply: coachAttempts,
+        }),
+      });
+      if (!res.ok) {
+        // Sécurité : si l'endpoint plante, on laisse passer pour ne pas
+        // bloquer la session entière sur un bug coach.
+        return { proceed: true, showModel: false, reason: "", suggestion: "" };
+      }
+      const data = (await res.json()) as {
+        verdict: "pass" | "block" | "force_unlock";
+        reason: string;
+        suggestion: string;
+      };
+      if (data.verdict === "pass") {
+        return {
+          proceed: true,
+          showModel: false,
+          reason: "",
+          suggestion: "",
+        };
+      }
+      if (data.verdict === "force_unlock") {
+        // 3e tentative : le coach donne la formulation modèle et on
+        // débloque. On l'affiche ET on la joue, mais on enchaîne sur
+        // sendMessage pour faire avancer la conversation.
+        return {
+          proceed: true,
+          showModel: true,
+          reason: data.reason ?? "",
+          suggestion: data.suggestion ?? "",
+        };
+      }
+      // verdict = 'block'
+      return {
+        proceed: false,
+        showModel: false,
+        reason: data.reason ?? "",
+        suggestion: data.suggestion ?? "",
+      };
+    } catch {
+      return { proceed: true, showModel: false, reason: "", suggestion: "" };
+    }
+  }
+
+  async function dispatchUserText(text: string) {
+    if (session.training_mode !== "embedded") {
+      void sendMessage(text);
+      return;
+    }
+    // Mode embarqué : on consulte le coach avant d'envoyer.
+    setCoachThinking(true);
+    const check = await runCoachCheck(text);
+    setCoachThinking(false);
+
+    if (!check.proceed) {
+      // Blocage : on incrémente, on affiche la raison, on fait jouer
+      // l'audio coach. Le commercial reformule via le mic ou le textarea.
+      setCoachAttempts((a) => a + 1);
+      setCoachState({
+        blocked: true,
+        reason: check.reason,
+        suggestion: "",
+        lastBlockedText: text,
+      });
+      if (check.reason) {
+        void speakCoach(check.reason);
+      }
+      return;
+    }
+
+    // proceed = true. Si showModel (force_unlock après 3 tentatives),
+    // on joue d'abord la suggestion modèle puis on enchaîne avec le
+    // texte réel du commercial (sa 3e tentative quoi).
+    if (check.showModel && check.suggestion) {
+      setCoachState({
+        blocked: false,
+        reason: check.reason,
+        suggestion: check.suggestion,
+        lastBlockedText: null,
+      });
+      const intro = `Voici comment vous auriez pu formuler. ${check.suggestion}`;
+      void speakCoach(intro);
+    } else {
+      setCoachState({
+        blocked: false,
+        reason: "",
+        suggestion: "",
+        lastBlockedText: null,
+      });
+    }
+    setCoachAttempts(0);
+    void sendMessage(text);
+  }
+
+  // Wrapper : joue un texte avec la voix coach (Onyx fixe, ton pédagogique).
+  // Fait pause sur l'audio prospect en cours si nécessaire.
+  function speakCoach(text: string) {
+    stopSpeaking();
+    setIsSpeaking(true);
+    void speak({
+      text,
+      gender: "homme",
+      seed: "coach",
+      role: "coach",
+      onEnd: () => setIsSpeaking(false),
+      onError: () => setIsSpeaking(false),
+    });
+  }
+
   async function sendMessage(text: string) {
     if (!text.trim() || sending || ended) return;
 
@@ -513,7 +652,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
               setTranscribing(false);
               // Défense en profondeur : le serveur déduplique déjà, on
               // refait une passe côté client au cas où.
-              void sendMessage(dedupeRepeats(whisperText));
+              void dispatchUserText(dedupeRepeats(whisperText));
               return;
             }
           }
@@ -527,7 +666,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
         // Web Speech peut parfois ré-émettre des résultats finals avec le
         // même index, ce qui produit des doublons. dedupeRepeats nettoie
         // les patterns évidents (acronymes redoublés, phrases répétées).
-        void sendMessage(dedupeRepeats(fallbackText));
+        void dispatchUserText(dedupeRepeats(fallbackText));
       }
     };
     recognition.onerror = (e: Event) => {
@@ -983,6 +1122,50 @@ export function ChatRoom({ session, initialMessages }: Props) {
 
           <div className="border-t chatroom-bottombar">
             <div className="container-noxias py-4 max-w-3xl">
+              {/* Panneau coach embarqué : visible uniquement en mode
+                  'embedded' quand le coach est en train d'évaluer ou
+                  qu'il a bloqué la réponse / proposé une formulation. */}
+              {session.training_mode === "embedded" && coachThinking && (
+                <div className="coach-panel coach-panel-thinking">
+                  <div className="coach-panel-eyebrow">Le coach évalue…</div>
+                </div>
+              )}
+              {session.training_mode === "embedded" &&
+                !coachThinking &&
+                coachState.blocked && (
+                  <div className="coach-panel coach-panel-blocked">
+                    <div className="coach-panel-header">
+                      <div className="coach-panel-eyebrow">
+                        Coach · reformulation demandée
+                      </div>
+                      <div className="coach-panel-attempts">
+                        Tentative {coachAttempts}/3
+                      </div>
+                    </div>
+                    <p className="coach-panel-reason">{coachState.reason}</p>
+                    <p className="coach-panel-help">
+                      Reformule ta réponse au micro ou en texte. Au bout de 3
+                      essais, le coach te donnera la formulation modèle.
+                    </p>
+                  </div>
+                )}
+              {session.training_mode === "embedded" &&
+                !coachThinking &&
+                !coachState.blocked &&
+                coachState.suggestion && (
+                  <div className="coach-panel coach-panel-model">
+                    <div className="coach-panel-eyebrow">
+                      Coach · formulation modèle
+                    </div>
+                    <p className="coach-panel-reason">
+                      « {coachState.suggestion} »
+                    </p>
+                    <p className="coach-panel-help">
+                      Le coach vient de te jouer cette formulation. Garde-la
+                      en tête pour la prochaine fois.
+                    </p>
+                  </div>
+                )}
               {error && (
                 <div
                   className="rounded-md px-3 py-2 text-small mb-3"
@@ -1005,7 +1188,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
-                    void sendMessage(draft);
+                    void dispatchUserText(draft);
                   }}
                   className="flex gap-3 items-end"
                 >
@@ -1015,7 +1198,7 @@ export function ChatRoom({ session, initialMessages }: Props) {
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
-                        void sendMessage(draft);
+                        void dispatchUserText(draft);
                       }
                     }}
                     rows={2}

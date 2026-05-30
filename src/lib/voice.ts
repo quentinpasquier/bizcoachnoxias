@@ -181,6 +181,8 @@ interface SpeakOptions {
   seed?: string;
   rate?: number;
   pitch?: number;
+  /** "coach" force la voix Onyx + ton pédagogique (Mode 2 embarqué). */
+  role?: "prospect" | "coach";
   onStart?: () => void;
   onEnd?: () => void;
   onError?: (err: Event) => void;
@@ -337,6 +339,7 @@ async function speakOpenAIStreaming(opts: SpeakOptions): Promise<boolean> {
         text: opts.text,
         gender: opts.gender,
         seed: opts.seed ?? "",
+        role: opts.role ?? "prospect",
       }),
       signal: abort.signal,
     });
@@ -436,6 +439,7 @@ async function speakOpenAIBuffered(opts: SpeakOptions): Promise<boolean> {
         text: opts.text,
         gender: opts.gender,
         seed: opts.seed ?? "",
+        role: opts.role ?? "prospect",
       }),
       signal: abort.signal,
     });
