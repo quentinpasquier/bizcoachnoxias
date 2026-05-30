@@ -305,6 +305,7 @@ export default async function NewSessionPage({
             description: cfg.description,
           }))}
           trainingMode={trainingMode}
+          lastClientId={lastConfig?.clientId ?? null}
         />
       </section>
     </div>

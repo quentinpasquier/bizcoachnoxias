@@ -75,6 +75,8 @@ interface Props {
   preselectedPersonaLabel: string;
   difficulties: DifficultyOption[];
   trainingMode?: "full" | "block" | "embedded";
+  /** Si défini, ce client est remonté en tête de la liste (raccourci). */
+  lastClientId?: string | null;
 }
 
 export function NewSessionForm({
@@ -83,6 +85,7 @@ export function NewSessionForm({
   preselectedPersonaLabel,
   difficulties,
   trainingMode = "full",
+  lastClientId = null,
 }: Props) {
   const router = useRouter();
 
@@ -90,6 +93,26 @@ export function NewSessionForm({
     preselectedClientId || clients[0]?.id || "",
   );
   const selectedClient = clients.find((c) => c.id === clientId);
+
+  // Recherche + tri intelligent du sélecteur de clients (UX grandes listes).
+  // Le dernier client utilisé est remonté en tête pour reprendre vite.
+  // Filtre case-insensitive sur le nom ET le secteur.
+  const [clientSearch, setClientSearch] = useState("");
+  const clientsSorted = useMemo(() => {
+    if (!lastClientId) return clients;
+    const idx = clients.findIndex((c) => c.id === lastClientId);
+    if (idx <= 0) return clients;
+    const last = clients[idx]!;
+    return [last, ...clients.filter((c) => c.id !== lastClientId)];
+  }, [clients, lastClientId]);
+  const clientsFiltered = useMemo(() => {
+    const q = clientSearch.trim().toLowerCase();
+    if (!q) return clientsSorted;
+    return clientsSorted.filter((c) => {
+      const haystack = `${c.name} ${c.sector ?? ""}`.toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [clientsSorted, clientSearch]);
   const personaOptions = useMemo(
     () =>
       selectedClient?.target_personas?.length
@@ -186,8 +209,10 @@ export function NewSessionForm({
           {/* STEPPER */}
           <Stepper completed={completedSteps} total={4} />
 
-          {/* Conseil du coach */}
-          <CoachTip collapsible defaultOpen={false}>
+          {/* Conseil du coach. Toujours ouvert (pas de collapsible) pour
+              que le conseil pédagogique soit immédiatement visible — sur
+              demande de Quentin. */}
+          <CoachTip>
             Conseil tactique : ne saute pas les niveaux.{" "}
             <strong style={{ color: "#FFFFFF" }}>
               3 sessions Débutant sur le même persona
@@ -205,33 +230,70 @@ export function NewSessionForm({
             industrie en 3-4 semaines.
           </CoachTip>
 
-          {/* Étape 1 : Client */}
+          {/* Étape 1 : Client (avec recherche et tri intelligent).
+              Sur grandes listes (>8 clients), la recherche évite le
+              défilement infini. Le dernier client utilisé est remonté
+              en tête pour reprendre rapidement. */}
           <StepSection
             number="01"
             title="Tu prospectes pour..."
-            subtitle={`${clients.length} client${clients.length > 1 ? "s" : ""} dans ton arsenal`}
+            subtitle={
+              clients.length > 8
+                ? `${clientsFiltered.length} sur ${clients.length} client${
+                    clients.length > 1 ? "s" : ""
+                  } visible${clientsFiltered.length > 1 ? "s" : ""}`
+                : `${clients.length} client${clients.length > 1 ? "s" : ""} dans ton arsenal`
+            }
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {clients.map((c) => (
-                <SelectableCard
-                  key={c.id}
-                  selected={clientId === c.id}
-                  onClick={() => handleClientChange(c.id)}
-                  warningBadge={!c.has_docs ? "Pas de docs" : undefined}
-                >
-                  <div className="text-h4">{c.name}</div>
-                  {c.sector && <div className="eyebrow mt-1">{c.sector}</div>}
-                  {c.value_proposition && (
-                    <p
-                      className="text-small mt-2 line-clamp-2"
-                      style={{ color: "#FFFFFF" }}
-                    >
-                      {c.value_proposition}
-                    </p>
-                  )}
-                </SelectableCard>
-              ))}
-            </div>
+            {clients.length > 5 && (
+              <div className="mb-4 max-w-md">
+                <input
+                  type="search"
+                  value={clientSearch}
+                  onChange={(e) => setClientSearch(e.target.value)}
+                  placeholder="Recherche par nom ou secteur..."
+                  className="client-search-input"
+                  aria-label="Rechercher un client"
+                />
+              </div>
+            )}
+            {clientsFiltered.length === 0 ? (
+              <div
+                className="rounded-lg px-4 py-3 text-small"
+                style={{
+                  background: "rgba(255, 255, 255, 0.04)",
+                  color: "rgba(255, 255, 255, 0.6)",
+                  border: "1px dashed rgba(255, 255, 255, 0.12)",
+                }}
+              >
+                Aucun client ne correspond à &quot;{clientSearch}&quot;.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {clientsFiltered.map((c) => (
+                  <SelectableCard
+                    key={c.id}
+                    selected={clientId === c.id}
+                    onClick={() => handleClientChange(c.id)}
+                    warningBadge={!c.has_docs ? "Pas de docs" : undefined}
+                    compact
+                  >
+                    <div className="text-h4">{c.name}</div>
+                    {c.sector && (
+                      <div className="eyebrow mt-1">{c.sector}</div>
+                    )}
+                    {c.value_proposition && (
+                      <p
+                        className="text-meta mt-1.5 line-clamp-2"
+                        style={{ color: "rgba(255, 255, 255, 0.72)" }}
+                      >
+                        {c.value_proposition}
+                      </p>
+                    )}
+                  </SelectableCard>
+                ))}
+              </div>
+            )}
           </StepSection>
 
           {/* Étape 2 : Persona, dépend du client */}
