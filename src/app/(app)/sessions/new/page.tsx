@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { NewSessionForm } from "./NewSessionForm";
 import { QuickLaunch } from "./QuickLaunch";
+import { TrainingModeSelection } from "./TrainingModeSelection";
 import { DIFFICULTY_CONFIG } from "@/lib/personas";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -25,12 +26,17 @@ export default async function NewSessionPage({
   }>;
 }) {
   const params = await searchParams;
-  const trainingMode: "full" | "block" | "embedded" =
-    params.mode === "block"
-      ? "block"
-      : params.mode === "embedded"
-        ? "embedded"
-        : "full";
+  // Si aucun mode n'est dans l'URL : on affiche la page d'accueil
+  // d'entraînement avec les 3 grandes cartes (Pourquoi / Quoi / Comment).
+  // Le commercial choisit, puis on revient sur la même URL avec ?mode=X
+  // et on bascule sur la vue de configuration.
+  const modeSelected: "full" | "block" | "embedded" | null =
+    params.mode === "full" ||
+    params.mode === "block" ||
+    params.mode === "embedded"
+      ? params.mode
+      : null;
+  const trainingMode: "full" | "block" | "embedded" = modeSelected ?? "full";
   const supabase = await createClient();
   const configured = isSupabaseConfigured();
 
@@ -130,115 +136,52 @@ export default async function NewSessionPage({
 
   return (
     <div className="container-noxias py-10 max-w-6xl space-y-10">
-      <header className="space-y-3">
-        <div className="eyebrow-green">Briefing room</div>
-        <h1
-          className="text-h1"
-          style={{
-            fontSize: "clamp(2rem, 4vw, 3rem)",
-            lineHeight: "1.05",
-          }}
-        >
-          <span>Lance </span>
-          <span style={{ color: "var(--color-green)" }}>ton</span>{" "}
-          <span>entraînement.</span>
-        </h1>
-        <p
-          className="text-body-l"
-          style={{ color: "rgba(255,255,255,0.7)", maxWidth: "56ch" }}
-        >
-          Trois modes pour progresser : ciblé sur un bloc, embarqué avec un
-          coach IA en direct, ou appel complet sans filet.
-        </p>
-      </header>
+      {/* Mode NON choisi : page d'accueil entraînement avec 3 grandes
+          cartes pédagogiques (Pourquoi / Quoi / Comment / Bénéfices). */}
+      {!modeSelected && <TrainingModeSelection />}
 
-      {/* Sélecteur de mode d'entraînement. Activé : Coaching ciblé (PR B)
-          et Appel complet (PR A). Désactivé : Coaching embarqué (PR C). */}
-      <section className="space-y-4">
-        <div className="eyebrow-green">Choisis ton mode</div>
-        <div className="training-mode-grid">
-          <Link
-            href="/sessions/new?mode=block"
-            className={`training-mode-card training-mode-card-link ${
-              trainingMode === "block" ? "training-mode-card-active" : ""
-            }`}
-          >
-            <div
-              className={`training-mode-card-badge ${
-                trainingMode === "block"
-                  ? "training-mode-card-badge-active"
-                  : ""
-              }`}
-            >
-              {trainingMode === "block" ? "Actif" : "Disponible"}
-            </div>
-            <div className="training-mode-card-icon" aria-hidden="true">
-              🎯
-            </div>
-            <h3 className="training-mode-card-title">Coaching ciblé</h3>
-            <p className="training-mode-card-desc">
-              Entraîne-toi sur UN bloc en 2-3 minutes : brise-glace,
-              découverte, pitch, objections ou closing. Idéal pour bosser un
-              point faible identifié.
-            </p>
-          </Link>
-
-          <Link
-            href="/sessions/new?mode=embedded"
-            className={`training-mode-card training-mode-card-link ${
-              trainingMode === "embedded" ? "training-mode-card-active" : ""
-            }`}
-          >
-            <div
-              className={`training-mode-card-badge ${
-                trainingMode === "embedded"
-                  ? "training-mode-card-badge-active"
-                  : ""
-              }`}
-            >
-              {trainingMode === "embedded" ? "Actif" : "Disponible"}
-            </div>
-            <div className="training-mode-card-icon" aria-hidden="true">
-              🧑‍🏫
-            </div>
-            <h3 className="training-mode-card-title">Coaching embarqué</h3>
-            <p className="training-mode-card-desc">
-              Appel complet avec un coach IA qui te corrige en direct. Il te
-              bloque si ta réponse ne fait pas avancer, et t&apos;explique
-              quoi reformuler.
-            </p>
-          </Link>
-
+      {/* Mode CHOISI : breadcrumb pour revenir au choix + header de
+          configuration adapté au mode. */}
+      {modeSelected && (
+        <header className="space-y-3">
           <Link
             href="/sessions/new"
-            className={`training-mode-card training-mode-card-link ${
-              trainingMode === "full" ? "training-mode-card-active" : ""
-            }`}
+            className="text-small inline-flex items-center gap-2"
+            style={{ color: "rgba(255,255,255,0.55)" }}
           >
-            <div
-              className={`training-mode-card-badge ${
-                trainingMode === "full" ? "training-mode-card-badge-active" : ""
-              }`}
-            >
-              {trainingMode === "full" ? "Actif" : "Disponible"}
-            </div>
-            <div className="training-mode-card-icon" aria-hidden="true">
-              📞
-            </div>
-            <h3 className="training-mode-card-title">Appel complet</h3>
-            <p className="training-mode-card-desc">
-              Le cold call de bout en bout, sans filet, comme dans la vraie
-              vie. Débrief à la fin avec note sur 100 et reformulations
-              concrètes.
-            </p>
+            <span aria-hidden="true">←</span> Changer de mode d&apos;entraînement
           </Link>
-        </div>
-      </section>
+          <div className="eyebrow-green">
+            {trainingMode === "block"
+              ? "Mode Coaching ciblé"
+              : trainingMode === "embedded"
+                ? "Mode Coaching embarqué"
+                : "Mode Appel complet"}
+          </div>
+          <h1
+            className="text-h1"
+            style={{
+              fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)",
+              lineHeight: "1.05",
+            }}
+          >
+            Paramètre ton entraînement.
+          </h1>
+          <p
+            className="text-body-l"
+            style={{ color: "rgba(255,255,255,0.7)", maxWidth: "56ch" }}
+          >
+            {trainingMode === "block"
+              ? "Choisis ton offre et le bloc à travailler. La conversation démarre directement à ce bloc en 2 à 3 minutes."
+              : trainingMode === "embedded"
+                ? "Choisis ton offre. Le coach IA évalue chaque réponse, te bloque si tu n'avances pas et t'explique quoi reformuler."
+                : "Choisis ton offre, ton persona et ton niveau. L'appel se déroule de bout en bout, comme dans la vraie vie."}
+          </p>
+        </header>
+      )}
 
-      {/* Quick Launch : disponible uniquement en mode "full" (appel
-          complet). Les modes ciblés/embarqués exigent une configuration
-          précise donc on cache. */}
-      {trainingMode === "full" && (
+      {/* Quick Launch : disponible uniquement en mode "full" choisi. */}
+      {modeSelected && trainingMode === "full" && (
         <section className="space-y-4">
           <div className="flex items-end justify-between gap-3 flex-wrap">
             <div>
@@ -267,9 +210,11 @@ export default async function NewSessionPage({
         </section>
       )}
 
-      {/* Configuration sur mesure : la plus puissante */}
-      <section className="space-y-5">
-        <div>
+      {/* Configuration sur mesure : visible uniquement quand un mode
+          d'entraînement a été explicitement choisi. */}
+      {modeSelected && (
+        <section className="space-y-5">
+          <div>
           <div className="eyebrow" style={{ color: "#b495ff" }}>
             {trainingMode === "block"
               ? "Configuration du coaching ciblé"
@@ -307,7 +252,8 @@ export default async function NewSessionPage({
           trainingMode={trainingMode}
           lastClientId={lastConfig?.clientId ?? null}
         />
-      </section>
+        </section>
+      )}
     </div>
   );
 }
