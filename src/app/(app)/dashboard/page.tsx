@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { CamilleMascot } from "@/components/CamilleMascot";
+import { TrainingModeBadge } from "@/components/TrainingModeBadge";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { formatRelativeFr } from "@/lib/format";
@@ -381,14 +382,25 @@ export default async function DashboardPage() {
                           </span>
                         )}
                       </div>
-                      <p
-                        className="text-meta truncate"
-                        style={{ color: "rgba(255,255,255,0.55)" }}
+                      <div
+                        className="flex items-center gap-2 flex-wrap"
+                        style={{ marginTop: "2px" }}
                       >
-                        {s.client_name_snapshot ?? "Client supprimé"} ·{" "}
-                        {s.persona_label} ·{" "}
-                        {formatRelativeFr(s.started_at)}
-                      </p>
+                        <p
+                          className="text-meta truncate"
+                          style={{ color: "rgba(255,255,255,0.55)", margin: 0 }}
+                        >
+                          {s.client_name_snapshot ?? "Client supprimé"} ·{" "}
+                          {s.persona_label} ·{" "}
+                          {formatRelativeFr(s.started_at)}
+                        </p>
+                        <TrainingModeBadge
+                          mode={s.training_mode}
+                          blockTarget={s.block_target}
+                          embeddedBlocksCount={s.embedded_blocks_count}
+                          compact
+                        />
+                      </div>
                     </div>
                     {typeof s.score === "number" && (
                       <span

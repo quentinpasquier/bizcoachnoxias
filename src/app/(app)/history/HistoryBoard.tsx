@@ -7,6 +7,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { DifficultyBadge, ScoreBadge } from "@/components/ui/Badge";
 import { StatusPill } from "@/components/ui/Status";
 import { FilterChip } from "@/components/ui/FilterChip";
+import { TrainingModeBadge } from "@/components/TrainingModeBadge";
 import { formatDateTimeFr, formatDuration } from "@/lib/format";
 import type { SessionRow } from "@/lib/supabase/types";
 
@@ -173,6 +174,11 @@ export function HistoryBoard({
                           </span>
                           <span className="text-h4">{s.persona_label}</span>
                           <DifficultyBadge difficulty={s.difficulty} />
+                          <TrainingModeBadge
+                            mode={s.training_mode}
+                            blockTarget={s.block_target}
+                            embeddedBlocksCount={s.embedded_blocks_count}
+                          />
                           {s.status === "active" && (
                             <StatusPill tone="success">En cours</StatusPill>
                           )}

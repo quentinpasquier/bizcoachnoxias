@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Avatar } from "@/components/ui/Avatar";
+import { TrainingModeBadge } from "@/components/TrainingModeBadge";
 import { formatRelativeFr } from "@/lib/format";
 import { computeStats } from "@/lib/badges";
 import { rankFromPpn, totalPpn } from "@/lib/ranks";
@@ -374,10 +375,20 @@ export function TeamLeaderboard({
                       color: "rgba(255, 255, 255, 0.45)",
                       fontSize: "0.72rem",
                       letterSpacing: "0.05em",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      flexWrap: "wrap",
                     }}
                   >
-                    {formatRelativeFr(s.started_at)}
-                    {s.appointment_secured && " · ✓ RDV"}
+                    <span>{formatRelativeFr(s.started_at)}</span>
+                    {s.appointment_secured && <span>· ✓ RDV</span>}
+                    <TrainingModeBadge
+                      mode={s.training_mode}
+                      blockTarget={s.block_target}
+                      embeddedBlocksCount={s.embedded_blocks_count}
+                      compact
+                    />
                   </div>
                 </div>
                 <ScorePill score={s.score} />
