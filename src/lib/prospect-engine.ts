@@ -149,10 +149,24 @@ export async function generateProspectReply(args: {
     });
   }
 
+  // Prompt caching Anthropic : le system prompt du persona pèse ~3000 tokens
+  // (identité + douleurs + KPIs + objections + règles d'oralité + règles de
+  // fin propre, etc.). Il est quasi-stable au sein d'une session (seul le
+  // pressureLine en fin varie aux paliers 0/2/5/8 tours commercial). On le
+  // marque cache_control:ephemeral : le 1er appel paye le write, les tours
+  // suivants tapent le cache et gagnent 3-8s d'ingestion par réplique du
+  // prospect. C'est ce qui transforme un échange à 5-8s/réplique en un vrai
+  // ping-pong à 1-3s/réplique.
   const response = await getAnthropic().messages.create({
     model: PROSPECT_MODEL,
     max_tokens: 220,
-    system,
+    system: [
+      {
+        type: "text",
+        text: system,
+        cache_control: { type: "ephemeral" },
+      },
+    ],
     messages,
   });
 
