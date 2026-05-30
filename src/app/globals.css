@@ -3327,6 +3327,89 @@
   line-height: 1.4;
 }
 
+/* Radar SVG : cartographie compétences pentagonale + cible 7/10 */
+.scan-skill-radar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 6px 0 18px;
+  gap: 8px;
+}
+.scan-skill-radar {
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+  display: block;
+}
+.scan-skill-radar-grid {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.07);
+  stroke-width: 1;
+}
+.scan-skill-radar-axis {
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 1;
+}
+.scan-skill-radar-target {
+  fill: rgba(255, 255, 255, 0.05);
+  stroke: rgba(255, 255, 255, 0.32);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  stroke-linejoin: round;
+}
+.scan-skill-radar-actual {
+  fill: rgba(60, 200, 121, 0.22);
+  stroke: var(--color-green, #3CC879);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.scan-skill-radar-dot {
+  stroke: #1a1330;
+  stroke-width: 2;
+}
+.scan-skill-radar-dot-fort { fill: var(--color-green, #3CC879); }
+.scan-skill-radar-dot-moyen { fill: var(--color-warning, #F5A524); }
+.scan-skill-radar-dot-faible { fill: #E94B4B; }
+.scan-skill-radar-label-name {
+  fill: rgba(255, 255, 255, 0.92);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.scan-skill-radar-label-level {
+  fill: rgba(255, 255, 255, 0.55);
+  font-size: 11px;
+  font-weight: 600;
+}
+.scan-skill-radar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.02em;
+}
+.scan-skill-radar-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.scan-skill-radar-legend-swatch {
+  display: inline-block;
+  width: 16px;
+  height: 8px;
+  border-radius: 2px;
+}
+.scan-skill-radar-legend-swatch-actual {
+  background: rgba(60, 200, 121, 0.4);
+  border: 1px solid var(--color-green, #3CC879);
+}
+.scan-skill-radar-legend-swatch-target {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px dashed rgba(255, 255, 255, 0.5);
+}
+
 /* Points perdus : moments précis avec coût estimé */
 .scan-lost {
   list-style: none;
