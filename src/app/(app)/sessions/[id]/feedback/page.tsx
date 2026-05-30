@@ -185,12 +185,7 @@ export default async function FeedbackPage({
               <Badge tone="neutral">Appel terminé</Badge>
             )}
           </div>
-          <p
-            className="text-body-l"
-            style={{ color: "#FFFFFF", lineHeight: "1.5" }}
-          >
-            {evaluation.outcome_summary}
-          </p>
+          <OutcomeSummary text={evaluation.outcome_summary} />
         </Card>
       </section>
 
@@ -383,6 +378,47 @@ export default async function FeedbackPage({
         </Link>
       </section>
     </div>
+  );
+}
+
+// Rend l'outcome_summary en 5 bullets standardisés si le format est
+// reconnaissable ("- [Libellé] : contenu"), sinon retombe sur un paragraphe
+// classique pour rétrocompat avec les anciennes évaluations.
+function OutcomeSummary({ text }: { text: string }) {
+  const lines = text
+    .split(/\n+/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+  const bulletLines = lines.filter((l) => /^[-•*]\s*/.test(l));
+  const isBulletFormat =
+    lines.length >= 3 && bulletLines.length / lines.length > 0.6;
+
+  if (!isBulletFormat) {
+    return (
+      <p
+        className="text-body-l"
+        style={{ color: "#FFFFFF", lineHeight: "1.5" }}
+      >
+        {text}
+      </p>
+    );
+  }
+
+  return (
+    <ul className="outcome-summary-bullets">
+      {bulletLines.map((line, idx) => {
+        const stripped = line.replace(/^[-•*]\s*/, "");
+        const labelMatch = stripped.match(/^\[([^\]]+)\]\s*:?\s*(.*)$/);
+        const label = labelMatch ? labelMatch[1] : null;
+        const body = labelMatch ? labelMatch[2] : stripped;
+        return (
+          <li key={idx}>
+            {label && <span className="outcome-summary-label">{label}</span>}
+            <span className="outcome-summary-body">{body}</span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
