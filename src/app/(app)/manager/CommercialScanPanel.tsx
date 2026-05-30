@@ -28,6 +28,14 @@ interface Props {
   totalCompletedSessions: number;
 }
 
+const SKILL_CATEGORY_LABEL: Record<string, string> = {
+  accroche: "Accroche",
+  decouverte: "Découverte",
+  valeur: "Pitch & valeur",
+  objections: "Levée d'objections",
+  closing: "Closing",
+};
+
 const BLOCK_LABEL: Record<string, string> = {
   brise_glace: "Brise-glace",
   decouverte: "Découverte",
@@ -220,6 +228,38 @@ function ScanResultView({
         <p className="scan-section-text">{analysis.overall_diagnosis}</p>
       </div>
 
+      {/* 1bis. Cartographie skill : 5 catégories du cold call avec niveau
+         visualisé sous forme de barre horizontale. Lecture instantanée
+         des forces / faiblesses par catégorie. */}
+      {analysis.skill_map && analysis.skill_map.length > 0 && (
+        <div className="scan-section">
+          <div className="scan-section-eyebrow">Cartographie skill</div>
+          <ul className="scan-skill-map">
+            {analysis.skill_map.map((s) => (
+              <li key={s.category} className="scan-skill-row">
+                <div className="scan-skill-head">
+                  <span className="scan-skill-name">
+                    {SKILL_CATEGORY_LABEL[s.category] ?? s.category}
+                  </span>
+                  <span
+                    className={`scan-skill-qualifier scan-skill-qualifier-${s.qualifier}`}
+                  >
+                    {s.qualifier} · {s.level}/10
+                  </span>
+                </div>
+                <div className="scan-skill-bar">
+                  <div
+                    className={`scan-skill-bar-fill scan-skill-bar-fill-${s.qualifier}`}
+                    style={{ width: `${Math.max(0, Math.min(100, s.level * 10))}%` }}
+                  />
+                </div>
+                <p className="scan-skill-line">{s.one_liner}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* 2. Défauts récurrents */}
       {analysis.recurring_defects.length > 0 && (
         <div className="scan-section">
@@ -242,6 +282,54 @@ function ScanResultView({
                   </blockquote>
                 )}
                 <p className="scan-defect-why">{d.why_it_matters}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 2bis. Points perdus : moments précis où le score a baissé.
+         Plus granulaire que les défauts récurrents. */}
+      {analysis.points_lost && analysis.points_lost.length > 0 && (
+        <div className="scan-section">
+          <div className="scan-section-eyebrow">Là où il perd des points</div>
+          <ul className="scan-lost">
+            {analysis.points_lost.map((p, i) => (
+              <li key={i} className="scan-lost-item">
+                <div className="scan-lost-header">
+                  <span className="scan-lost-moment">{p.moment}</span>
+                  <span className="scan-lost-cost">−{p.estimated_cost} pts</span>
+                </div>
+                {p.quote && (
+                  <blockquote className="scan-lost-quote">
+                    « {p.quote} »
+                  </blockquote>
+                )}
+                <p className="scan-lost-why">{p.why}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 2ter. Blocages : situations où il reste figé / hésite, plutôt
+         que des fautes actives. Avec piste de déblocage. */}
+      {analysis.blockers && analysis.blockers.length > 0 && (
+        <div className="scan-section">
+          <div className="scan-section-eyebrow">Là où il bloque</div>
+          <ul className="scan-blockers">
+            {analysis.blockers.map((b, i) => (
+              <li key={i} className="scan-blocker">
+                <div className="scan-blocker-situation">{b.situation}</div>
+                {b.example && (
+                  <blockquote className="scan-blocker-example">
+                    {b.example}
+                  </blockquote>
+                )}
+                <p className="scan-blocker-why">{b.why_he_blocks}</p>
+                <div className="scan-blocker-hint">
+                  <span aria-hidden="true">→</span> {b.unlock_hint}
+                </div>
               </li>
             ))}
           </ul>
