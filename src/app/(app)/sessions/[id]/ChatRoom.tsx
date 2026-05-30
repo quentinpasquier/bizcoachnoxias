@@ -21,7 +21,24 @@ import {
   type SpeechRecognitionEvent,
 } from "@/lib/voice";
 import type { Difficulty, Gender, MessageRow, SessionRow } from "@/lib/supabase/types";
-import type { CallStage } from "@/lib/prospect-engine";
+import type { CallStage, DeltaCategory } from "@/lib/prospect-engine";
+
+// Label court affiché dans le pop éphémère sur la barre CallPipeline.
+// Tient en max ~16 chars pour ne pas casser le layout.
+const DELTA_CATEGORY_LABEL: Record<DeltaCategory, string> = {
+  "bonne-question": "Bonne question",
+  acquittement: "Acquittement",
+  "benefice-chiffre": "Bénéfice chiffré",
+  reformulation: "Reformulation",
+  "creneau-precis": "Créneau précis",
+  "relance-tenue": "Relance tenue",
+  "pitch-deroule": "Pitch déroulé",
+  "question-fermee": "Question fermée",
+  capitulation: "Capitulation",
+  baratin: "Baratin",
+  esquive: "Esquive",
+  agressivite: "Agressif",
+};
 
 const STAGE_LABELS: { key: CallStage; label: string; short: string }[] = [
   { key: "brise_glace", label: "Brise-glace", short: "Décrochage" },
@@ -36,6 +53,7 @@ interface DeltaPop {
   id: string;
   type: "+" | "-";
   stage: CallStage;
+  category?: DeltaCategory;
 }
 type StageScore = { plus: number; minus: number };
 
@@ -228,7 +246,11 @@ export function ChatRoom({ session, initialMessages }: Props) {
   function handleProspectReply(data: {
     prospectMessage?: { id: string; content: string };
     signal: { type: "continue" | "hangup" | "appointment"; reason?: string; date?: string };
-    progress?: { stage?: CallStage; delta?: "+" | "-" };
+    progress?: {
+      stage?: CallStage;
+      delta?: "+" | "-";
+      deltaCategory?: DeltaCategory;
+    };
     sessionEnded?: boolean;
   }) {
     if (data.progress?.stage) {
@@ -237,10 +259,11 @@ export function ChatRoom({ session, initialMessages }: Props) {
     if (data.progress?.delta) {
       const id = `delta-${Date.now()}-${Math.random()}`;
       const stageForDelta = data.progress.stage ?? currentStage;
-      const newDelta = {
+      const newDelta: DeltaPop = {
         id,
         type: data.progress.delta,
         stage: stageForDelta,
+        category: data.progress.deltaCategory,
       };
       setDeltas((d) => [...d, newDelta]);
       setStageScores((s) => {
@@ -1196,10 +1219,18 @@ function CallPipeline({
                 ? "current"
                 : "pending";
           const popsForThisStage = deltas.filter((d) => d.stage === s.key);
+          // 3 paliers de teinte selon le solde plus-minus sur cette étape.
+          // positive : le commercial a marqué plus de bons points sur cette
+          //            étape ; negative : il a accumulé plus de fautes ; neutre
+          //            par défaut. La teinte est subtile (bordure colorée),
+          //            elle ne court-circuite pas le statut done/current/pending.
+          const net = score.plus - score.minus;
+          const tone =
+            net > 0 ? "positive" : net < 0 ? "negative" : "neutral";
           return (
             <li
               key={s.key}
-              className={`call-pipeline-step call-pipeline-step-${status}`}
+              className={`call-pipeline-step call-pipeline-step-${status} call-pipeline-step-tone-${tone}`}
             >
               <span className="call-pipeline-step-num">
                 {status === "done" ? "✓" : idx + 1}
@@ -1222,20 +1253,30 @@ function CallPipeline({
                   </div>
                 )}
               </div>
-              {/* Pops éphémères */}
+              {/* Pops éphémères avec label catégorie */}
               <div className="call-pipeline-pops">
-                {popsForThisStage.map((d) => (
-                  <span
-                    key={d.id}
-                    className={`call-pipeline-pop ${
-                      d.type === "+"
-                        ? "call-pipeline-pop-plus"
-                        : "call-pipeline-pop-minus"
-                    }`}
-                  >
-                    {d.type === "+" ? "+1" : "−1"}
-                  </span>
-                ))}
+                {popsForThisStage.map((d) => {
+                  const label = d.category
+                    ? DELTA_CATEGORY_LABEL[d.category]
+                    : null;
+                  return (
+                    <span
+                      key={d.id}
+                      className={`call-pipeline-pop ${
+                        d.type === "+"
+                          ? "call-pipeline-pop-plus"
+                          : "call-pipeline-pop-minus"
+                      }`}
+                    >
+                      <span className="call-pipeline-pop-sign">
+                        {d.type === "+" ? "+1" : "−1"}
+                      </span>
+                      {label && (
+                        <span className="call-pipeline-pop-label">{label}</span>
+                      )}
+                    </span>
+                  );
+                })}
               </div>
             </li>
           );

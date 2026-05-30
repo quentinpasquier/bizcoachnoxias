@@ -128,6 +128,9 @@ export async function POST(
               : { signal: "continue" }),
           ...(reply.progress.stage ? { stage: reply.progress.stage } : {}),
           ...(reply.progress.delta ? { delta: reply.progress.delta } : {}),
+          ...(reply.progress.deltaCategory
+            ? { delta_category: reply.progress.deltaCategory }
+            : {}),
         },
       })
       .select("id, content")
