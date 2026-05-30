@@ -134,24 +134,25 @@ export default async function NewSessionPage({
     has_docs: Boolean(c.synced_content),
   }));
 
+  // Classe de thème : pose la couleur d'accent du mode actif sur le
+  // container, propagée via la variable CSS --mode-accent aux enfants.
+  // Sans mode sélectionné, on garde le thème vert par défaut.
+  const themeClass = modeSelected ? `training-theme-${modeSelected}` : "";
+
   return (
-    <div className="container-noxias py-10 max-w-6xl space-y-10">
+    <div className={`container-noxias py-10 max-w-6xl space-y-10 ${themeClass}`}>
       {/* Mode NON choisi : page d'accueil entraînement avec 3 grandes
           cartes pédagogiques (Pourquoi / Quoi / Comment / Bénéfices). */}
       {!modeSelected && <TrainingModeSelection />}
 
       {/* Mode CHOISI : breadcrumb pour revenir au choix + header de
-          configuration adapté au mode. */}
+          configuration adapté au mode, teinté de la couleur du mode. */}
       {modeSelected && (
-        <header className="space-y-3">
-          <Link
-            href="/sessions/new"
-            className="text-small inline-flex items-center gap-2"
-            style={{ color: "rgba(255,255,255,0.55)" }}
-          >
+        <header className="space-y-3 training-config-header">
+          <Link href="/sessions/new" className="training-mode-breadcrumb">
             <span aria-hidden="true">←</span> Changer de mode d&apos;entraînement
           </Link>
-          <div className="eyebrow-green">
+          <div className="training-mode-eyebrow">
             {trainingMode === "block"
               ? "Mode Coaching ciblé"
               : trainingMode === "embedded"

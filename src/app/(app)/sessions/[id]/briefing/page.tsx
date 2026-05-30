@@ -57,13 +57,19 @@ export default async function BriefingPage({
       (p) => p.label.toLowerCase() === session.persona_label.toLowerCase(),
     ) ?? null;
 
+  // Wrapper de thème : applique la teinte du mode actif sur tout le
+  // briefing (cohérent avec la page de config). Sans mode = vert défaut.
+  const themeClass = `training-theme-${session.training_mode ?? "full"}`;
+
   return (
-    <BriefingScreen
-      sessionId={id}
-      session={session}
-      client={client}
-      persona={persona as PersonaProfile | null}
-      difficultyConfig={DIFFICULTY_CONFIG[session.difficulty as Difficulty]}
-    />
+    <div className={themeClass}>
+      <BriefingScreen
+        sessionId={id}
+        session={session}
+        client={client}
+        persona={persona as PersonaProfile | null}
+        difficultyConfig={DIFFICULTY_CONFIG[session.difficulty as Difficulty]}
+      />
+    </div>
   );
 }
