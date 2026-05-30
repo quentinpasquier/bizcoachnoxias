@@ -2739,6 +2739,44 @@
   border-left: 3px solid transparent;
 }
 
+/* Bouton "Voir les N autres" / "Réduire" sur le sélecteur d'offres.
+   Apparaît au-delà de 6 propositions pour éviter le mur de cartes.
+   Style sobre, prend toute la largeur du grid, hover violet doux. */
+.client-show-more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 16px;
+  background: rgba(157, 107, 255, 0.08);
+  border: 1px dashed rgba(157, 107, 255, 0.35);
+  border-radius: 10px;
+  color: #FFFFFF;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.client-show-more-btn:hover {
+  background: rgba(157, 107, 255, 0.14);
+  border-color: rgba(157, 107, 255, 0.55);
+}
+.client-show-more-btn span[aria-hidden] {
+  font-size: 1.1rem;
+  line-height: 0.8;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.6);
+}
+.client-show-more-btn-collapse {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.18);
+  border-style: solid;
+}
+.client-show-more-btn-collapse:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.30);
+}
+
 /* Input de recherche client sur le sélecteur d'offres (Étape 1).
    Apparaît uniquement à partir de 5+ clients pour ne pas encombrer
    les petites listes. Filtre case-insensitive nom + secteur. */

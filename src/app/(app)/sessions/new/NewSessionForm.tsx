@@ -98,6 +98,11 @@ export function NewSessionForm({
   // Le dernier client utilisé est remonté en tête pour reprendre vite.
   // Filtre case-insensitive sur le nom ET le secteur.
   const [clientSearch, setClientSearch] = useState("");
+  // Cap visuel à 6 cartes affichées par défaut. Au-delà, on propose un
+  // bouton "Voir les N autres" pour étendre. Bypassé quand l'utilisateur
+  // tape dans la recherche (résultats toujours complets).
+  const [showAllClients, setShowAllClients] = useState(false);
+  const CLIENTS_VISIBLE_DEFAULT = 6;
   const clientsSorted = useMemo(() => {
     if (!lastClientId) return clients;
     const idx = clients.findIndex((c) => c.id === lastClientId);
@@ -230,19 +235,22 @@ export function NewSessionForm({
             industrie en 3-4 semaines.
           </CoachTip>
 
-          {/* Étape 1 : Client (avec recherche et tri intelligent).
-              Sur grandes listes (>8 clients), la recherche évite le
-              défilement infini. Le dernier client utilisé est remonté
-              en tête pour reprendre rapidement. */}
+          {/* Étape 1 : Client (avec recherche, tri intelligent, et cap
+              visuel à 6 cartes). La recherche évite le défilement infini,
+              le dernier client utilisé est remonté en tête pour reprendre
+              rapidement, et au-delà de 6 propositions on cache derrière
+              un bouton "Voir les N autres" pour garder l'écran respirable. */}
           <StepSection
             number="01"
             title="Tu prospectes pour..."
             subtitle={
               clients.length > 8
-                ? `${clientsFiltered.length} sur ${clients.length} client${
+                ? `${clientsFiltered.length} sur ${clients.length} proposition${
                     clients.length > 1 ? "s" : ""
-                  } visible${clientsFiltered.length > 1 ? "s" : ""}`
-                : `${clients.length} client${clients.length > 1 ? "s" : ""} dans ton arsenal`
+                  } de valeur visible${clientsFiltered.length > 1 ? "s" : ""}`
+                : `${clients.length} proposition${
+                    clients.length > 1 ? "s" : ""
+                  } de valeur dans ton arsenal`
             }
           >
             {clients.length > 5 && (
@@ -253,7 +261,7 @@ export function NewSessionForm({
                   onChange={(e) => setClientSearch(e.target.value)}
                   placeholder="Recherche par nom ou secteur..."
                   className="client-search-input"
-                  aria-label="Rechercher un client"
+                  aria-label="Rechercher une proposition de valeur"
                 />
               </div>
             )}
@@ -266,33 +274,74 @@ export function NewSessionForm({
                   border: "1px dashed rgba(255, 255, 255, 0.12)",
                 }}
               >
-                Aucun client ne correspond à &quot;{clientSearch}&quot;.
+                Aucune proposition de valeur ne correspond à &quot;
+                {clientSearch}&quot;.
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {clientsFiltered.map((c) => (
-                  <SelectableCard
-                    key={c.id}
-                    selected={clientId === c.id}
-                    onClick={() => handleClientChange(c.id)}
-                    warningBadge={!c.has_docs ? "Pas de docs" : undefined}
-                    compact
-                  >
-                    <div className="text-h4">{c.name}</div>
-                    {c.sector && (
-                      <div className="eyebrow mt-1">{c.sector}</div>
-                    )}
-                    {c.value_proposition && (
-                      <p
-                        className="text-meta mt-1.5 line-clamp-2"
-                        style={{ color: "rgba(255, 255, 255, 0.72)" }}
+              (() => {
+                // Cap actif : pas de recherche ET pas déjà tout déplié ET
+                // plus de propositions que le seuil par défaut.
+                const capActive =
+                  !clientSearch &&
+                  !showAllClients &&
+                  clientsFiltered.length > CLIENTS_VISIBLE_DEFAULT;
+                const visible = capActive
+                  ? clientsFiltered.slice(0, CLIENTS_VISIBLE_DEFAULT)
+                  : clientsFiltered;
+                const hidden = clientsFiltered.length - visible.length;
+                return (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {visible.map((c) => (
+                        <SelectableCard
+                          key={c.id}
+                          selected={clientId === c.id}
+                          onClick={() => handleClientChange(c.id)}
+                          warningBadge={!c.has_docs ? "Pas de docs" : undefined}
+                          compact
+                        >
+                          <div className="text-h4">{c.name}</div>
+                          {c.sector && (
+                            <div className="eyebrow mt-1">{c.sector}</div>
+                          )}
+                          {c.value_proposition && (
+                            <p
+                              className="text-meta mt-1.5 line-clamp-2"
+                              style={{ color: "rgba(255, 255, 255, 0.72)" }}
+                            >
+                              {c.value_proposition}
+                            </p>
+                          )}
+                        </SelectableCard>
+                      ))}
+                    </div>
+                    {capActive && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllClients(true)}
+                        className="client-show-more-btn"
+                        aria-label={`Voir les ${hidden} autres propositions de valeur`}
                       >
-                        {c.value_proposition}
-                      </p>
+                        <span aria-hidden="true">…</span>
+                        <span>Voir les {hidden} autres</span>
+                      </button>
                     )}
-                  </SelectableCard>
-                ))}
-              </div>
+                    {!capActive &&
+                      !clientSearch &&
+                      showAllClients &&
+                      clientsFiltered.length > CLIENTS_VISIBLE_DEFAULT && (
+                        <button
+                          type="button"
+                          onClick={() => setShowAllClients(false)}
+                          className="client-show-more-btn client-show-more-btn-collapse"
+                          aria-label="Réduire la liste"
+                        >
+                          <span>Réduire</span>
+                        </button>
+                      )}
+                  </>
+                );
+              })()
             )}
           </StepSection>
 
