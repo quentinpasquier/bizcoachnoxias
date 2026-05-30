@@ -1,13 +1,16 @@
-import Link from "next/link";
-import type { ReactNode } from "react";
+"use client";
 
-// Page d'accueil "Nouvel entraînement" : 3 grandes cartes pédagogiques
-// (Pourquoi / Quoi / Comment / Bénéfices) qui orientent le commercial
-// vers le bon mode selon son besoin du moment. Rendue uniquement quand
-// aucun mode n'est encore choisi (pas de ?mode= dans l'URL).
+import Link from "next/link";
+import { useState, type ReactNode } from "react";
+
+// Page d'accueil "Nouvel entraînement" : 3 cartes au repos compactes
+// avec accordéons dépliables (Pourquoi / Quoi / Comment / Bénéfices)
+// pour éviter le mur de texte et permettre la comparaison.
+// Plusieurs sections peuvent être ouvertes en même temps (multiselect)
+// pour comparer deux modes sur la même dimension.
 //
-// Au clic sur une carte, on navigue vers /sessions/new?mode=X qui
-// affiche la vue de configuration du mode.
+// Au clic sur le CTA, on navigue vers /sessions/new?mode=X qui affiche
+// la vue de configuration du mode.
 
 interface ModeDescriptor {
   key: "block" | "embedded" | "full";
@@ -129,8 +132,24 @@ export function TrainingModeSelection() {
 }
 
 function ModeRichCard({ mode }: { mode: ModeDescriptor }) {
+  // Multi-ouvert : on peut explorer plusieurs sections en parallèle
+  // (typiquement pour comparer "Pourquoi" entre 2 modes côte à côte).
+  // Set local par carte, indépendant des autres cartes.
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set());
+
+  const toggle = (key: string) => {
+    setOpenSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   return (
-    <article className={`training-mode-rich-card training-mode-rich-card-${mode.accent}`}>
+    <article
+      className={`training-mode-rich-card training-mode-rich-card-${mode.accent}`}
+    >
       <div className="training-mode-rich-visual">{mode.visual}</div>
 
       <div className="training-mode-rich-body">
@@ -144,35 +163,44 @@ function ModeRichCard({ mode }: { mode: ModeDescriptor }) {
           </div>
         </div>
 
-        <div className="training-mode-rich-section">
-          <div className="training-mode-rich-eyebrow">Pourquoi</div>
-          <p className="training-mode-rich-text">{mode.why}</p>
-        </div>
+        <div className="training-mode-rich-accordions">
+          <Accordion
+            label="Pourquoi ce mode ?"
+            open={openSections.has("why")}
+            onToggle={() => toggle("why")}
+          >
+            <p className="training-mode-rich-text">{mode.why}</p>
+          </Accordion>
 
-        <div className="training-mode-rich-section">
-          <div className="training-mode-rich-eyebrow">Quoi</div>
-          <p className="training-mode-rich-text">{mode.what}</p>
-        </div>
+          <Accordion
+            label="Comment ça marche"
+            open={openSections.has("how")}
+            onToggle={() => toggle("how")}
+          >
+            <p className="training-mode-rich-text training-mode-rich-text-mb">
+              {mode.what}
+            </p>
+            <ol className="training-mode-rich-steps">
+              {mode.how.map((step, i) => (
+                <li key={i}>
+                  <span className="training-mode-rich-step-num">{i + 1}</span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
+          </Accordion>
 
-        <div className="training-mode-rich-section">
-          <div className="training-mode-rich-eyebrow">Comment</div>
-          <ol className="training-mode-rich-steps">
-            {mode.how.map((step, i) => (
-              <li key={i}>
-                <span className="training-mode-rich-step-num">{i + 1}</span>
-                <span>{step}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-
-        <div className="training-mode-rich-section">
-          <div className="training-mode-rich-eyebrow">Bénéfices</div>
-          <ul className="training-mode-rich-benefits">
-            {mode.benefits.map((b, i) => (
-              <li key={i}>{b}</li>
-            ))}
-          </ul>
+          <Accordion
+            label="Bénéfices"
+            open={openSections.has("benefits")}
+            onToggle={() => toggle("benefits")}
+          >
+            <ul className="training-mode-rich-benefits">
+              {mode.benefits.map((b, i) => (
+                <li key={i}>{b}</li>
+              ))}
+            </ul>
+          </Accordion>
         </div>
 
         <Link href={mode.href} className="training-mode-rich-cta">
@@ -181,6 +209,40 @@ function ModeRichCard({ mode }: { mode: ModeDescriptor }) {
         </Link>
       </div>
     </article>
+  );
+}
+
+function Accordion({
+  label,
+  open,
+  onToggle,
+  children,
+}: {
+  label: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className={`training-accordion ${open ? "training-accordion-open" : ""}`}>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="training-accordion-trigger"
+        aria-expanded={open}
+      >
+        <span
+          className="training-accordion-chevron"
+          aria-hidden="true"
+        >
+          ▸
+        </span>
+        <span className="training-accordion-label">{label}</span>
+      </button>
+      <div className="training-accordion-body">
+        <div className="training-accordion-body-inner">{children}</div>
+      </div>
+    </div>
   );
 }
 
