@@ -4232,6 +4232,7 @@ a.training-stepper-step-link:hover {
 }
 
 .training-mode-rich-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   border-radius: 18px;
@@ -4242,6 +4243,85 @@ a.training-stepper-step-link:hover {
 }
 .training-mode-rich-card:hover {
   transform: translateY(-3px);
+}
+
+/* Badge "BETA TEST" en coin haut-droit sur les modes en bêta interne.
+   Gold pulsant pour signaler "fonctionnalité testée, accès restreint". */
+.training-mode-beta-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(247, 192, 65, 0.22) 0%, rgba(245, 165, 36, 0.16) 100%);
+  border: 1px solid rgba(247, 192, 65, 0.55);
+  color: #F7C041;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(245, 165, 36, 0.18);
+}
+.training-mode-beta-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #F7C041;
+  box-shadow: 0 0 0 0 rgba(247, 192, 65, 0.55);
+  animation: trainingModeBetaPulse 2.4s ease-out infinite;
+}
+@keyframes trainingModeBetaPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(247, 192, 65, 0.55); }
+  60%  { box-shadow: 0 0 0 8px rgba(247, 192, 65, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(247, 192, 65, 0); }
+}
+
+/* Carte verrouillée (mode bêta, utilisateur non manager) : visuel
+   désaturé + bloc explicatif à la place du CTA. */
+.training-mode-rich-card-locked {
+  opacity: 0.86;
+}
+.training-mode-rich-card-locked:hover {
+  transform: none;
+}
+.training-mode-rich-card-locked .training-mode-rich-visual {
+  filter: saturate(0.5) brightness(0.85);
+}
+.training-mode-rich-locked {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(247, 192, 65, 0.08);
+  border: 1px dashed rgba(247, 192, 65, 0.45);
+  margin-top: auto;
+}
+.training-mode-rich-locked-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.training-mode-rich-locked-title {
+  color: #F7C041;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+.training-mode-rich-locked-text {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .training-mode-beta-dot { animation: none; }
 }
 .training-mode-rich-card-green:hover {
   border-color: rgba(60, 200, 121, 0.55);

@@ -109,7 +109,7 @@ RÈGLE DE BLOCAGE : verdict = "block" si :
 - N'IMPORTE QUEL des 4 scores est strictement inférieur à 6
 - OU une faute grave est présente :
   • Capitulation : "je vous envoie un mail / une plaquette / de la doc" sans contre-proposition de RDV verbal
-  • Baratin : mot vide isolé sans définition concrète ("optimisation", "synergie", "expertise reconnue", "approche disruptive", "accompagnement sur mesure")
+  • Baratin (seuil ÉLEVÉ — uniquement quand l'ensemble est creux) : la réponse repose dominamment sur des mots vides juxtaposés ("synergie", "optimisation", "expertise reconnue", "approche disruptive", "accompagnement sur mesure", "transformation digitale") SANS aucune concretion à côté. UN SEUL mot abstrait dans une phrase qui contient PAR AILLEURS un chiffre, un cas client, un exemple opérationnel, ou une question ancrée sur le métier du prospect ne déclenche PAS Baratin — on ne bloque que si TOUT est creux. En cas de doute, tu laisses passer.
   • Esquive : ne répond PAS à la question/objection que le prospect vient de poser
   • Tutoiement du prospect ("tu", "te", "toi")
   • Réponse trop courte (< 5 mots) qui n'apporte rien

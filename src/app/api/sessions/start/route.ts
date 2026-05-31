@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { DIFFICULTY_CONFIG } from "@/lib/personas";
 import { generateScenario } from "@/lib/scenario-generator";
 import { pickFlashOpener } from "@/lib/flash-blocks";
-import type { Client, Difficulty, Gender } from "@/lib/supabase/types";
+import { isManagerOrAbove } from "@/lib/auth-helpers";
+import type { Client, Difficulty, Gender, UserRole } from "@/lib/supabase/types";
 
 export const maxDuration = 60;
 
@@ -55,6 +56,27 @@ export async function POST(request: Request) {
       { error: "Mode d'entraînement invalide (full | block | embedded)." },
       { status: 400 },
     );
+  }
+  // Bêta interne : "embedded" est restreint aux rôles manager+ pendant
+  // la phase de test. Défense en profondeur — la page UI verrouille déjà
+  // la carte, mais on protège aussi la route au cas où.
+  if (trainingMode === "embedded") {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+    const role = ((profile as { role?: UserRole } | null)?.role ??
+      "commercial") as UserRole;
+    if (!isManagerOrAbove(role)) {
+      return NextResponse.json(
+        {
+          error:
+            "Le mode Coaching embarqué est en bêta interne. Demande à ton manager d'y accéder.",
+        },
+        { status: 403 },
+      );
+    }
   }
   const VALID_BLOCKS = [
     "brise_glace",

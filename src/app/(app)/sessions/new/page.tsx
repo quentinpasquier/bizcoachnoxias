@@ -8,11 +8,13 @@ import { TrainingStepper } from "@/components/TrainingStepper";
 import { DIFFICULTY_CONFIG } from "@/lib/personas";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { isManagerOrAbove } from "@/lib/auth-helpers";
 import type {
   Client,
   Difficulty,
   Gender,
   PersonaProfile,
+  UserRole,
 } from "@/lib/supabase/types";
 
 export const dynamic = "force-dynamic";
@@ -50,28 +52,50 @@ export default async function NewSessionPage({
     difficulty: Difficulty;
     gender: Gender;
   } | null = null;
+  // Le mode "Coaching embarqué" est en bêta interne : accessible
+  // uniquement aux rôles manager/org_admin/platform_admin tant qu'on
+  // stabilise l'UX. La carte affiche un badge BETA TEST et le CTA est
+  // remplacé par un message verrouillé pour les commerciaux. On bloque
+  // aussi l'accès direct via ?mode=embedded en redirigeant côté serveur.
+  let canAccessBeta = false;
 
   if (configured) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    const [{ data: clientsData }, lastSessionRes] = await Promise.all([
-      supabase
-        .from("clients")
-        .select("*")
-        .eq("active", true)
-        .order("name", { ascending: true }),
-      user
-        ? supabase
-            .from("sessions")
-            .select("client_id, client_name_snapshot, persona_label, difficulty, gender")
-            .eq("user_id", user.id)
-            .order("started_at", { ascending: false })
-            .limit(1)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-    ]);
+    const [{ data: clientsData }, lastSessionRes, myProfileRes] =
+      await Promise.all([
+        supabase
+          .from("clients")
+          .select("*")
+          .eq("active", true)
+          .order("name", { ascending: true }),
+        user
+          ? supabase
+              .from("sessions")
+              .select("client_id, client_name_snapshot, persona_label, difficulty, gender")
+              .eq("user_id", user.id)
+              .order("started_at", { ascending: false })
+              .limit(1)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+        user
+          ? supabase
+              .from("profiles")
+              .select("role")
+              .eq("id", user.id)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
+    const myRole = ((myProfileRes.data as { role?: UserRole } | null)?.role ??
+      "commercial") as UserRole;
+    canAccessBeta = isManagerOrAbove(myRole);
+    if (modeSelected === "embedded" && !canAccessBeta) {
+      // Bypass interdit : on retire le ?mode pour retomber sur le
+      // sélecteur, qui affichera la carte verrouillée.
+      redirect("/sessions/new");
+    }
 
     clients = (clientsData ?? []) as Client[];
 
@@ -152,7 +176,7 @@ export default async function NewSessionPage({
 
       {/* Mode NON choisi : page d'accueil entraînement avec 3 grandes
           cartes pédagogiques (Pourquoi / Quoi / Comment / Bénéfices). */}
-      {!modeSelected && <TrainingModeSelection />}
+      {!modeSelected && <TrainingModeSelection canAccessBeta={canAccessBeta} />}
 
       {/* Mode CHOISI : breadcrumb pour revenir au choix + header de
           configuration adapté au mode, teinté de la couleur du mode. */}

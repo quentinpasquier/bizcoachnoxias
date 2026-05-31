@@ -25,6 +25,11 @@ interface ModeDescriptor {
   how: [string, string, string];
   benefits: [string, string, string];
   cta: string;
+  /** Mode en bêta interne : accessible uniquement aux rôles
+   *  manager / org_admin / platform_admin tant qu'on stabilise l'UX
+   *  et qu'on collecte du feedback. Affiche un badge "BETA TEST" sur
+   *  la carte et désactive le CTA pour les commerciaux non autorisés. */
+  beta?: boolean;
 }
 
 const MODES: ModeDescriptor[] = [
@@ -71,6 +76,7 @@ const MODES: ModeDescriptor[] = [
       "Le compteur de reformulations s'affiche sur ton débrief pour mesurer ta progression session après session.",
     ],
     cta: "Choisir le coaching embarqué",
+    beta: true,
   },
   {
     key: "full",
@@ -96,7 +102,13 @@ const MODES: ModeDescriptor[] = [
   },
 ];
 
-export function TrainingModeSelection() {
+export function TrainingModeSelection({
+  canAccessBeta = false,
+}: {
+  /** True si l'utilisateur courant est manager / org_admin / platform_admin.
+   *  Conditionne l'accès aux modes flaggés `beta`. */
+  canAccessBeta?: boolean;
+}) {
   return (
     <div className="space-y-8">
       <header className="space-y-3">
@@ -124,14 +136,24 @@ export function TrainingModeSelection() {
 
       <div className="training-mode-rich-grid">
         {MODES.map((m) => (
-          <ModeRichCard key={m.key} mode={m} />
+          <ModeRichCard
+            key={m.key}
+            mode={m}
+            locked={Boolean(m.beta) && !canAccessBeta}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function ModeRichCard({ mode }: { mode: ModeDescriptor }) {
+function ModeRichCard({
+  mode,
+  locked,
+}: {
+  mode: ModeDescriptor;
+  locked: boolean;
+}) {
   // Multi-ouvert : on peut explorer plusieurs sections en parallèle
   // (typiquement pour comparer "Pourquoi" entre 2 modes côte à côte).
   // Set local par carte, indépendant des autres cartes.
@@ -148,8 +170,17 @@ function ModeRichCard({ mode }: { mode: ModeDescriptor }) {
 
   return (
     <article
-      className={`training-mode-rich-card training-mode-rich-card-${mode.accent}`}
+      className={`training-mode-rich-card training-mode-rich-card-${mode.accent}${locked ? " training-mode-rich-card-locked" : ""}`}
     >
+      {mode.beta && (
+        <div
+          className="training-mode-beta-badge"
+          aria-label="Mode en bêta test interne"
+        >
+          <span aria-hidden="true" className="training-mode-beta-dot" />
+          BETA TEST
+        </div>
+      )}
       <div className="training-mode-rich-visual">{mode.visual}</div>
 
       <div className="training-mode-rich-body">
@@ -203,10 +234,28 @@ function ModeRichCard({ mode }: { mode: ModeDescriptor }) {
           </Accordion>
         </div>
 
-        <Link href={mode.href} className="training-mode-rich-cta">
-          <span>{mode.cta}</span>
-          <span aria-hidden="true">→</span>
-        </Link>
+        {locked ? (
+          <div className="training-mode-rich-locked">
+            <span aria-hidden="true" className="training-mode-rich-locked-icon">
+              🔒
+            </span>
+            <div>
+              <div className="training-mode-rich-locked-title">
+                Réservé aux managers pendant la bêta
+              </div>
+              <p className="training-mode-rich-locked-text">
+                Ce mode est en cours de stabilisation. Il sera ouvert à tous
+                les commerciaux après la phase de test. Demande à ton manager
+                de te l&apos;activer ou de te le faire tester en duo.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <Link href={mode.href} className="training-mode-rich-cta">
+            <span>{mode.cta}</span>
+            <span aria-hidden="true">→</span>
+          </Link>
+        )}
       </div>
     </article>
   );
