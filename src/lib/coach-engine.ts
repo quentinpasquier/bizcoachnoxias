@@ -47,10 +47,26 @@ function truncate(s: string, n: number): string {
 export async function evaluateCoachCheck(
   input: CoachCheckInput,
 ): Promise<CoachCheckResult> {
+  // Garde : le tout premier tour du commercial passe TOUJOURS sans
+  // blocage. C'est la phrase d'accroche, juste après le décrochage
+  // prospect — la bloquer d'entrée frustre le commercial avant même
+  // que l'échange ait pris. Si la 1ʳᵉ phrase est faible, on la laissera
+  // passer et le coach interviendra sur les tours suivants quand le
+  // contexte de l'appel sera installé.
+  const priorUserTurns = input.history.filter((t) => t.role === "user").length;
+  if (priorUserTurns === 0) {
+    return {
+      verdict: "pass",
+      scores: { precision: 5, ecoute: 5, pertinence: 5, professionnalisme: 5 },
+      reason: "",
+      suggestion: "",
+    };
+  }
+
   // Force-unlock automatique : après MAX_ATTEMPTS blocages sur la même
   // réplique, on débloque le pipeline pour ne pas frustrer le commercial,
-  // ET on lui donne la formulation modèle qui sera ensuite jouée à
-  // l'audio par le coach.
+  // ET on lui donne la formulation modèle qui sera ensuite affichée
+  // comme référence dans l'encart gold (plus de TTS).
   if (input.attemptsOnThisReply >= MAX_ATTEMPTS) {
     // On laisse quand même Haiku produire une suggestion (la formulation
     // modèle exemplaire) mais on force le verdict.
