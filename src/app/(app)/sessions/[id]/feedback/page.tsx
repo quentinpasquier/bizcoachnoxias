@@ -13,6 +13,7 @@ import type {
   SessionRow,
 } from "@/lib/supabase/types";
 import { FeedbackEvaluator } from "./FeedbackEvaluator";
+import { FlashResult } from "./FlashResult";
 import { Celebration } from "./Celebration";
 import { computeBadges, computeStats } from "@/lib/badges";
 import { xpForSession } from "@/lib/xp";
@@ -59,6 +60,21 @@ export default async function FeedbackPage({
             .order("started_at", { ascending: false })
         : Promise.resolve({ data: null }),
     ]);
+
+  // Drill flash : on n'attend pas l'évaluation Sonnet, les 3 critères
+  // se déduisent déterministiquement des deltas stockés sur chaque
+  // message prospect (delta_category dans metadata). C'est plus rapide,
+  // moins cher, et l'écran de résultat est conçu pour relancer
+  // immédiatement un autre drill plutôt que digérer un rapport long.
+  if (s.training_mode === "block" && s.block_target) {
+    return (
+      <FlashResult
+        session={s}
+        messages={(messages ?? []) as MessageRow[]}
+        block={s.block_target}
+      />
+    );
+  }
 
   if (!s.evaluation) {
     return <FeedbackEvaluator sessionId={id} />;

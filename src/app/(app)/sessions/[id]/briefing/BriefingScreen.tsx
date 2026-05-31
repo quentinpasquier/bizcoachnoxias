@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CamilleMascot } from "@/components/CamilleMascot";
 import { TrainingStepper } from "@/components/TrainingStepper";
+import { FlashBriefing } from "./FlashBriefing";
 import type {
   Client,
   PersonaProfile,
@@ -78,6 +79,18 @@ export function BriefingScreen({
     const t = setTimeout(() => setCountdown((c) => (c ?? 0) - 1), 1000);
     return () => clearTimeout(t);
   }, [countdown, router, sessionId]);
+
+  // Mode drill flash : fiche compacte 1 écran, pas de briefing immersif.
+  // L'early-return est placé APRÈS tous les hooks pour respecter les
+  // rules-of-hooks (utiliser un sous-composant à la place plutôt qu'un
+  // gros if/else qui dépaint le code du briefing classique).
+  if (
+    session.training_mode === "block" &&
+    session.block_target &&
+    session.scenario_data?.flash_meta
+  ) {
+    return <FlashBriefing sessionId={sessionId} session={session} />;
+  }
 
   function handleAccept() {
     setStarting(true);

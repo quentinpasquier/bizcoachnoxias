@@ -20,8 +20,9 @@ import {
   type MinimalSpeechRecognition,
   type SpeechRecognitionEvent,
 } from "@/lib/voice";
-import type { Difficulty, Gender, MessageRow, SessionRow } from "@/lib/supabase/types";
+import type { BlockTarget, Difficulty, Gender, MessageRow, SessionRow } from "@/lib/supabase/types";
 import type { CallStage, DeltaCategory } from "@/lib/prospect-engine";
+import { FlashMissionCard } from "./FlashMissionCard";
 
 // Label court affiché dans le pop éphémère sur la barre CallPipeline.
 // Tient en max ~16 chars pour ne pas casser le layout.
@@ -126,6 +127,22 @@ export function ChatRoom({ session, initialMessages }: Props) {
     lastBlockedText: string | null;
   }>({ blocked: false, reason: "", suggestion: "", lastBlockedText: null });
 
+  // États du Mode 1 "Coaching ciblé" / drill flash. On accumule les
+  // compteurs de deltas par catégorie pour pouvoir cocher les 3 critères
+  // de la mission en temps réel (cf FLASH_BLOCKS[block].criteria). Le
+  // timer démarre sur le premier envoi commercial (pas le mount), pour
+  // que la lecture de la fiche briefing ne pénalise pas le score temps.
+  const isFlash = session.training_mode === "block" && !!session.block_target;
+  const flashBlock = (session.block_target ?? null) as BlockTarget | null;
+  const flashOpener = session.scenario_data?.flash_meta?.opener_text ?? null;
+  const [flashPositive, setFlashPositive] = useState<
+    Partial<Record<DeltaCategory, number>>
+  >({});
+  const [flashNegative, setFlashNegative] = useState<
+    Partial<Record<DeltaCategory, number>>
+  >({});
+  const [flashStartedAt, setFlashStartedAt] = useState<number | null>(null);
+
   const transcriptRef = useRef<HTMLDivElement>(null);
   const hasOpenedRef = useRef(false);
   const recognitionRef = useRef<MinimalSpeechRecognition | null>(null);
@@ -199,6 +216,9 @@ export function ChatRoom({ session, initialMessages }: Props) {
   useEffect(() => {
     if (hasOpenedRef.current) return;
     hasOpenedRef.current = true;
+    // Drill flash : on amorce le timer dès que la fiche live est
+    // affichée (= la session a effectivement commencé pour le commercial).
+    if (isFlash) setFlashStartedAt(Date.now());
     if (initialMessages.length > 0) {
       const lastProspect = [...initialMessages]
         .reverse()
@@ -289,6 +309,18 @@ export function ChatRoom({ session, initialMessages }: Props) {
               : { ...cur, minus: cur.minus + 1 },
         };
       });
+      // Drill flash : on accumule le compteur par catégorie pour cocher
+      // les 3 critères en live (cf FlashMissionCard). Sans catégorie
+      // émise par Claude, le delta ne peut pas matcher un critère
+      // (qui est typé par DeltaCategory), donc on n'incrémente rien.
+      if (isFlash && data.progress.deltaCategory) {
+        const cat = data.progress.deltaCategory;
+        if (data.progress.delta === "+") {
+          setFlashPositive((p) => ({ ...p, [cat]: (p[cat] ?? 0) + 1 }));
+        } else {
+          setFlashNegative((n) => ({ ...n, [cat]: (n[cat] ?? 0) + 1 }));
+        }
+      }
       // Le delta "pop" disparaît après 4s mais le compteur reste
       setTimeout(() => {
         setDeltas((d) => d.filter((x) => x.id !== id));
@@ -886,12 +918,26 @@ export function ChatRoom({ session, initialMessages }: Props) {
       {/* MODE VOIX, prend tout l'espace */}
       {useVoice && (
         <>
-          <div className="flex-1 flex relative">
-            <CallPipeline
-              currentStage={currentStage}
-              stageScores={stageScores}
-              deltas={deltas}
+          {/* Drill flash : la fiche mission live remplace la colonne de
+             progression du cold call. Toute l'attention va sur les 3
+             critères du bloc, l'opener épinglé et le timer cible. */}
+          {isFlash && flashBlock && (
+            <FlashMissionCard
+              block={flashBlock}
+              opener={flashOpener}
+              positiveCounts={flashPositive}
+              negativeCounts={flashNegative}
+              startedAt={flashStartedAt}
             />
+          )}
+          <div className="flex-1 flex relative">
+            {!isFlash && (
+              <CallPipeline
+                currentStage={currentStage}
+                stageScores={stageScores}
+                deltas={deltas}
+              />
+            )}
           <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 gap-8">
             {/* État textuel */}
             <div className="flex items-center gap-3">

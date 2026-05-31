@@ -75,6 +75,8 @@ interface Props {
   preselectedPersonaLabel: string;
   difficulties: DifficultyOption[];
   trainingMode?: "full" | "block" | "embedded";
+  /** Bloc cible pré-sélectionné (cas relance depuis FlashResult). */
+  preselectedBlock?: BlockTarget;
   /** Si défini, ce client est remonté en tête de la liste (raccourci). */
   lastClientId?: string | null;
 }
@@ -85,6 +87,7 @@ export function NewSessionForm({
   preselectedPersonaLabel,
   difficulties,
   trainingMode = "full",
+  preselectedBlock,
   lastClientId = null,
 }: Props) {
   const router = useRouter();
@@ -135,7 +138,9 @@ export function NewSessionForm({
 
   const [gender, setGender] = useState<Gender>("homme");
   const [difficulty, setDifficulty] = useState<Difficulty>("debutant");
-  const [blockTarget, setBlockTarget] = useState<BlockTarget>("brise_glace");
+  const [blockTarget, setBlockTarget] = useState<BlockTarget>(
+    preselectedBlock ?? "brise_glace",
+  );
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [elapsed, setElapsed] = useState(0);

@@ -165,6 +165,15 @@ export interface Scenario {
   current_setting?: string; // où se trouve physiquement le prospect au moment de l'appel
   mood_baseline?: string; // humeur de base au décrochage
   speech_quirks?: string[]; // tics de langage du persona
+  // Métadonnées du drill flash (mode "block" uniquement) : phrase d'amorce
+  // tirée au démarrage et stockée ici pour être reproduite identiquement
+  // sur la fiche flash, comme première réplique prospect en DB, et comme
+  // chip épinglé pendant l'appel.
+  flash_meta?: {
+    opener_id: string;
+    opener_text: string;
+    family?: string;
+  } | null;
 }
 
 export type TrainingMode = "full" | "block" | "embedded";

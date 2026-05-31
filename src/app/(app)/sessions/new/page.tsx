@@ -24,6 +24,7 @@ export default async function NewSessionPage({
     client?: string;
     persona?: string;
     mode?: "full" | "block" | "embedded";
+    block?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -259,6 +260,15 @@ export default async function NewSessionPage({
             description: cfg.description,
           }))}
           trainingMode={trainingMode}
+          preselectedBlock={
+            params.block === "brise_glace" ||
+            params.block === "decouverte" ||
+            params.block === "pitch" ||
+            params.block === "objections" ||
+            params.block === "closing"
+              ? params.block
+              : undefined
+          }
           lastClientId={lastConfig?.clientId ?? null}
         />
         </section>
