@@ -437,24 +437,24 @@ export function ChatRoom({ session, initialMessages }: Props) {
     setCoachThinking(false);
 
     if (!check.proceed) {
-      // Blocage : on incrémente, on affiche la raison, on fait jouer
-      // l'audio coach. Le commercial reformule via le mic ou le textarea.
+      // Blocage. On affiche TOUT dans l'encart gold dès la 1ʳᵉ tentative
+      // (pas seulement à la 3ème) : raison + "La formulation de l'expert".
+      // Pas de TTS : le commercial lit l'encart et reformule, ça évite la
+      // friction d'attendre une voix qui parle pendant qu'il réfléchit.
       setCoachAttempts((a) => a + 1);
       setCoachState({
         blocked: true,
         reason: check.reason,
-        suggestion: "",
+        suggestion: check.suggestion,
         lastBlockedText: text,
       });
-      if (check.reason) {
-        void speakCoach(check.reason);
-      }
       return;
     }
 
     // proceed = true. Si showModel (force_unlock après 3 tentatives),
-    // on joue d'abord la suggestion modèle puis on enchaîne avec le
-    // texte réel du commercial (sa 3e tentative quoi).
+    // on conserve la formulation de l'expert affichée comme référence
+    // pendant que la réponse part au prospect. Sinon (pass propre), on
+    // nettoie l'encart.
     if (check.showModel && check.suggestion) {
       setCoachState({
         blocked: false,
@@ -462,8 +462,6 @@ export function ChatRoom({ session, initialMessages }: Props) {
         suggestion: check.suggestion,
         lastBlockedText: null,
       });
-      const intro = `Voici comment vous auriez pu formuler. ${check.suggestion}`;
-      void speakCoach(intro);
     } else {
       setCoachState({
         blocked: false,
@@ -474,21 +472,6 @@ export function ChatRoom({ session, initialMessages }: Props) {
     }
     setCoachAttempts(0);
     void sendMessage(text);
-  }
-
-  // Wrapper : joue un texte avec la voix coach (Onyx fixe, ton pédagogique).
-  // Fait pause sur l'audio prospect en cours si nécessaire.
-  function speakCoach(text: string) {
-    stopSpeaking();
-    setIsSpeaking(true);
-    void speak({
-      text,
-      gender: "homme",
-      seed: "coach",
-      role: "coach",
-      onEnd: () => setIsSpeaking(false),
-      onError: () => setIsSpeaking(false),
-    });
   }
 
   async function sendMessage(text: string) {
@@ -1174,9 +1157,14 @@ export function ChatRoom({ session, initialMessages }: Props) {
 
           <div className="border-t chatroom-bottombar">
             <div className="container-noxias py-4 max-w-3xl">
-              {/* Panneau coach embarqué : visible uniquement en mode
-                  'embedded' quand le coach est en train d'évaluer ou
-                  qu'il a bloqué la réponse / proposé une formulation. */}
+              {/* Encart coach embarqué (gold). Trois états visuellement
+                  consistants : (1) évaluation en cours, (2) blocage avec
+                  "Ce qui coince" + "La formulation de l'expert" dès la 1ʳᵉ
+                  tentative pour ne pas frustrer (le commercial a tout de
+                  suite la piste de reformulation), (3) après force_unlock,
+                  la formulation reste affichée comme référence pendant que
+                  la réponse part au prospect. Plus de TTS coach : tout
+                  passe par cet encart écrit. */}
               {session.training_mode === "embedded" && coachThinking && (
                 <div className="coach-panel coach-panel-thinking">
                   <div className="coach-panel-eyebrow">Le coach évalue…</div>
@@ -1185,38 +1173,23 @@ export function ChatRoom({ session, initialMessages }: Props) {
               {session.training_mode === "embedded" &&
                 !coachThinking &&
                 coachState.blocked && (
-                  <div className="coach-panel coach-panel-blocked">
-                    <div className="coach-panel-header">
-                      <div className="coach-panel-eyebrow">
-                        Coach · reformulation demandée
-                      </div>
-                      <div className="coach-panel-attempts">
-                        Tentative {coachAttempts}/3
-                      </div>
-                    </div>
-                    <p className="coach-panel-reason">{coachState.reason}</p>
-                    <p className="coach-panel-help">
-                      Reformule ta réponse au micro ou en texte. Au bout de 3
-                      essais, le coach te donnera la formulation modèle.
-                    </p>
-                  </div>
+                  <EmbeddedCoachEncart
+                    reason={coachState.reason}
+                    expertFormulation={coachState.suggestion}
+                    attempt={coachAttempts}
+                    mode="blocked"
+                  />
                 )}
               {session.training_mode === "embedded" &&
                 !coachThinking &&
                 !coachState.blocked &&
                 coachState.suggestion && (
-                  <div className="coach-panel coach-panel-model">
-                    <div className="coach-panel-eyebrow">
-                      Coach · formulation modèle
-                    </div>
-                    <p className="coach-panel-reason">
-                      « {coachState.suggestion} »
-                    </p>
-                    <p className="coach-panel-help">
-                      Le coach vient de te jouer cette formulation. Garde-la
-                      en tête pour la prochaine fois.
-                    </p>
-                  </div>
+                  <EmbeddedCoachEncart
+                    reason={coachState.reason}
+                    expertFormulation={coachState.suggestion}
+                    attempt={3}
+                    mode="unlocked"
+                  />
                 )}
               {error && (
                 <div
@@ -1272,6 +1245,68 @@ export function ChatRoom({ session, initialMessages }: Props) {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// Encart gold "Coach embarqué" : ce que voit le commercial à chaque
+// blocage. Affiche la raison + la formulation de l'expert dès la 1ʳᵉ
+// tentative (pour faire avancer plutôt que frustrer). Texte uniquement,
+// pas de TTS — le commercial lit, intègre, reformule. Le label
+// "La formulation de l'expert" est volontairement constant sur les 3
+// tentatives : la même formulation modèle est ce vers quoi il tend.
+function EmbeddedCoachEncart({
+  reason,
+  expertFormulation,
+  attempt,
+  mode,
+}: {
+  reason: string;
+  expertFormulation: string;
+  attempt: number;
+  mode: "blocked" | "unlocked";
+}) {
+  const remaining = Math.max(0, 3 - attempt);
+  const footer =
+    mode === "unlocked"
+      ? "Le coach a repris la main et envoie cette formulation au prospect. Garde-la en tête pour la prochaine."
+      : attempt >= 3
+        ? "Dernière tentative. Reformule ou le coach reprendra la main et enverra la formulation de l'expert."
+        : `Inspire-toi de la formulation de l'expert ci-dessous et reformule. Il te reste ${remaining} tentative${remaining > 1 ? "s" : ""}.`;
+  return (
+    <div className="coach-encart-gold" role="status" aria-live="polite">
+      <div className="coach-encart-gold-rim" aria-hidden="true" />
+      <div className="coach-encart-gold-head">
+        <span className="coach-encart-gold-tag">
+          <span aria-hidden="true" className="coach-encart-gold-tag-dot" />
+          Coach · Reformulation demandée
+        </span>
+        <span
+          className={`coach-encart-gold-attempt${mode === "unlocked" ? " coach-encart-gold-attempt-final" : ""}`}
+        >
+          {mode === "unlocked" ? "Tentative finale" : `Tentative ${attempt}/3`}
+        </span>
+      </div>
+
+      {reason && (
+        <div className="coach-encart-gold-section">
+          <div className="coach-encart-gold-eyebrow">Ce qui coince</div>
+          <p className="coach-encart-gold-reason">{reason}</p>
+        </div>
+      )}
+
+      {expertFormulation && (
+        <div className="coach-encart-gold-section coach-encart-gold-expert">
+          <div className="coach-encart-gold-eyebrow">
+            La formulation de l&apos;expert
+          </div>
+          <blockquote className="coach-encart-gold-quote">
+            « {expertFormulation} »
+          </blockquote>
+        </div>
+      )}
+
+      <p className="coach-encart-gold-footer">{footer}</p>
     </div>
   );
 }
