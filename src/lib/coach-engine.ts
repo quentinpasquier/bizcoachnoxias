@@ -47,10 +47,26 @@ function truncate(s: string, n: number): string {
 export async function evaluateCoachCheck(
   input: CoachCheckInput,
 ): Promise<CoachCheckResult> {
+  // Garde : le tout premier tour du commercial passe TOUJOURS sans
+  // blocage. C'est la phrase d'accroche, juste après le décrochage
+  // prospect — la bloquer d'entrée frustre le commercial avant même
+  // que l'échange ait pris. Si la 1ʳᵉ phrase est faible, on la laissera
+  // passer et le coach interviendra sur les tours suivants quand le
+  // contexte de l'appel sera installé.
+  const priorUserTurns = input.history.filter((t) => t.role === "user").length;
+  if (priorUserTurns === 0) {
+    return {
+      verdict: "pass",
+      scores: { precision: 5, ecoute: 5, pertinence: 5, professionnalisme: 5 },
+      reason: "",
+      suggestion: "",
+    };
+  }
+
   // Force-unlock automatique : après MAX_ATTEMPTS blocages sur la même
   // réplique, on débloque le pipeline pour ne pas frustrer le commercial,
-  // ET on lui donne la formulation modèle qui sera ensuite jouée à
-  // l'audio par le coach.
+  // ET on lui donne la formulation modèle qui sera ensuite affichée
+  // comme référence dans l'encart gold (plus de TTS).
   if (input.attemptsOnThisReply >= MAX_ATTEMPTS) {
     // On laisse quand même Haiku produire une suggestion (la formulation
     // modèle exemplaire) mais on force le verdict.
@@ -93,7 +109,7 @@ RÈGLE DE BLOCAGE : verdict = "block" si :
 - N'IMPORTE QUEL des 4 scores est strictement inférieur à 6
 - OU une faute grave est présente :
   • Capitulation : "je vous envoie un mail / une plaquette / de la doc" sans contre-proposition de RDV verbal
-  • Baratin : mot vide isolé sans définition concrète ("optimisation", "synergie", "expertise reconnue", "approche disruptive", "accompagnement sur mesure")
+  • Baratin (seuil ÉLEVÉ — uniquement quand l'ensemble est creux) : la réponse repose dominamment sur des mots vides juxtaposés ("synergie", "optimisation", "expertise reconnue", "approche disruptive", "accompagnement sur mesure", "transformation digitale") SANS aucune concretion à côté. UN SEUL mot abstrait dans une phrase qui contient PAR AILLEURS un chiffre, un cas client, un exemple opérationnel, ou une question ancrée sur le métier du prospect ne déclenche PAS Baratin — on ne bloque que si TOUT est creux. En cas de doute, tu laisses passer.
   • Esquive : ne répond PAS à la question/objection que le prospect vient de poser
   • Tutoiement du prospect ("tu", "te", "toi")
   • Réponse trop courte (< 5 mots) qui n'apporte rien

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { CoachScanResult } from "@/lib/coach-scan";
+import type { CoachScanResult, SkillMapEntry } from "@/lib/coach-scan";
 
 // Panneau scan IA pour un commercial donné, intégré dans sa carte
 // /manager. Au montage, vérifie via GET s'il existe un scan récent
@@ -35,6 +35,17 @@ const SKILL_CATEGORY_LABEL: Record<string, string> = {
   objections: "Levée d'objections",
   closing: "Closing",
 };
+
+// Ordre fixe des axes du radar : suit le flow naturel d'un cold call,
+// dans le sens horaire à partir du haut. Label court pour tenir autour
+// du polygone sans déborder.
+const RADAR_AXES: { category: SkillMapEntry["category"]; short: string }[] = [
+  { category: "accroche", short: "Accroche" },
+  { category: "decouverte", short: "Découverte" },
+  { category: "valeur", short: "Pitch" },
+  { category: "objections", short: "Objections" },
+  { category: "closing", short: "Closing" },
+];
 
 const BLOCK_LABEL: Record<string, string> = {
   brise_glace: "Brise-glace",
@@ -228,12 +239,14 @@ function ScanResultView({
         <p className="scan-section-text">{analysis.overall_diagnosis}</p>
       </div>
 
-      {/* 1bis. Cartographie skill : 5 catégories du cold call avec niveau
-         visualisé sous forme de barre horizontale. Lecture instantanée
-         des forces / faiblesses par catégorie. */}
+      {/* 1bis. Cartographie skill : radar à 5 axes pour lire d'un coup
+         d'œil le profil (forces / creux), avec une cible "niveau 7" en
+         filigrane comme seuil "fort". Détail textuel en dessous avec
+         le qualifier et la justification 1-liner par catégorie. */}
       {analysis.skill_map && analysis.skill_map.length > 0 && (
         <div className="scan-section">
           <div className="scan-section-eyebrow">Cartographie skill</div>
+          <SkillRadar entries={analysis.skill_map} />
           <ul className="scan-skill-map">
             {analysis.skill_map.map((s) => (
               <li key={s.category} className="scan-skill-row">
@@ -246,12 +259,6 @@ function ScanResultView({
                   >
                     {s.qualifier} · {s.level}/10
                   </span>
-                </div>
-                <div className="scan-skill-bar">
-                  <div
-                    className={`scan-skill-bar-fill scan-skill-bar-fill-${s.qualifier}`}
-                    style={{ width: `${Math.max(0, Math.min(100, s.level * 10))}%` }}
-                  />
                 </div>
                 <p className="scan-skill-line">{s.one_liner}</p>
               </li>
@@ -395,6 +402,129 @@ function ScanResultView({
       {analysis.encouragement && (
         <div className="scan-encouragement">{analysis.encouragement}</div>
       )}
+    </div>
+  );
+}
+
+// Radar SVG inline : 5 axes (Accroche / Découverte / Pitch / Objections /
+// Closing) avec polygone cible "niveau 7" (seuil "fort") en filigrane et
+// polygone réel coloré. Permet une lecture immédiate du profil de
+// compétence du commercial. Sans dépendance externe, viewBox responsive.
+function SkillRadar({ entries }: { entries: SkillMapEntry[] }) {
+  const byCategory = new Map(entries.map((e) => [e.category, e]));
+  const ordered = RADAR_AXES.map((a) => byCategory.get(a.category));
+  if (ordered.filter(Boolean).length < 3) return null;
+
+  const n = RADAR_AXES.length;
+  const cx = 220;
+  const cy = 210;
+  const maxR = 130;
+  const TARGET_LEVEL = 7;
+
+  const angleFor = (i: number) => ((-90 + i * (360 / n)) * Math.PI) / 180;
+  const pointAt = (i: number, level: number): readonly [number, number] => {
+    const a = angleFor(i);
+    const r = maxR * (level / 10);
+    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  };
+
+  const polyPoints = (level: number) =>
+    Array.from({ length: n }, (_, i) => pointAt(i, level))
+      .map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`)
+      .join(" ");
+
+  const targetPoly = polyPoints(TARGET_LEVEL);
+  const actualPoly = ordered
+    .map((entry, i) => pointAt(i, entry?.level ?? 0))
+    .map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`)
+    .join(" ");
+
+  return (
+    <div className="scan-skill-radar-wrap">
+      <svg
+        viewBox="0 0 440 420"
+        className="scan-skill-radar"
+        role="img"
+        aria-label="Cartographie des compétences cold call"
+      >
+        {[2, 4, 6, 8, 10].map((gl) => (
+          <polygon
+            key={gl}
+            points={polyPoints(gl)}
+            className="scan-skill-radar-grid"
+          />
+        ))}
+        {RADAR_AXES.map((_, i) => {
+          const [x, y] = pointAt(i, 10);
+          return (
+            <line
+              key={i}
+              x1={cx}
+              y1={cy}
+              x2={x}
+              y2={y}
+              className="scan-skill-radar-axis"
+            />
+          );
+        })}
+        <polygon points={targetPoly} className="scan-skill-radar-target" />
+        <polygon points={actualPoly} className="scan-skill-radar-actual" />
+        {ordered.map((entry, i) => {
+          if (!entry) return null;
+          const [x, y] = pointAt(i, entry.level);
+          return (
+            <circle
+              key={i}
+              cx={x}
+              cy={y}
+              r={5}
+              className={`scan-skill-radar-dot scan-skill-radar-dot-${entry.qualifier}`}
+            />
+          );
+        })}
+        {RADAR_AXES.map((axis, i) => {
+          const a = angleFor(i);
+          const r = maxR + 26;
+          const x = cx + r * Math.cos(a);
+          const y = cy + r * Math.sin(a);
+          const cosA = Math.cos(a);
+          const anchor: "start" | "middle" | "end" =
+            cosA > 0.3 ? "start" : cosA < -0.3 ? "end" : "middle";
+          const entry = ordered[i];
+          return (
+            <g key={i}>
+              <text
+                x={x}
+                y={y - 4}
+                textAnchor={anchor}
+                className="scan-skill-radar-label-name"
+              >
+                {axis.short}
+              </text>
+              {entry && (
+                <text
+                  x={x}
+                  y={y + 13}
+                  textAnchor={anchor}
+                  className="scan-skill-radar-label-level"
+                >
+                  {entry.level}/10
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+      <div className="scan-skill-radar-legend">
+        <span className="scan-skill-radar-legend-item">
+          <span className="scan-skill-radar-legend-swatch scan-skill-radar-legend-swatch-actual" />
+          Niveau actuel
+        </span>
+        <span className="scan-skill-radar-legend-item">
+          <span className="scan-skill-radar-legend-swatch scan-skill-radar-legend-swatch-target" />
+          Cible 7/10
+        </span>
+      </div>
     </div>
   );
 }

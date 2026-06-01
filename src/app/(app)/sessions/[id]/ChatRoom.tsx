@@ -20,8 +20,9 @@ import {
   type MinimalSpeechRecognition,
   type SpeechRecognitionEvent,
 } from "@/lib/voice";
-import type { Difficulty, Gender, MessageRow, SessionRow } from "@/lib/supabase/types";
+import type { BlockTarget, Difficulty, Gender, MessageRow, SessionRow } from "@/lib/supabase/types";
 import type { CallStage, DeltaCategory } from "@/lib/prospect-engine";
+import { FlashMissionCard } from "./FlashMissionCard";
 
 // Label court affiché dans le pop éphémère sur la barre CallPipeline.
 // Tient en max ~16 chars pour ne pas casser le layout.
@@ -69,11 +70,22 @@ interface Props {
   initialMessages: MessageRow[];
 }
 
-interface DisplayMessage {
-  id: string;
-  role: "user" | "prospect" | "system";
-  content: string;
-}
+// Messages affichés dans le transcript. Les 3 rôles classiques (user /
+// prospect / system) portent un texte. Le 4ème rôle "coach" est utilisé
+// uniquement en mode embarqué : il s'insère INLINE dans le transcript
+// juste après la réplique commerciale qui a déclenché le blocage, avec
+// la même mise en forme que l'encart gold. Pas de TTS sur ces lignes,
+// elles sont strictement visuelles.
+type DisplayMessage =
+  | { id: string; role: "user" | "prospect" | "system"; content: string }
+  | {
+      id: string;
+      role: "coach";
+      reason: string;
+      expertFormulation: string;
+      attempt: number;
+      mode: "blocked" | "unlocked";
+    };
 
 export function ChatRoom({ session, initialMessages }: Props) {
   const router = useRouter();
@@ -115,16 +127,29 @@ export function ChatRoom({ session, initialMessages }: Props) {
 
   // États du Mode 2 "Coaching embarqué". coachAttempts compte les
   // reformulations sur LA réplique en cours (reset après chaque envoi
-  // accepté). coachState porte le panneau d'explication affiché quand
-  // bloqué. coachThinking : true pendant l'appel à /coach-check.
+  // accepté), envoyé au serveur comme attemptsOnThisReply. coachThinking
+  // : indicateur "Coach évalue…" pendant l'appel à /coach-check. Les
+  // retours détaillés (raison + formulation de l'expert) ne vivent plus
+  // dans un state local : ils sont poussés directement comme messages
+  // role:"coach" dans le transcript, juste après la tentative bloquée.
   const [coachAttempts, setCoachAttempts] = useState(0);
   const [coachThinking, setCoachThinking] = useState(false);
-  const [coachState, setCoachState] = useState<{
-    blocked: boolean;
-    reason: string;
-    suggestion: string;
-    lastBlockedText: string | null;
-  }>({ blocked: false, reason: "", suggestion: "", lastBlockedText: null });
+
+  // États du Mode 1 "Coaching ciblé" / drill flash. On accumule les
+  // compteurs de deltas par catégorie pour pouvoir cocher les 3 critères
+  // de la mission en temps réel (cf FLASH_BLOCKS[block].criteria). Le
+  // timer démarre sur le premier envoi commercial (pas le mount), pour
+  // que la lecture de la fiche briefing ne pénalise pas le score temps.
+  const isFlash = session.training_mode === "block" && !!session.block_target;
+  const flashBlock = (session.block_target ?? null) as BlockTarget | null;
+  const flashOpener = session.scenario_data?.flash_meta?.opener_text ?? null;
+  const [flashPositive, setFlashPositive] = useState<
+    Partial<Record<DeltaCategory, number>>
+  >({});
+  const [flashNegative, setFlashNegative] = useState<
+    Partial<Record<DeltaCategory, number>>
+  >({});
+  const [flashStartedAt, setFlashStartedAt] = useState<number | null>(null);
 
   const transcriptRef = useRef<HTMLDivElement>(null);
   const hasOpenedRef = useRef(false);
@@ -199,6 +224,9 @@ export function ChatRoom({ session, initialMessages }: Props) {
   useEffect(() => {
     if (hasOpenedRef.current) return;
     hasOpenedRef.current = true;
+    // Drill flash : on amorce le timer dès que la fiche live est
+    // affichée (= la session a effectivement commencé pour le commercial).
+    if (isFlash) setFlashStartedAt(Date.now());
     if (initialMessages.length > 0) {
       const lastProspect = [...initialMessages]
         .reverse()
@@ -289,6 +317,18 @@ export function ChatRoom({ session, initialMessages }: Props) {
               : { ...cur, minus: cur.minus + 1 },
         };
       });
+      // Drill flash : on accumule le compteur par catégorie pour cocher
+      // les 3 critères en live (cf FlashMissionCard). Sans catégorie
+      // émise par Claude, le delta ne peut pas matcher un critère
+      // (qui est typé par DeltaCategory), donc on n'incrémente rien.
+      if (isFlash && data.progress.deltaCategory) {
+        const cat = data.progress.deltaCategory;
+        if (data.progress.delta === "+") {
+          setFlashPositive((p) => ({ ...p, [cat]: (p[cat] ?? 0) + 1 }));
+        } else {
+          setFlashNegative((n) => ({ ...n, [cat]: (n[cat] ?? 0) + 1 }));
+        }
+      }
       // Le delta "pop" disparaît après 4s mais le compteur reste
       setTimeout(() => {
         setDeltas((d) => d.filter((x) => x.id !== id));
@@ -405,58 +445,57 @@ export function ChatRoom({ session, initialMessages }: Props) {
     setCoachThinking(false);
 
     if (!check.proceed) {
-      // Blocage : on incrémente, on affiche la raison, on fait jouer
-      // l'audio coach. Le commercial reformule via le mic ou le textarea.
-      setCoachAttempts((a) => a + 1);
-      setCoachState({
-        blocked: true,
-        reason: check.reason,
-        suggestion: "",
-        lastBlockedText: text,
-      });
-      if (check.reason) {
-        void speakCoach(check.reason);
-      }
+      // Blocage. On INJECTE inline dans le transcript : la tentative du
+      // commercial + l'encart coach gold avec raison et formulation de
+      // l'expert, dès la 1ʳᵉ tentative. Pas de TTS. Le commercial voit
+      // d'un coup d'œil son geste et le retour, peut scroller pour
+      // comparer ses essais successifs, et reformule dans la zone de
+      // saisie ci-dessous.
+      const nextAttempt = coachAttempts + 1;
+      setCoachAttempts(nextAttempt);
+      const tsKey = Date.now();
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `attempt-${nextAttempt}-user-${tsKey}`,
+          role: "user",
+          content: text.trim(),
+        },
+        {
+          id: `attempt-${nextAttempt}-coach-${tsKey}`,
+          role: "coach",
+          reason: check.reason,
+          expertFormulation: check.suggestion,
+          attempt: nextAttempt,
+          mode: "blocked",
+        },
+      ]);
+      // On vide le draft pour que le commercial reparte d'une zone propre.
+      setDraft("");
       return;
     }
 
-    // proceed = true. Si showModel (force_unlock après 3 tentatives),
-    // on joue d'abord la suggestion modèle puis on enchaîne avec le
-    // texte réel du commercial (sa 3e tentative quoi).
+    // proceed = true. On délègue à sendMessage qui pousse l'optimistic
+    // commercial et déclenche l'appel API. Si showModel (force_unlock à
+    // la 4e tentative), on append l'encart coach inline JUSTE APRÈS,
+    // pour qu'il apparaisse entre la réplique commerciale et la réponse
+    // prospect dans le fil du transcript.
+    void sendMessage(text);
     if (check.showModel && check.suggestion) {
-      setCoachState({
-        blocked: false,
-        reason: check.reason,
-        suggestion: check.suggestion,
-        lastBlockedText: null,
-      });
-      const intro = `Voici comment vous auriez pu formuler. ${check.suggestion}`;
-      void speakCoach(intro);
-    } else {
-      setCoachState({
-        blocked: false,
-        reason: "",
-        suggestion: "",
-        lastBlockedText: null,
-      });
+      const tsKey = Date.now();
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `force-coach-${tsKey}`,
+          role: "coach",
+          reason: check.reason,
+          expertFormulation: check.suggestion,
+          attempt: 3,
+          mode: "unlocked",
+        },
+      ]);
     }
     setCoachAttempts(0);
-    void sendMessage(text);
-  }
-
-  // Wrapper : joue un texte avec la voix coach (Onyx fixe, ton pédagogique).
-  // Fait pause sur l'audio prospect en cours si nécessaire.
-  function speakCoach(text: string) {
-    stopSpeaking();
-    setIsSpeaking(true);
-    void speak({
-      text,
-      gender: "homme",
-      seed: "coach",
-      role: "coach",
-      onEnd: () => setIsSpeaking(false),
-      onError: () => setIsSpeaking(false),
-    });
   }
 
   async function sendMessage(text: string) {
@@ -751,8 +790,13 @@ export function ChatRoom({ session, initialMessages }: Props) {
   }
 
   function replayProspect() {
-    const lastProspect = [...messages].reverse().find((m) => m.role === "prospect");
-    if (lastProspect) void playProspectAudio(lastProspect.content);
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i]!;
+      if (m.role === "prospect") {
+        void playProspectAudio(m.content);
+        return;
+      }
+    }
   }
 
   const stateLabel = isSpeaking
@@ -886,12 +930,26 @@ export function ChatRoom({ session, initialMessages }: Props) {
       {/* MODE VOIX, prend tout l'espace */}
       {useVoice && (
         <>
-          <div className="flex-1 flex relative">
-            <CallPipeline
-              currentStage={currentStage}
-              stageScores={stageScores}
-              deltas={deltas}
+          {/* Drill flash : la fiche mission live remplace la colonne de
+             progression du cold call. Toute l'attention va sur les 3
+             critères du bloc, l'opener épinglé et le timer cible. */}
+          {isFlash && flashBlock && (
+            <FlashMissionCard
+              block={flashBlock}
+              opener={flashOpener}
+              positiveCounts={flashPositive}
+              negativeCounts={flashNegative}
+              startedAt={flashStartedAt}
             />
+          )}
+          <div className="flex-1 flex relative">
+            {!isFlash && (
+              <CallPipeline
+                currentStage={currentStage}
+                stageScores={stageScores}
+                deltas={deltas}
+              />
+            )}
           <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 gap-8">
             {/* État textuel */}
             <div className="flex items-center gap-3">
@@ -1041,11 +1099,19 @@ export function ChatRoom({ session, initialMessages }: Props) {
             )}
           </div>
 
-          {/* Transcript collapsible */}
+          {/* Transcript : par défaut replié pour ne pas distraire de
+             l'orbe central + mic. Sauf en mode embarqué où le coach
+             intervient inline dans ce transcript : on l'ouvre
+             automatiquement pour que les retours coach soient visibles
+             sans avoir à cliquer. Hauteur élargie aussi en embarqué
+             pour qu'on lise confortablement les encarts gold. */}
           <div
             className="border-t chatroom-bottombar"
           >
-            <details className="container-noxias py-3">
+            <details
+              className="container-noxias py-3"
+              open={session.training_mode === "embedded"}
+            >
               <summary
                 className="text-meta uppercase tracking-widest cursor-pointer flex items-center gap-2 select-none"
                 style={{ color: "rgba(255, 255, 255, 0.65)" }}
@@ -1054,10 +1120,21 @@ export function ChatRoom({ session, initialMessages }: Props) {
                 <span className="badge" style={{ background: "var(--color-lavender)", color: "#b495ff" }}>
                   {messages.filter((m) => m.role !== "system").length}
                 </span>
+                {session.training_mode === "embedded" && (
+                  <span
+                    className="text-meta"
+                    style={{
+                      color: "rgba(247, 192, 65, 0.75)",
+                      letterSpacing: "0.06em",
+                    }}
+                  >
+                    · les retours du coach s&apos;affichent ici
+                  </span>
+                )}
               </summary>
               <div
                 ref={transcriptRef}
-                className="mt-3 max-h-[260px] overflow-y-auto space-y-2 pr-2"
+                className={`mt-3 overflow-y-auto space-y-2 pr-2 ${session.training_mode === "embedded" ? "max-h-[460px]" : "max-h-[260px]"}`}
               >
                 {messages.map((m) => (
                   <TranscriptLine key={m.id} message={m} />
@@ -1128,50 +1205,18 @@ export function ChatRoom({ session, initialMessages }: Props) {
 
           <div className="border-t chatroom-bottombar">
             <div className="container-noxias py-4 max-w-3xl">
-              {/* Panneau coach embarqué : visible uniquement en mode
-                  'embedded' quand le coach est en train d'évaluer ou
-                  qu'il a bloqué la réponse / proposé une formulation. */}
+              {/* Coach embarqué en mode embarqué : les retours détaillés
+                  (raison + formulation de l'expert) sont maintenant inline
+                  dans le transcript juste après la réplique commerciale
+                  qui a déclenché le blocage. Ici on ne garde que le tout
+                  petit indicateur "Coach évalue…" pendant le call API,
+                  pour que le commercial sache qu'il y a une analyse en
+                  cours et qu'il n'a pas à renvoyer son texte. */}
               {session.training_mode === "embedded" && coachThinking && (
                 <div className="coach-panel coach-panel-thinking">
                   <div className="coach-panel-eyebrow">Le coach évalue…</div>
                 </div>
               )}
-              {session.training_mode === "embedded" &&
-                !coachThinking &&
-                coachState.blocked && (
-                  <div className="coach-panel coach-panel-blocked">
-                    <div className="coach-panel-header">
-                      <div className="coach-panel-eyebrow">
-                        Coach · reformulation demandée
-                      </div>
-                      <div className="coach-panel-attempts">
-                        Tentative {coachAttempts}/3
-                      </div>
-                    </div>
-                    <p className="coach-panel-reason">{coachState.reason}</p>
-                    <p className="coach-panel-help">
-                      Reformule ta réponse au micro ou en texte. Au bout de 3
-                      essais, le coach te donnera la formulation modèle.
-                    </p>
-                  </div>
-                )}
-              {session.training_mode === "embedded" &&
-                !coachThinking &&
-                !coachState.blocked &&
-                coachState.suggestion && (
-                  <div className="coach-panel coach-panel-model">
-                    <div className="coach-panel-eyebrow">
-                      Coach · formulation modèle
-                    </div>
-                    <p className="coach-panel-reason">
-                      « {coachState.suggestion} »
-                    </p>
-                    <p className="coach-panel-help">
-                      Le coach vient de te jouer cette formulation. Garde-la
-                      en tête pour la prochaine fois.
-                    </p>
-                  </div>
-                )}
               {error && (
                 <div
                   className="rounded-md px-3 py-2 text-small mb-3"
@@ -1225,6 +1270,63 @@ export function ChatRoom({ session, initialMessages }: Props) {
             </div>
           </div>
         </>
+      )}
+    </div>
+  );
+}
+
+// Encart gold "Coach" affiché INLINE dans le transcript (mode embarqué).
+// Apparaît juste après la réplique commerciale qui a déclenché le
+// blocage, avec : tag "COACH · TENTATIVE X/3", raison du blocage, et
+// "La formulation de l'expert" dès la 1ʳᵉ tentative (pas seulement à la
+// 3ème). Texte pur, jamais vocalisé. Utilisé à la fois dans le
+// transcript voice mode (TranscriptLine) et dans la liste text mode
+// (Bubble). Largeur contenue à 80% pour s'aligner sur les bulles
+// classiques côté gauche du transcript.
+type CoachMessage = Extract<DisplayMessage, { role: "coach" }>;
+
+function CoachInlineBubble({ msg }: { msg: CoachMessage }) {
+  return (
+    <div className="flex justify-start animate-fade-in">
+      <CoachInlineBlock msg={msg} variant="bubble" />
+    </div>
+  );
+}
+
+function CoachInlineLine({ msg }: { msg: CoachMessage }) {
+  return <CoachInlineBlock msg={msg} variant="line" />;
+}
+
+function CoachInlineBlock({
+  msg,
+  variant,
+}: {
+  msg: CoachMessage;
+  variant: "bubble" | "line";
+}) {
+  const tagText =
+    msg.mode === "unlocked" ? "TENTATIVE FINALE" : `TENTATIVE ${msg.attempt}/3`;
+  return (
+    <div
+      className={`coach-inline coach-inline-${variant}`}
+      role="status"
+      aria-live="polite"
+    >
+      <div className="coach-inline-tag">
+        <span className="coach-inline-tag-strong">COACH</span>
+        <span className="coach-inline-tag-sep">·</span>
+        <span>{tagText}</span>
+      </div>
+      {msg.reason && <p className="coach-inline-reason">{msg.reason}</p>}
+      {msg.expertFormulation && (
+        <div className="coach-inline-expert">
+          <div className="coach-inline-expert-label">
+            La formulation de l&apos;expert
+          </div>
+          <blockquote className="coach-inline-expert-quote">
+            « {msg.expertFormulation} »
+          </blockquote>
+        </div>
       )}
     </div>
   );
@@ -1325,6 +1427,9 @@ function TranscriptLine({ message }: { message: DisplayMessage }) {
       </div>
     );
   }
+  if (message.role === "coach") {
+    return <CoachInlineLine msg={message} />;
+  }
   const isUser = message.role === "user";
   return (
     <div className="text-small flex gap-3">
@@ -1358,6 +1463,9 @@ function Bubble({ message }: { message: DisplayMessage }) {
         </div>
       </div>
     );
+  }
+  if (message.role === "coach") {
+    return <CoachInlineBubble msg={message} />;
   }
 
   const isUser = message.role === "user";

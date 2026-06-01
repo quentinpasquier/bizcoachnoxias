@@ -2870,6 +2870,88 @@
   100% { opacity: 1; transform: translateY(0); }
 }
 
+/* --- Coach inline (mode embarqué) ---
+   Encart gold injecté DANS le transcript, juste après la tentative
+   bloquée du commercial. Deux variantes :
+   - `coach-inline-bubble` : pour le mode TEXTE (bulles), aligné à
+     gauche, max-width 80%, mêmes proportions que les bulles prospect.
+   - `coach-inline-line` : pour le mode VOIX (transcript condensé),
+     pleine largeur, padding réduit, pour rester compact dans le
+     panneau dépliant en bas. */
+.coach-inline {
+  position: relative;
+  border-radius: 14px;
+  border: 1.5px solid rgba(247, 192, 65, 0.55);
+  background: linear-gradient(140deg,
+    rgba(247, 192, 65, 0.14) 0%,
+    rgba(245, 165, 36, 0.06) 60%,
+    rgba(34, 25, 50, 0.55) 100%);
+  box-shadow:
+    0 8px 22px rgba(245, 165, 36, 0.10),
+    inset 0 1px 0 rgba(247, 192, 65, 0.16);
+  animation: coachPanelFade 0.3s ease-out;
+  overflow: hidden;
+}
+.coach-inline-bubble {
+  padding: 14px 18px 12px;
+  max-width: 82%;
+  margin-top: 4px;
+}
+.coach-inline-line {
+  padding: 10px 14px 10px;
+  margin: 6px 0;
+}
+.coach-inline-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #F7C041;
+  margin-bottom: 8px;
+}
+.coach-inline-tag-strong {
+  font-weight: 800;
+}
+.coach-inline-tag-sep {
+  opacity: 0.55;
+}
+.coach-inline-reason {
+  margin: 0;
+  color: #FFFFFF;
+  font-size: 0.96rem;
+  line-height: 1.5;
+}
+.coach-inline-expert {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: rgba(247, 192, 65, 0.10);
+  border-left: 3px solid #F7C041;
+}
+.coach-inline-expert-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #F7C041;
+  margin-bottom: 4px;
+}
+.coach-inline-expert-quote {
+  margin: 0;
+  color: #FFFFFF;
+  font-size: 0.96rem;
+  line-height: 1.5;
+  font-style: italic;
+  font-weight: 500;
+}
+.coach-inline-line .coach-inline-reason,
+.coach-inline-line .coach-inline-expert-quote { font-size: 0.88rem; }
+.coach-inline-line .coach-inline-tag { margin-bottom: 4px; }
+.coach-inline-line .coach-inline-expert { margin-top: 6px; padding: 8px 10px; }
+
 /* ============================================================
    Thématisation par mode d'entraînement.
    Pose une classe .training-theme-X sur le container racine d'une
@@ -3325,6 +3407,89 @@
   font-size: 0.82rem;
   color: rgba(255, 255, 255, 0.66);
   line-height: 1.4;
+}
+
+/* Radar SVG : cartographie compétences pentagonale + cible 7/10 */
+.scan-skill-radar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 6px 0 18px;
+  gap: 8px;
+}
+.scan-skill-radar {
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+  display: block;
+}
+.scan-skill-radar-grid {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.07);
+  stroke-width: 1;
+}
+.scan-skill-radar-axis {
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 1;
+}
+.scan-skill-radar-target {
+  fill: rgba(255, 255, 255, 0.05);
+  stroke: rgba(255, 255, 255, 0.32);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  stroke-linejoin: round;
+}
+.scan-skill-radar-actual {
+  fill: rgba(60, 200, 121, 0.22);
+  stroke: var(--color-green, #3CC879);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.scan-skill-radar-dot {
+  stroke: #1a1330;
+  stroke-width: 2;
+}
+.scan-skill-radar-dot-fort { fill: var(--color-green, #3CC879); }
+.scan-skill-radar-dot-moyen { fill: var(--color-warning, #F5A524); }
+.scan-skill-radar-dot-faible { fill: #E94B4B; }
+.scan-skill-radar-label-name {
+  fill: rgba(255, 255, 255, 0.92);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.scan-skill-radar-label-level {
+  fill: rgba(255, 255, 255, 0.55);
+  font-size: 11px;
+  font-weight: 600;
+}
+.scan-skill-radar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.02em;
+}
+.scan-skill-radar-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.scan-skill-radar-legend-swatch {
+  display: inline-block;
+  width: 16px;
+  height: 8px;
+  border-radius: 2px;
+}
+.scan-skill-radar-legend-swatch-actual {
+  background: rgba(60, 200, 121, 0.4);
+  border: 1px solid var(--color-green, #3CC879);
+}
+.scan-skill-radar-legend-swatch-target {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px dashed rgba(255, 255, 255, 0.5);
 }
 
 /* Points perdus : moments précis avec coût estimé */
@@ -4067,6 +4232,7 @@ a.training-stepper-step-link:hover {
 }
 
 .training-mode-rich-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   border-radius: 18px;
@@ -4077,6 +4243,110 @@ a.training-stepper-step-link:hover {
 }
 .training-mode-rich-card:hover {
   transform: translateY(-3px);
+}
+
+/* Badge "BETA TEST" en coin haut-droit sur les modes en bêta interne.
+   Gold pulsant pour signaler "fonctionnalité testée, accès restreint". */
+.training-mode-beta-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(247, 192, 65, 0.22) 0%, rgba(245, 165, 36, 0.16) 100%);
+  border: 1px solid rgba(247, 192, 65, 0.55);
+  color: #F7C041;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(245, 165, 36, 0.18);
+}
+.training-mode-beta-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #F7C041;
+  box-shadow: 0 0 0 0 rgba(247, 192, 65, 0.55);
+  animation: trainingModeBetaPulse 2.4s ease-out infinite;
+}
+@keyframes trainingModeBetaPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(247, 192, 65, 0.55); }
+  60%  { box-shadow: 0 0 0 8px rgba(247, 192, 65, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(247, 192, 65, 0); }
+}
+
+/* Badge "EN DÉVELOPPEMENT" : remplace BETA TEST quand l'utilisateur
+   n'a pas accès (commercial). Visuel gris franc, sans pulse — signale
+   "indisponible" plutôt que "en test, peut-être pour toi". */
+.training-mode-dev-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Carte verrouillée (mode bêta, utilisateur non manager) : entièrement
+   désactivée. Filtre grisaille + opacité réduite + pointer-events
+   coupés sur le contenu pour qu'aucun accordéon ne s'ouvre et qu'aucun
+   hover ne suggère un clic possible. Le badge EN DÉVELOPPEMENT et le
+   bloc final restent lisibles mais sans interaction. */
+.training-mode-rich-card-locked {
+  opacity: 0.62;
+  filter: grayscale(0.55) brightness(0.92);
+  cursor: not-allowed;
+}
+.training-mode-rich-card-locked:hover {
+  transform: none;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.training-mode-rich-card-locked .training-mode-rich-visual,
+.training-mode-rich-card-locked .training-mode-rich-body {
+  pointer-events: none;
+  user-select: none;
+}
+.training-mode-rich-card-locked .training-mode-dev-badge {
+  pointer-events: auto;
+  opacity: 1.6; /* compense la baisse globale d'opacité pour rester lisible */
+  filter: grayscale(0);
+}
+.training-mode-rich-locked {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  margin-top: auto;
+}
+.training-mode-rich-locked-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+.training-mode-rich-locked-title {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+@media (prefers-reduced-motion: reduce) {
+  .training-mode-beta-dot { animation: none; }
 }
 .training-mode-rich-card-green:hover {
   border-color: rgba(60, 200, 121, 0.55);
@@ -4624,4 +4894,501 @@ a.training-stepper-step-link:hover {
 
 @media (prefers-reduced-motion: reduce) {
   .mission-blob { animation: none !important; }
+}
+
+/* =============================================================
+   DRILL FLASH (mode "Coaching ciblé" / bloc par bloc)
+   Fiche briefing compacte, sticky mission card pendant l'appel,
+   écran de résultat punchy avec relances. Uniquement activé
+   quand session.training_mode === "block".
+   ============================================================= */
+
+/* Tag rond commun (briefing + result + mission card) */
+.flash-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.flash-tag-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+/* --- Briefing flash : carte unique tient en 1 écran --- */
+.flash-briefing-card {
+  border-radius: 24px;
+  background: linear-gradient(150deg,
+    rgba(34, 25, 50, 0.78) 0%,
+    rgba(20, 14, 36, 0.85) 100%);
+  border: 1px solid;
+  padding: 28px 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+}
+.flash-briefing-eyebrow {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.flash-briefing-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.07);
+}
+.flash-briefing-context-line {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.45;
+  margin: 0;
+}
+.flash-briefing-target {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 6px 0 0;
+}
+.flash-briefing-mission-text {
+  font-size: 1.15rem;
+  color: #FFFFFF;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0;
+}
+.flash-briefing-criteria-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.flash-briefing-criterion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.flash-briefing-criterion-bullet {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.flash-briefing-criterion-label {
+  font-size: 0.94rem;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.4;
+}
+.flash-briefing-opener-quote {
+  margin: 6px 0 8px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid rgba(255, 255, 255, 0.35);
+  font-size: 1.05rem;
+  color: #FFFFFF;
+  line-height: 1.5;
+  font-style: italic;
+}
+.flash-briefing-opener-hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.4;
+}
+.flash-briefing-cta {
+  width: 100%;
+  padding: 18px 24px;
+  border-radius: 16px;
+  color: #FFFFFF;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.flash-briefing-cta:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+.flash-briefing-cta:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* --- Carte mission sticky pendant l'appel --- */
+.flash-mission-card {
+  margin: 14px auto 0;
+  width: calc(100% - 32px);
+  max-width: 1024px;
+  padding: 16px 18px 14px;
+  border-radius: 16px;
+  background: linear-gradient(150deg,
+    rgba(34, 25, 50, 0.85) 0%,
+    rgba(20, 14, 36, 0.92) 100%);
+  border: 1px solid;
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+.flash-mission-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.flash-mission-head-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+}
+.flash-mission-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+.flash-mission-objective {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.35;
+  font-weight: 600;
+}
+.flash-mission-head-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1;
+}
+.flash-mission-score {
+  font-family: var(--font-ubuntu), Lato, sans-serif;
+  display: inline-flex;
+  align-items: baseline;
+}
+.flash-mission-score-num {
+  font-size: 2rem;
+  font-weight: 800;
+}
+.flash-mission-score-denom {
+  font-size: 1rem;
+  opacity: 0.6;
+  margin-left: 1px;
+}
+.flash-mission-score-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.flash-mission-opener {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+.flash-mission-opener-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+}
+.flash-mission-opener-text {
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.35;
+}
+.flash-mission-timer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.flash-mission-timer-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.7rem;
+}
+.flash-mission-timer-label {
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.05em;
+}
+.flash-mission-timer-value {
+  font-family: var(--font-ubuntu), Lato, sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+}
+.flash-mission-timer-bar {
+  position: relative;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.flash-mission-timer-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+.flash-mission-timer-zone-target {
+  background: rgba(60, 200, 121, 0.12);
+}
+.flash-mission-timer-zone-warn {
+  background: rgba(245, 165, 36, 0.10);
+}
+.flash-mission-timer-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 999px;
+  transition: width 0.5s linear, background 0.3s ease;
+}
+.flash-mission-criteria {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.flash-mission-criterion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 5px 8px;
+  border-radius: 999px;
+  border: 1px solid;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.flash-mission-criterion-pending {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.65);
+}
+.flash-mission-criterion-ok {
+  background: rgba(60, 200, 121, 0.16);
+  border-color: rgba(60, 200, 121, 0.55);
+  color: var(--color-green);
+}
+.flash-mission-criterion-fail {
+  background: rgba(233, 75, 75, 0.16);
+  border-color: rgba(233, 75, 75, 0.55);
+  color: #FFB4B4;
+}
+.flash-mission-criterion-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* --- Écran de résultat du drill flash --- */
+.flash-result-criteria {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.flash-result-criterion {
+  border-radius: 16px;
+  padding: 18px 20px;
+  border: 1px solid;
+  background: linear-gradient(140deg,
+    rgba(34, 25, 50, 0.55) 0%,
+    rgba(20, 14, 36, 0.65) 100%);
+}
+.flash-result-criterion-ok {
+  /* border color overridden inline avec l'accent du bloc */
+  background: linear-gradient(140deg,
+    rgba(60, 200, 121, 0.08) 0%,
+    rgba(20, 14, 36, 0.65) 100%);
+}
+.flash-result-criterion-fail {
+  border-color: rgba(233, 75, 75, 0.45);
+  background: linear-gradient(140deg,
+    rgba(233, 75, 75, 0.10) 0%,
+    rgba(20, 14, 36, 0.65) 100%);
+}
+.flash-result-criterion-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.flash-result-criterion-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.flash-result-criterion-icon-ok {
+  background: var(--color-green);
+  color: var(--color-dark);
+}
+.flash-result-criterion-icon-fail {
+  background: rgba(233, 75, 75, 0.18);
+  color: #FFB4B4;
+  border: 1px solid rgba(233, 75, 75, 0.55);
+}
+.flash-result-criterion-label {
+  font-size: 0.98rem;
+  color: #FFFFFF;
+  font-weight: 600;
+  flex: 1 1 auto;
+}
+.flash-result-criterion-count {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 3px 9px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+}
+.flash-result-criterion-count-bad {
+  color: #FFB4B4;
+  background: rgba(233, 75, 75, 0.12);
+}
+.flash-result-criterion-quote {
+  margin: 10px 0 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.88);
+}
+.flash-result-criterion-quote-ok {
+  background: rgba(60, 200, 121, 0.08);
+  border-left: 3px solid rgba(60, 200, 121, 0.55);
+}
+.flash-result-criterion-quote-fail {
+  background: rgba(233, 75, 75, 0.08);
+  border-left: 3px solid rgba(233, 75, 75, 0.45);
+}
+
+/* Cartes de relance */
+.flash-result-relance {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.flash-result-relance-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.flash-result-relance-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+.flash-result-relance-card-outline {
+  background: rgba(255, 255, 255, 0.03);
+}
+.flash-result-relance-label {
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.flash-result-relance-hint {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.02em;
+}
+
+/* Transcript repliable */
+.flash-result-transcript {
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 14px 18px;
+}
+.flash-result-transcript summary {
+  cursor: pointer;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  user-select: none;
+}
+.flash-result-transcript-list {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.flash-result-transcript-line {
+  display: flex;
+  gap: 12px;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+.flash-result-transcript-role {
+  flex-shrink: 0;
+  width: 70px;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.flash-result-transcript-line-user .flash-result-transcript-role {
+  color: var(--color-green);
+}
+.flash-result-transcript-line-prospect .flash-result-transcript-role {
+  color: var(--color-purple);
+}
+.flash-result-transcript-line-system {
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+@media (max-width: 640px) {
+  .flash-mission-head-right { flex-direction: row; gap: 6px; align-items: baseline; }
+  .flash-mission-objective { font-size: 0.82rem; }
 }
