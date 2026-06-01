@@ -4280,45 +4280,70 @@ a.training-stepper-step-link:hover {
   100% { box-shadow: 0 0 0 0 rgba(247, 192, 65, 0); }
 }
 
-/* Carte verrouillée (mode bêta, utilisateur non manager) : visuel
-   désaturé + bloc explicatif à la place du CTA. */
+/* Badge "EN DÉVELOPPEMENT" : remplace BETA TEST quand l'utilisateur
+   n'a pas accès (commercial). Visuel gris franc, sans pulse — signale
+   "indisponible" plutôt que "en test, peut-être pour toi". */
+.training-mode-dev-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Carte verrouillée (mode bêta, utilisateur non manager) : entièrement
+   désactivée. Filtre grisaille + opacité réduite + pointer-events
+   coupés sur le contenu pour qu'aucun accordéon ne s'ouvre et qu'aucun
+   hover ne suggère un clic possible. Le badge EN DÉVELOPPEMENT et le
+   bloc final restent lisibles mais sans interaction. */
 .training-mode-rich-card-locked {
-  opacity: 0.86;
+  opacity: 0.62;
+  filter: grayscale(0.55) brightness(0.92);
+  cursor: not-allowed;
 }
 .training-mode-rich-card-locked:hover {
   transform: none;
+  border-color: rgba(255, 255, 255, 0.08);
 }
-.training-mode-rich-card-locked .training-mode-rich-visual {
-  filter: saturate(0.5) brightness(0.85);
+.training-mode-rich-card-locked .training-mode-rich-visual,
+.training-mode-rich-card-locked .training-mode-rich-body {
+  pointer-events: none;
+  user-select: none;
+}
+.training-mode-rich-card-locked .training-mode-dev-badge {
+  pointer-events: auto;
+  opacity: 1.6; /* compense la baisse globale d'opacité pour rester lisible */
+  filter: grayscale(0);
 }
 .training-mode-rich-locked {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 18px;
   border-radius: 12px;
-  background: rgba(247, 192, 65, 0.08);
-  border: 1px dashed rgba(247, 192, 65, 0.45);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.25);
   margin-top: auto;
 }
 .training-mode-rich-locked-icon {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   line-height: 1;
-  flex-shrink: 0;
-  margin-top: 2px;
 }
 .training-mode-rich-locked-title {
-  color: #F7C041;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  margin-bottom: 4px;
-}
-.training-mode-rich-locked-text {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.82);
   font-size: 0.78rem;
-  line-height: 1.45;
-  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 @media (prefers-reduced-motion: reduce) {
   .training-mode-beta-dot { animation: none; }

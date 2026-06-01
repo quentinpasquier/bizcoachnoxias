@@ -172,13 +172,21 @@ function ModeRichCard({
     <article
       className={`training-mode-rich-card training-mode-rich-card-${mode.accent}${locked ? " training-mode-rich-card-locked" : ""}`}
     >
-      {mode.beta && (
+      {mode.beta && !locked && (
         <div
           className="training-mode-beta-badge"
           aria-label="Mode en bêta test interne"
         >
           <span aria-hidden="true" className="training-mode-beta-dot" />
           BETA TEST
+        </div>
+      )}
+      {locked && (
+        <div
+          className="training-mode-dev-badge"
+          aria-label="Fonctionnalité en cours de développement"
+        >
+          EN DÉVELOPPEMENT
         </div>
       )}
       <div className="training-mode-rich-visual">{mode.visual}</div>
@@ -235,20 +243,17 @@ function ModeRichCard({
         </div>
 
         {locked ? (
-          <div className="training-mode-rich-locked">
+          <div
+            className="training-mode-rich-locked"
+            role="status"
+            aria-live="polite"
+          >
             <span aria-hidden="true" className="training-mode-rich-locked-icon">
-              🔒
+              🚧
             </span>
-            <div>
-              <div className="training-mode-rich-locked-title">
-                Réservé aux managers pendant la bêta
-              </div>
-              <p className="training-mode-rich-locked-text">
-                Ce mode est en cours de stabilisation. Il sera ouvert à tous
-                les commerciaux après la phase de test. Demande à ton manager
-                de te l&apos;activer ou de te le faire tester en duo.
-              </p>
-            </div>
+            <span className="training-mode-rich-locked-title">
+              En développement
+            </span>
           </div>
         ) : (
           <Link href={mode.href} className="training-mode-rich-cta">
